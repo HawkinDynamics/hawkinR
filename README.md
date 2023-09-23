@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hawkinR
+# hawkinR: Work with data from the Hawkin Dynamics API
 
 <!-- badges: start -->
 <!-- badges: end -->
