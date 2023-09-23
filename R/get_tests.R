@@ -1,17 +1,50 @@
 #' Get All Tests or Sync Tests
 #'
 #' @description
-#' Use this function to retrieve all tests or sync tests from your database. You can specify a time frame from, or to, which the tests should come (or be synced)
+#' Get the tests for an account. You can specify a time frame from, or to, which the tests should come (or be synced).
 #'
 #' @usage
 #' get_tests(from, to, sync = FALSE)
 #'
+#' @param from Optionally supply a time (Unix timestamp) you want the tests from. If you do not
+#' supply this value you will receive every test. This parameter is best suited for bulk exports of
+#' historical data
+#'
+#' @param to Optionally supply a time (Unix timestamp) you want the tests to. If you do not
+#' supply this value you will receive every test from the beginning of time or the optionally
+#' supplied `from` parameter. This parameter is best suited for bulk exports of historical data.
+#'
+#' @param sync  The result set will include updated and newly created tests. This parameter is best
+#' suited to keep your database in sync with the Hawkin database. If you do not supply this value
+#' you will receive every test.
+#'
 #' @return
-#' Response will be a data frame containing the trials within the time range (if specified)
+#' Response will be a data frame containing the trials within the time range (if specified).
 #'
-#' id: <chr> test's unique ID
+#' **id**   *str*   Test trial unique ID
 #'
-#' name: <chr> test's given name
+#' **timestamp**   *int*   UNIX timestamp of trial
+#'
+#' **segment**   *chr*   Description of the test type and trial number of the session (testType:trialNo)
+#'
+#' **testType.id**   *chr*   Id of the test type of the trial
+#'
+#' **testType.name**   *chr*   Name of the test type of the trial
+#'
+#' **testType.canonicalId**   *chr*   Canonical Id of the test type of the trial
+#'
+#' **athlete.id**   *chr*   Unique Id of the athlete
+#'
+#' **athlete.name**   *chr*   Athlete given name
+#'
+#' **athlete.active**   *logi*   The athlete is active
+#'
+#' **athlete.teams**   *list*   List containing Ids of each team the athlete is on
+#'
+#' **athlete.groups**   *list*   List containing Ids of each group the athlete is in
+#'
+#' All metrics from each test type are included as the remaining variables.
+#' If a trial does not have data for a variable it is returned NA.
 #'
 #' @examples
 #' \dontrun{
@@ -26,12 +59,14 @@
 #' dfFromTo <- get_tests(from = 1689958617, to = 1691207356)
 #'
 #'
-#' ## Call for all new tests since a specific date, or any tests that have been updated/changed since that date
+#' ## Call for all new tests since a specific date, or any tests that have been
+#' updated/changed since that date
 #' dfSync <- get_tests(from = 1689958617, sync=TRUE)
 #'
 #' }
 #'
 #' @importFrom rlang .data
+#' @importFrom tidyr unnest
 #' @export
 
 get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
@@ -130,7 +165,7 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
       base::names(Resp) <- base::sub("^data\\.", "", base::names(Resp))
 
       # UnNest testType and Athlete data
-      Resp <- Resp %>% tidyr::unnest(c(testType, athlete), names_sep = ".")
+      Resp <- Resp %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
 
       Resp
     } else {

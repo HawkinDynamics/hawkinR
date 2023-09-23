@@ -1,17 +1,50 @@
 #' Get Test Trials By Groups
 #'
 #' @description
-#' Use this function to retrieve only tests of the specified groups.
+#' Get only tests of the specified group for an account.
 #'
 #' @usage
 #' get_tests_group(groupId, from, to)
 #'
+#' @param groupId Supply a group’s or a string of a comma separated list of group id’s to receive tests from
+#' specific groups. Recommended to use method `paste0()`. A maximum of 10 groups can be fetched at once.
+#'
+#' @param from Optionally supply a time (Unix timestamp) you want the tests from. If you do not
+#' supply this value you will receive every test. This parameter is best suited for bulk exports of
+#' historical data.
+#'
+#' @param to Optionally supply a time (Unix timestamp) you want the tests to. If you do not
+#' supply this value you will receive every test from the beginning of time or the optionally
+#' supplied `from` parameter. This parameter is best suited for bulk exports of historical data.
+#'
 #' @return
-#' Response will be a data frame containing the trials of the specified groups within the time range (if specified)
+#' Response will be a data frame containing the trials from the specified team and within the time
+#' range (if specified).
 #'
-#' id: <chr> test's unique ID
+#' **id**   *str*   Test trial unique ID
 #'
-#' name: <chr> test's given name
+#' **timestamp**   *int*   UNIX timestamp of trial
+#'
+#' **segment**   *chr*   Description of the test type and trial number of the session (testType:trialNo)
+#'
+#' **testType.id**   *chr*   Id of the test type of the trial
+#'
+#' **testType.name**   *chr*   Name of the test type of the trial
+#'
+#' **testType.canonicalId**   *chr*   Canonical Id of the test type of the trial
+#'
+#' **athlete.id**   *chr*   Unique Id of the athlete
+#'
+#' **athlete.name**   *chr*   Athlete given name
+#'
+#' **athlete.active**   *logi*   The athlete is active
+#'
+#' **athlete.teams**   *list*   List containing Ids of each team the athlete is on
+#'
+#' **athlete.groups**   *list*   List containing Ids of each group the athlete is in
+#'
+#' All metrics from each test type are included as the remaining variables.
+#' If a trial does not have data for a variable it is returned NA.
 #'
 #' @examples
 #' \dontrun{
@@ -32,6 +65,7 @@
 #' }
 #'
 #' @importFrom rlang .data
+#' @importFrom tidyr unnest
 #' @export
 
 ## Get Tests Data by Group Id -----
@@ -122,7 +156,7 @@ get_tests_group <- function(groupId, from = NULL, to = NULL) {
       base::names(Resp) <- base::sub("^data\\.", "", base::names(Resp))
 
       # UnNest testType and Athlete data
-      Resp <- Resp %>% tidyr::unnest(c(testType, athlete), names_sep = ".")
+      Resp <- Resp %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
 
       Resp
     } else {

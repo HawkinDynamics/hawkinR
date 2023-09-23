@@ -1,7 +1,7 @@
 #' Get Athletes
 #'
 #' @description
-#' Use this function to retrieve all active athletes from your database. Inactive players will only be included if
+#' Get the athletes for an account. Inactive players will only be included if
 #' `inactive` parameter is set to TRUE.
 #'
 #' @usage
@@ -11,18 +11,18 @@
 #' inactive players included in the return.
 #'
 #' @return
-#' Response will be a data frame containing the athletes that match
-#' this query. Each athlete has the following structure:
+#' Response will be a data frame containing the athletes that match this query.
+#' Each athlete includes the following variables:
 #'
-#' id: <chr> athlete's unique ID
+#' **id**   *chr*   athlete's unique ID
 #'
-#' name: <chr> athlete's given name (First Last)
+#' **name**   *chr*   athlete's given name (First Last)
 #'
-#' active: <logi> athlete is active (TRUE)
+#' **active**   *logi*   athlete is active (TRUE)
 #'
-#' teams: <chr> team ids separated by " | "
+#' **teams**   *chr*   team ids separated by ","
 #'
-#' groups: <chr> group ids separated by " | "
+#' **groups**   *chr*  group ids separated by ","
 #'
 #' @examples
 #' \dontrun{
@@ -34,7 +34,8 @@
 #' # If you want to include all athletes, including inactive athletes, include the optional
 #' # `inactive` parameter.
 #'
-#' df_inctvAthletes <- get_athletes(inactive = TRUE)
+#' df_wInactive <- get_athletes(inactive = TRUE)
+#'
 #' }
 #'
 #'
@@ -113,8 +114,8 @@ get_athletes <- function(inactive = FALSE) {
           "id" = .data$data.id,
           "name" = .data$data.name,
           "active" = .data$data.active,
-          "teams" = base::sapply(.data$data.teams, function(x) base::paste(x, collapse = " | ")),
-          "groups" = base::sapply(.data$data.groups, function(x) base::paste(x, collapse = " | "))
+          "teams" = base::sapply(.data$data.teams, function(x) base::paste(x, collapse = ",")),
+          "groups" = base::sapply(.data$data.groups, function(x) base::paste(x, collapse = ","))
         )
 
       athlTbl
