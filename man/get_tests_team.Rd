@@ -6,15 +6,48 @@
 \usage{
 get_tests_team(teamId, from, to)
 }
+\arguments{
+\item{teamId}{Supply a team’s or a string of a comma separated list of group id’s to receive tests from
+specific groups. Recommended to use method \code{paste0()}. A maximum of 10 groups can be fetched at once.}
+
+\item{from}{Optionally supply a time (Unix timestamp) you want the tests from. If you do not
+supply this value you will receive every test. This parameter is best suited for bulk exports of
+historical data.}
+
+\item{to}{Optionally supply a time (Unix timestamp) you want the tests to. If you do not
+supply this value you will receive every test from the beginning of time or the optionally
+supplied \code{from} parameter. This parameter is best suited for bulk exports of historical data.}
+}
 \value{
-Response will be a data frame containing the trials of the specified teams within the time range (if specified)
+Response will be a data frame containing the trials from the specified team and within the time range (if specified).
 
-id: \if{html}{\out{<chr>}} test's unique ID
+\strong{id}   \emph{str}   Test trial unique ID
 
-name: \if{html}{\out{<chr>}} test's given name
+\strong{timestamp}   \emph{int}   UNIX timestamp of trial
+
+\strong{segment}   \emph{chr}   Description of the test type and trial number of the session (testType:trialNo)
+
+\strong{testType.id}   \emph{chr}   Id of the test type of the trial
+
+\strong{testType.name}   \emph{chr}   Name of the test type of the trial
+
+\strong{testType.canonicalId}   \emph{chr}   Canonical Id of the test type of the trial
+
+\strong{athlete.id}   \emph{chr}   Unique Id of the athlete
+
+\strong{athlete.name}   \emph{chr}   Athlete given name
+
+\strong{athlete.active}   \emph{logi}   The athlete is active
+
+\strong{athlete.teams}   \emph{List}   list containing Ids of each team the athlete is on
+
+\strong{athlete.groups}   \emph{List}   list containing Ids of each group the athlete is in
+
+All metrics from each test type are included as the remaining variables.
+If a trial does not have data for a variable it is returned NA.
 }
 \description{
-Use this function to retrieve only tests of the specified teams.
+Get only tests of the specified team for an account.
 }
 \examples{
 \dontrun{

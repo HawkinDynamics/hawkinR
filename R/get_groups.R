@@ -1,17 +1,18 @@
 #' Get Groups
 #'
 #' @description
-#' Use this function to retrieve the group names and IDs in the organization.
+#' Get the group names and ids for all the groups in the org.
 #'
 #' @usage
 #' get_groups()
 #'
 #' @return
-#' Response will be a data frame containing the groups that are in the organization.Each group has the following structure:
+#' Response will be a data frame containing the groups that are in the organization.
+#' Each group has the following variables:
 #'
-#' id: <chr> group's unique ID
+#' **id**   *chr*   group's unique ID
 #'
-#' name: <chr> group's given name
+#' **name**   *chr*   group's given name
 #'
 #' @examples
 #' \dontrun{

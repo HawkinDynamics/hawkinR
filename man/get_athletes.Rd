@@ -11,21 +11,21 @@ get_athletes(inactive = FALSE)
 inactive players included in the return.}
 }
 \value{
-Response will be a data frame containing the athletes that match
-this query. Each athlete has the following structure:
+Response will be a data frame containing the athletes that match this query.
+Each athlete includes the following variables:
 
-id: \if{html}{\out{<chr>}} athlete's unique ID
+\strong{id}   \emph{chr}   athlete's unique ID
 
-name: \if{html}{\out{<chr>}} athlete's given name (First Last)
+\strong{name}   \emph{chr}   athlete's given name (First Last)
 
-active: \if{html}{\out{<logi>}} athlete is active (TRUE)
+\strong{active}   \emph{logi}   athlete is active (TRUE)
 
-teams: \if{html}{\out{<chr>}} team ids separated by " | "
+\strong{teams}   \emph{chr}   team ids separated by ","
 
-groups: \if{html}{\out{<chr>}} group ids separated by " | "
+\strong{groups}   \emph{chr}  group ids separated by ","
 }
 \description{
-Use this function to retrieve all active athletes from your database. Inactive players will only be included if
+Get the athletes for an account. Inactive players will only be included if
 \code{inactive} parameter is set to TRUE.
 }
 \examples{
@@ -38,7 +38,8 @@ df_athletes <- get_athletes()
 # If you want to include all athletes, including inactive athletes, include the optional
 # `inactive` parameter.
 
-df_inctvAthletes <- get_athletes(inactive = TRUE)
+df_wInactive <- get_athletes(inactive = TRUE)
+
 }
 
 

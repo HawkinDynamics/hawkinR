@@ -1,24 +1,25 @@
 Package: hawkinR
-Title: Interacts With Hawkin Dynamics API
+Title: R package to work with data from the Hawkin Dynamics API
 Version: 0.0.0.9000
 Authors@R: 
-    person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: Provides simple functionality with Hawkin Dynamics API. These functions are for use
- with 'Hawkin Dynamics Beta API' version 1.8-beta. Must be HD user with active integration account 
- to utilize functions within package. This API is designed to get data out of your Hawkin Dynamics 
- database into your own database. It is not designed to be accessed from client applications directly.
- There is a limit on the amount of data that can be returned in a single request. As your database 
- grows, it will be necessary to use the from and to parameters to limit the size of the responses. 
- Responses that exceed the memory limit will fail.
+    person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
+Description: Provides simple functionality with Hawkin Dynamics API. These functions are for use with 'Hawkin Dynamics Beta API' version 1.8-beta. You must be an Hawkin Dynamics user with active integration account to utilize functions within the package. This API is designed to get data out of your Hawkin Dynamics database into your own database. It is not designed to be accessed from client applications directly. There is a limit on the amount of data that can be returned in a single request. As your database grows, it will be necessary to use the from and to parameters to limit the size of the responses. Responses that exceed the memory limit will fail.
+URL: https://github.com/HawkinDynamics/hawkinR
+BugReports: https://github.com/HawkinDynamics/hawkinR/issues
+Depends: R (>= 3.5.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports: 
-    dplyr,
-    httr,
-    jsonlite,
-    lubridate,
-    magrittr,
-    rlang
+    dplyr (>= 1.1.2),
+    httr (>= 1.4.7),
+    jsonlite (>= 1.8.7),
+    lubridate (>= 1.9.2),
+    magrittr (>= 2.0.3),
+    rlang (>= 1.1.1),
+    tidyr
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

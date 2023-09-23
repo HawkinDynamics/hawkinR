@@ -7,14 +7,15 @@
 get_groups()
 }
 \value{
-Response will be a data frame containing the groups that are in the organization.Each group has the following structure:
+Response will be a data frame containing the groups that are in the organization.
+Each group has the following variables:
 
-id: \if{html}{\out{<chr>}} group's unique ID
+\strong{id}   \emph{chr}   group's unique ID
 
-name: \if{html}{\out{<chr>}} group's given name
+\strong{name}   \emph{chr}   group's given name
 }
 \description{
-Use this function to retrieve the group names and IDs in the organization.
+Get the group names and ids for all the groups in the org.
 }
 \examples{
 \dontrun{

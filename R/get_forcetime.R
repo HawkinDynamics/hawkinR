@@ -1,42 +1,42 @@
 #' Get Force-Time Data
 #'
 #' @description
-#' Use this function to retrieve the raw recorded force-time data from a trial. This includes both left, right and combined force data at 1000hz (per millisecond).
+#' Get the force-time data for a specific test by id. This includes both left, right and combined force data at 1000hz (per millisecond).
 #' Calculated velocity, displacement, and power at each time interval will also be included.
 #'
 #' @usage
-#' get_forcetime(testID)
+#' get_forcetime(testId)
 #'
-#' @param testID Give the unique test id of the trial you want to be called.
+#' @param testId Give the unique test id of the trial you want to be called.
 #'
 #' @return
 #' Response will be a data frame containing the following:
 #'
-#' **time_s** (int): elapsed time in seconds, starting from end of identified quiet phase
+#' **time_s**   *int*   Elapsed time in seconds, starting from end of identified quiet phase
 #'
-#' **force_right** (int): Force recorded from the RIGHT platform coinciding with time point from  `time_s`, measured in Newtons (N)
+#' **force_right**   *int*   Force recorded from the RIGHT platform coinciding with time point from  `time_s`, measured in Newtons (N)
 #'
-#' **force_Left** (int): Force recorded from the LEFT platform coinciding with time point from  `time_s`, measured in Newtons (N)
+#' **force_Left**   *int*   Force recorded from the LEFT platform coinciding with time point from  `time_s`, measured in Newtons (N)
 #'
-#' **force_combined** (int): Sum of forces from LEFT and RIGHT, coinciding with time point from  `time_s`, measured in Newtons (N)
+#' **force_combined**   *int*   Sum of forces from LEFT and RIGHT, coinciding with time point from  `time_s`, measured in Newtons (N)
 #'
-#' **velocity_m.s** (int): Calculated velocity of center of mass at time interval, measured in meters per second (m/s)
+#' **velocity_m.s**   *int*   Calculated velocity of center of mass at time interval, measured in meters per second (m/s)
 #'
-#' **displacement_m** (int): Calculated displacement of center of mass at time interval, measured in meters (m)
+#' **displacement_m**   *int*   Calculated displacement of center of mass at time interval, measured in meters (m)
 #'
-#' **power_w** (int): Calculated power of mass at time interval, measured in watts (W)
+#' **power_w**   *int*   Calculated power of mass at time interval, measured in watts (W)
 #'
 #' @examples
 #' \dontrun{
 #' # This is an example of how the function would be called.
 #'
-#' df_forcetime <- get_forcetime( testID = `stringId` )
+#' df_ft <- get_forcetime( testId = `stringId` )
 #'
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
-get_forcetime <- function(testID) {
+get_forcetime <- function(testId) {
 
   # Retrieve access token and expiration from environment variables
   aToken <- base::Sys.getenv("accessToken")
@@ -54,8 +54,11 @@ get_forcetime <- function(testID) {
   # API Cloud URL
   urlCloud <- base::Sys.getenv("urlRegion")
 
+  # Test Id
+  id <- testId
+
   # Create URL for request
-  URL <-base::paste0(urlCloud,"/forcetime/",testID)
+  URL <-base::paste0(urlCloud,"/forcetime/",id)
 
   #-----#
 
@@ -99,14 +102,15 @@ get_forcetime <- function(testID) {
   # Return Response
   return(
     if(response$status_code == 200) {
-      tbl <- base::data.frame(
-        "time_s" = Resp$`Time(s)`,
-        "force_right" = Resp$`RightForce(N)`,
-        "force_left" = Resp$`LeftForce(N)`,
-        "force_combined" = Resp$`CombinedForce(N)`,
-        "velocity_m.s" = Resp$`Velocity(m/s)`,
-        "displacement_m" = Resp$`Displacement(m)`,
-        "power_w" = Resp$`Power(W)`
+      tbl <- Resp %>%
+        dplyr::transmute(
+        "time_s" = .data$`Time(s)`,
+        "force_right" = .data$`RightForce(N)`,
+        "force_left" = .data$`LeftForce(N)`,
+        "force_combined" = .data$`CombinedForce(N)`,
+        "velocity_m.s" = .data$`Velocity(m/s)`,
+        "displacement_m" = .data$`Displacement(m)`,
+        "power_w" = .data$`Power(W)`
       )
 
       tbl

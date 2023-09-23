@@ -7,14 +7,15 @@
 get_testTypes()
 }
 \value{
-Response will be a data frame containing the tests that are in the HD system. Each test type has the following structure:
+Response will be a data frame containing the tests that are in the HD system.
+Each test type includes the following variables:
 
-\strong{id} \if{html}{\out{<chr>}} test's unique ID
+\strong{id}   \emph{chr}   test's unique ID
 
-\strong{name} \if{html}{\out{<chr>}} test's given name
+\strong{name}   \emph{chr}   test's given name
 }
 \description{
-Use this function to retrieve the test names and IDs for the different tests in the Hawkin Dynamics system.
+Get the test type names and ids for all the test types in the system.
 }
 \examples{
 \dontrun{

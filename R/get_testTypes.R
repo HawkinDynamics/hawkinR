@@ -1,17 +1,18 @@
 #' Get Test Types
 #'
 #' @description
-#' Use this function to retrieve the test names and IDs for the different tests in the Hawkin Dynamics system.
+#' Get the test type names and ids for all the test types in the system.
 #'
 #' @usage
 #' get_testTypes()
 #'
 #' @return
-#' Response will be a data frame containing the tests that are in the HD system. Each test type has the following structure:
+#' Response will be a data frame containing the tests that are in the HD system.
+#' Each test type includes the following variables:
 #'
-#' **id**  test's unique ID
+#' **id**   *chr*   test's unique ID
 #'
-#' **name**  test's given name
+#' **name**   *chr*   test's given name
 #'
 #' @examples
 #' \dontrun{
