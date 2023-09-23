@@ -1,7 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hawkinR: Work with data from the Hawkin Dynamics API
+# hawkinR
+
+**Get your data from the Hawkin Dynamics API**
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -10,6 +12,18 @@ hawkinR provides simple functionality with Hawkin Dynamics API. These
 functions are for use with ‘Hawkin Dynamics Beta API’ version 1.8-beta.
 You must be an Hawkin Dynamics user with active integration account to
 utilize functions within the package.
+
+## Installation
+
+You can install the development version of hawkinR from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("HawkinDynamics/hawkinR")
+```
+
+## Functions
 
 This API is designed to get data out of your Hawkin Dynamics database
 into your own database. It is not designed to be accessed from client
@@ -26,18 +40,6 @@ entire database since you began testing that is only executed when
 necessary. A recommended way of doing this is to generate the from and
 to parameters for each month since you started and send a request for
 each either in parallel or sequentially.
-
-## Installation
-
-You can install the development version of hawkinR from
-[GitHub](https://github.com/) with:
-
-``` r
-# install.packages("devtools")
-devtools::install_github("HawkinDynamics/hawkinR")
-```
-
-## Functions
 
 This package was meant to help execute requests to the Hawkin Dynamics
 API with a single line of code. There are 11 functions to help execute 4
@@ -103,24 +105,55 @@ primary objectives:
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example which shows common workflow:
 
 ``` r
-ibrary(hawkinR) 
-## basic example code
+library(hawkinR) 
 
-# Get access token. When successful, access token is stored for use in the session.
+# 1. Get access to your site
+
+## Store you secret API key
+refreshToken <- 'your-secret-api-key'
+#
+## Get access token. When successful, access token is stored for use in the session.
 get_access("refreshToken", region = "Americas")
 
-# Sync tests since a time point.
-df_SyncFrom <- get_tests(from = 1689958617, sync = TRUE)
 
-# Get tests by athlete in time frame.
-dfFromTo <- get_tests_ath(athleteId = "athleteId", from = 1689958617, to = 1691207356)
+# 2. Get Org data
 
-# Get all tests by team
-## get list of teams in org
+## Team data frame
 teamList <- get_teams()
-## paste teams together for teamId query
-df_teamTests <- get_tests_team(teamId = paste0(teamList$id[1],teamList$id[3],teamList$id[4]))
+#
+## Create list of teams
+teamIds <- paste0(teamList$id[1],teamList$id[3],teamList$id[4])
+
+## Athlete data frame
+athList <- get_athletes()
+#
+## Create athleteId
+athId <- athList$id[6]
+
+# 3. Get Test Data
+
+## Initial test call
+allTests <- get_tests()
+#
+## Create last test or sync date
+lastSync <- max(allTests$lastSyncTime)
+#
+## Create phase to review
+phaseDate1 <- allTests$timestamp[30] # from dateTime
+phaseDate2 <- allTests$timestamp[10] # to dateTime
+
+## Sync tests since a time point.
+df_SyncFrom <- get_tests(from = lastSync, sync = TRUE)
+
+## Get tests by athlete in time frame.
+df_athTests <- get_tests_ath(athleteId = athId, from = phaseDate1, to = phaseDate2)
+
+## Get all tests by team
+df_teamTests <- get_tests_team(teamId = teamIds)
+
+## Get test force-time data
+df_forceData <- get_forcetime(testId = df_athTests$id[10])
 ```
