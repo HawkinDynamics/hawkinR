@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# hawkinR
+# hawkinR: Work with data from the Hawkin Dynamics API
 
 <!-- badges: start -->
 
@@ -90,4 +90,3 @@ teamList <- get_teams()
 ## paste teams together for teamId query
 df_teamTests <- get_tests_team(teamId = paste0(teamList$id[1],teamList$id[3],teamList$id[4]))
 ```
-
