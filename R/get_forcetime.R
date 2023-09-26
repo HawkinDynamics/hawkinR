@@ -1,0 +1,122 @@
+#' Get Force-Time Data
+#'
+#' @description
+#' Get the force-time data for a specific test by id. This includes both left, right and combined force data at 1000hz (per millisecond).
+#' Calculated velocity, displacement, and power at each time interval will also be included.
+#'
+#' @usage
+#' get_forcetime(testId)
+#'
+#' @param testId Give the unique test id of the trial you want to be called.
+#'
+#' @return
+#' Response will be a data frame containing the following:
+#'
+#' **time_s**   *int*   Elapsed time in seconds, starting from end of identified quiet phase
+#'
+#' **force_right**   *int*   Force recorded from the RIGHT platform coinciding with time point from  `time_s`, measured in Newtons (N)
+#'
+#' **force_Left**   *int*   Force recorded from the LEFT platform coinciding with time point from  `time_s`, measured in Newtons (N)
+#'
+#' **force_combined**   *int*   Sum of forces from LEFT and RIGHT, coinciding with time point from  `time_s`, measured in Newtons (N)
+#'
+#' **velocity_m.s**   *int*   Calculated velocity of center of mass at time interval, measured in meters per second (m/s)
+#'
+#' **displacement_m**   *int*   Calculated displacement of center of mass at time interval, measured in meters (m)
+#'
+#' **power_w**   *int*   Calculated power of mass at time interval, measured in watts (W)
+#'
+#' @examples
+#' \dontrun{
+#' # This is an example of how the function would be called.
+#'
+#' df_ft <- get_forcetime( testId = `stringId` )
+#'
+#' }
+#'
+#' @importFrom rlang .data
+#' @export
+get_forcetime <- function(testId) {
+
+  # Retrieve access token and expiration from environment variables
+  aToken <- base::Sys.getenv("accessToken")
+  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration" ))
+
+  #-----#
+
+  # Check for Access Token and Expiration
+  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
+    stop("Access token not available or expired. Call get_access() to obtain it.")
+  }
+
+  #-----#
+
+  # API Cloud URL
+  urlCloud <- base::Sys.getenv("urlRegion")
+
+  # Test Id
+  id <- testId
+
+  # Create URL for request
+  URL <-base::paste0(urlCloud,"/forcetime/",id)
+
+  #-----#
+
+  # Call Variables
+  payload <- ""
+  encode <- "raw"
+
+  #-----#
+
+  # GET Request
+  response <- httr::VERB("GET",
+                         URL,
+                         body = payload,
+                         httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
+                         httr::content_type("application/octet-stream"),
+                         encode = encode
+  )
+
+  #-----#
+
+  # Response Table
+  Resp <- if(response$status_code == 401) {
+    # Invalid Token Response
+    "Invalid Access Token."
+  } else  if(response$status_code == 404){
+    "Requested Resource Not Found"
+  } else  if(response$status_code == 500){
+    # Contact Support Response
+    "Something went wrong. Please contact support@hawkindynamics.com"
+  } else  if(response$status_code == 200){
+    # Response GOOD - Run rest of script
+    x <- jsonlite::fromJSON(
+        httr::content(response, "text")
+      )
+
+    x
+  }
+
+  #-----#
+
+  # Return Response
+  return(
+    if(response$status_code == 200) {
+      tbl <- Resp %>%
+        dplyr::transmute(
+        "time_s" = .data$`Time(s)`,
+        "force_right" = .data$`RightForce(N)`,
+        "force_left" = .data$`LeftForce(N)`,
+        "force_combined" = .data$`CombinedForce(N)`,
+        "velocity_m.s" = .data$`Velocity(m/s)`,
+        "displacement_m" = .data$`Displacement(m)`,
+        "power_w" = .data$`Power(W)`
+      )
+
+      tbl
+    } else {
+      base::print(Resp)
+    }
+  )
+
+}
