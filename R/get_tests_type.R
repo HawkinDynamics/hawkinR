@@ -82,9 +82,9 @@ get_tests_type <- function(typeId, from = NULL, to = NULL) {
 
   # Check for Proper EPOCH Times
   if(!is.null(from) && !is.numeric(from)) {
-    stop("Error: `from` expecting numeric EPOCH/Unix timestamp.")
+    base::stop("Error: `from` expecting numeric EPOCH/Unix timestamp.")
   } else if(!is.null(to) && !is.numeric(to)) {
-    stop("Error: `to` expecting numeric EPOCH/Unix timestamp.")
+    base::stop("Error: `to` expecting numeric EPOCH/Unix timestamp.")
   }
 
   #-----#
@@ -107,8 +107,28 @@ get_tests_type <- function(typeId, from = NULL, to = NULL) {
     base::paste0("&to=",to)
   }
 
+  # Valid test type IDs
+  valid_typeIds <- c(
+    "7nNduHeM5zETPjHxvm7s",
+    "QEG7m7DhYsD6BrcQ8pic",
+    "2uS5XD5kXmWgIZ5HhQ3A",
+    "gyBETpRXpdr63Ab2E0V8",
+    "5pRSUQVSJVnxijpPMck3",
+    "pqgf2TPUOQOQs6r0HQWb",
+    "r4fhrkPdYlLxYQxEeM78",
+    "ubeWMPN1lJFbuQbAM97s",
+    "rKgI4y3ItTAzUekTUpvR"
+  )
+
+  # check typeId
+  tId <- if (typeId %in% valid_typeIds) {
+    typeId
+  } else {
+    base::stop("typeId incorrect. Check your entry")
+  }
+
   # Create URL for request!!!!!!!
-  URL <- base::paste0(urlCloud,"?testTypeId=", typeId, fromDT, toDT)
+  URL <- base::paste0(urlCloud,"?testTypeId=", tId, fromDT, toDT)
 
   #-----#
 
@@ -130,15 +150,33 @@ get_tests_type <- function(typeId, from = NULL, to = NULL) {
 
   # Response
   Resp <- if(response$status_code == 401) {
-    "Invalid Access token."
+    base::stop("Invalid Access token.")
   } else if(response$status_code == 500) {
-    "Someting went wrong. Please contact support@hawkindynamics.com"
+    base::stop("Someting went wrong. Please contact support@hawkindynamics.com")
   } else if(response$status_code == 200) {
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
+    x <- tryCatch({
+      base::data.frame(
+        jsonlite::fromJSON(
+          httr::content(response, "text")
+        )
       )
-    )
+    }, error = function(e) {
+      # Handle the error here
+      base::stop("No tests returned. If you feel this is incorrect, check the typeId and date range.")
+    })
+
+    # Check if an error occurred
+    if (base::inherits(x, "try-error")) {
+      # Handle the error case here
+    } else {
+      # The code ran successfully, and 'result' contains the data frame
+    }
+
+    # Clean Resp Headers
+    base::names(x) <- base::sub("^data\\.", "", base::names(x))
+
+    # UnNest testType and Athlete data
+    x <- x %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
 
     x
   }
@@ -147,19 +185,6 @@ get_tests_type <- function(typeId, from = NULL, to = NULL) {
 
 
   # Return Response
-  return(
-    if(response$status_code == 200) {
-
-      # Clean Resp Headers
-      base::names(Resp) <- base::sub("^data\\.", "", base::names(Resp))
-
-      # UnNest testType and Athlete data
-      Resp <- Resp %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
-
-      Resp
-    } else {
-      base::print(Resp)
-    }
-  )
+  return(Resp)
 
 }
