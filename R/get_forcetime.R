@@ -36,6 +36,9 @@
 #'
 #' @importFrom rlang .data
 #' @export
+
+
+## Get Force Time Data -----
 get_forcetime <- function(testId) {
 
   # Retrieve access token and expiration from environment variables
@@ -46,7 +49,7 @@ get_forcetime <- function(testId) {
 
   # Check for Access Token and Expiration
   if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
-    stop("Access token not available or expired. Call get_access() to obtain it.")
+    base::stop("Access token not available or expired. Call get_access() to obtain it.")
   }
 
   #-----#
@@ -54,11 +57,14 @@ get_forcetime <- function(testId) {
   # API Cloud URL
   urlCloud <- base::Sys.getenv("urlRegion")
 
-  # Test Id
-  id <- testId
+  tId <- if( base::is.character(testId)) {
+    testId
+  } else {
+    base::stop("Incorrect testId. Must be a character string.")
+  }
 
   # Create URL for request
-  URL <-base::paste0(urlCloud,"/forcetime/",id)
+  URL <-base::paste0(urlCloud,"/forcetime/",tId)
 
   #-----#
 
@@ -82,41 +88,35 @@ get_forcetime <- function(testId) {
   # Response Table
   Resp <- if(response$status_code == 401) {
     # Invalid Token Response
-    "Invalid Access Token."
+    base::stop("Invalid Access Token.")
   } else  if(response$status_code == 404){
-    "Requested Resource Not Found"
+    base::stop("Requested Resource Not Found")
   } else  if(response$status_code == 500){
     # Contact Support Response
-    "Something went wrong. Please contact support@hawkindynamics.com"
+    base::stop("Something went wrong. Please contact support@hawkindynamics.com")
   } else  if(response$status_code == 200){
     # Response GOOD - Run rest of script
     x <- jsonlite::fromJSON(
-        httr::content(response, "text")
-      )
+      httr::content(response, "text")
+    )
 
-    x
+    tbl <- base::data.frame(
+      "time_s" = x$`Time(s)`,
+      "force_right" = x$`RightForce(N)`,
+      "force_left" = x$`LeftForce(N)`,
+      "force_combined" = x$`CombinedForce(N)`,
+      "velocity_m.s" = x$`Velocity(m/s)`,
+      "displacement_m" = x$`Displacement(m)`,
+      "power_w" = x$`Power(W)`
+    )
+
+    tbl
   }
 
   #-----#
 
   # Return Response
-  return(
-    if(response$status_code == 200) {
-      tbl <- Resp %>%
-        dplyr::transmute(
-        "time_s" = .data$`Time(s)`,
-        "force_right" = .data$`RightForce(N)`,
-        "force_left" = .data$`LeftForce(N)`,
-        "force_combined" = .data$`CombinedForce(N)`,
-        "velocity_m.s" = .data$`Velocity(m/s)`,
-        "displacement_m" = .data$`Displacement(m)`,
-        "power_w" = .data$`Power(W)`
-      )
-
-      tbl
-    } else {
-      base::print(Resp)
-    }
-  )
+  return(Resp)
 
 }
+

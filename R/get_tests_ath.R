@@ -107,8 +107,15 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL) {
     base::paste0("&to=",to)
   }
 
+  # Athlete Id
+  aId <- if(base::is.character(athleteId)) {
+    athleteId
+  } else {
+    base::stop("Error: athleteId should be character string of an athlete ID. Example: 'athleteId'")
+  }
+
   # Create URL for request!!!!!!!
-  URL <- base::paste0(urlCloud,"?athleteId=", athleteId, fromDT, toDT)
+  URL <- base::paste0(urlCloud,"?athleteId=", aId, fromDT, toDT)
 
   #-----#
 
@@ -130,37 +137,37 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL) {
 
   # Response
   Resp <- if(response$status_code == 401) {
-    "Invalid Access token."
+    base::stop("Invalid Access token.")
   } else if(response$status_code == 500) {
-    "Someting went wrong. Please contact support@hawkindynamics.com"
+    base::stop("Someting went wrong. Please contact support@hawkindynamics.com")
   } else if(response$status_code == 200) {
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
-      )
+    # Convert JSON
+    resp <- jsonlite::fromJSON(
+      httr::content(response, "text")
     )
 
-    x
+    # Evaluate Response
+    x <- if(resp$count[1] > 0) {
+      # Convert to data frame
+      df <- base::data.frame(resp)
+
+      # Clean Resp Headers
+      base::names(df) <- base::sub("^data\\.", "", base::names(df))
+
+      # UnNest testType and Athlete data
+      df <- df %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
+
+      df
+    } else {
+      base::stop("No trials returned. Check athleteId or from/to entries")
+    }
   }
 
   #-----#
 
 
   # Return Response
-  return(
-    if(response$status_code == 200) {
-
-      # Clean Resp Headers
-      base::names(Resp) <- base::sub("^data\\.", "", base::names(Resp))
-
-      # UnNest testType and Athlete data
-      Resp <- Resp %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
-
-      Resp
-    } else {
-      base::print(Resp)
-    }
-  )
+  return(Resp)
 
 }
 
