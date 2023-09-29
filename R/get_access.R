@@ -42,6 +42,12 @@
 #' @export
 get_access <- function(refreshToken, region = "Americas") {
 
+  rToken <- if( base::is.character(refreshToken) ) {
+    refreshToken
+  } else {
+    base::stop("refreshToken invalid. token must be of class <chr>")
+  }
+
   # API Token URL
   urlToken <- if(region == "Americas") {
     "https://cloud.hawkindynamics.com/api/token"
@@ -78,7 +84,7 @@ get_access <- function(refreshToken, region = "Americas") {
   response <- httr::VERB("GET",
                          urlToken,
                          body = payload,
-                         httr::add_headers(Authorization = paste0("Bearer ", refreshToken)),
+                         httr::add_headers(Authorization = paste0("Bearer ", rToken)),
                          httr::content_type("application/octet-stream"), encode = encode
   )
 
@@ -87,13 +93,13 @@ get_access <- function(refreshToken, region = "Americas") {
   # Response Table
   tokResp <- if(response$status_code == 401) {
     # Invalid Token Response
-    "Refresh Token is invalid or expired."
+    base::stop("Refresh Token is invalid or expired.")
   } else  if(response$status_code == 403){
     # Missing Refresh Token Response
-    "Refresh Token is missing"
+    base::stop("Refresh Token is missing")
   } else  if(response$status_code == 500){
     # Contact Support Response
-    "Something went wrong. Please contact support@hawkindynamics.com"
+    base::stop("Something went wrong. Please contact support@hawkindynamics.com")
   } else  if(response$status_code == 200){
     # Response GOOD - Run rest of script
     x <- data.frame(
@@ -113,22 +119,18 @@ get_access <- function(refreshToken, region = "Americas") {
   #-----#
 
   return(
-    if(response$status_code == 200) {
-      print(
-        paste(
-          "Success! Your access token was recieved and stored for use by other hawkinR functions. Your token will expire at",
-          lubridate::with_tz(
-            lubridate::as_datetime(
-              base::as.numeric(Sys.getenv("accessToken_expiration")),
-              tz = "UTC"
-            ),
-            tzone = base::Sys.timezone()
-          )
+    print(
+      paste(
+        "Success! Your access token was recieved and stored for use by other hawkinR functions. Your token will expire at",
+        lubridate::with_tz(
+          lubridate::as_datetime(
+            base::as.numeric(Sys.getenv("accessToken_expiration")),
+            tz = "UTC"
+          ),
+          tzone = base::Sys.timezone()
         )
       )
-    } else {
-      print(tokResp)
-    }
+    )
   )
 
 }

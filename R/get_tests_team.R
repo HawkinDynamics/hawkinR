@@ -168,11 +168,11 @@ get_tests_team <- function(teamId, from = NULL, to = NULL) {
     x <- x %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
 
     # Split the ID string into individual IDs
-    ids <- base::unlist(base::strsplit(teamId, ","))
+    teamIds <- base::unlist(base::strsplit(teamId, ","))
 
     # Check if any of the IDs in teamIds are present in any of the lists in the 'athlete.teams' column
     filtered_df <- x %>%
-      dplyr::filter(base::any(base::sapply(.data$athlete.teams, function(ids) base::any(ids %in% .data$teamIds))))
+      dplyr::filter(base::any(base::sapply(.data$athlete.teams, function(ids) base::any(ids %in% teamIds))))
 
     # Use an if statement to handle the cases
     x <- if (base::nrow(filtered_df) > 0) {

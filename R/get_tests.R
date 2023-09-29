@@ -99,16 +99,18 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
   # From DateTime
   fromDT <- if(base::is.null(from)) {
     ""
-  } else if(base::isTRUE(sync)){
-    base::paste0("?syncFrom=",from)
-  } else {
-    base::paste0("?from=",from)
+  } else if(!is.numeric(from)) {
+    base::stop("date must be in numeric unix format")
+  } else{
+    base::paste0("&from=",from)
   }
 
 
   # To DateTime
   toDT <- if(base::is.null(to)) {
     ""
+  } else if(!is.numeric(to)) {
+    base::stop("date must be in numeric unix format")
   } else if(base::is.null(from)) {
     base::paste0("?to=",to)
   } else if(base::is.null(from) && base::isTRUE(sync)) {

@@ -96,14 +96,18 @@ get_tests_type <- function(typeId, from = NULL, to = NULL) {
   # From DateTime
   fromDT <- if(base::is.null(from)) {
     ""
-  } else {
+  } else if(!is.numeric(from)) {
+    base::stop("date must be in numeric unix format")
+  } else{
     base::paste0("&from=",from)
   }
 
   # To DateTime
   toDT <- if(base::is.null(to)) {
     ""
-  } else {
+  } else if(!is.numeric(to)) {
+    base::stop("date must be in numeric unix format")
+  } else{
     base::paste0("&to=",to)
   }
 
