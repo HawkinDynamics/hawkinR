@@ -69,10 +69,10 @@ get_testTypes <- function() {
   # Response Table
   Resp <- if(response$status_code == 401) {
     # Invalid Token Response
-    "Invalid Access Token."
+    base::stop("Invalid Access Token.")
   } else  if(response$status_code == 500){
     # Contact Support Response
-    "Something went wrong. Please contact support@hawkindynamics.com"
+    base::stop("Something went wrong. Please contact support@hawkindynamics.com")
   } else  if(response$status_code == 200){
     # Response GOOD - Run rest of script
     x <- data.frame(
@@ -86,12 +86,6 @@ get_testTypes <- function() {
 
   #-----#
 
-  return(
-    if(response$status_code == 200) {
-      Resp
-    } else {
-      base::print(Resp)
-    }
-  )
+  return(Resp)
 
 }
