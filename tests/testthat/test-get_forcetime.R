@@ -2,8 +2,8 @@
 test_that("get_forcetime with valid access token and testId", {
   # Set up access token and expiration environment variables
   Sys.setenv(
-    accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9yZ0lkIjoiRFBNYjZlazJtZ1VOVmNnOHNpU3Fwbkl2RTJpMiIsInNjb3BlcyI6Ilt0ZXN0cy5yZWFkXSJ9LCJpYXQiOjE2OTU5NjIzMjMsImV4cCI6MTY5NTk2NTkyM30.B0scvSbwrsGTPnCii24M7otdJcDr-Fc63HG6vTiluRA",
-    accessToken_expiration = 1695965923
+    accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9yZ0lkIjoiRFBNYjZlazJtZ1VOVmNnOHNpU3Fwbkl2RTJpMiIsInNjb3BlcyI6Ilt0ZXN0cy5yZWFkXSJ9LCJpYXQiOjE2OTYwNTgxMzUsImV4cCI6MTY5NjA2MTczNX0.C1YfTKZprFQDVTswDdlDvmVHba807okSTrL12Gs0F98",
+    accessToken_expiration = 1696061735
   )
   result <- get_forcetime("X0vGP2xyb1wx8qjaGRFa")
   # Validate the structure and values of the result data frame
@@ -14,7 +14,7 @@ test_that("get_forcetime with valid access token and testId", {
 # Access Token Expiration
 test_that("get_forcetime with expired access token", {
   # Set up access token and expiration environment variables with an expired token
-  Sys.setenv(accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9yZ0lkIjoiRFBNYjZlazJtZ1VOVmNnOHNpU3Fwbkl2RTJpMiIsInNjb3BlcyI6Ilt0ZXN0cy5yZWFkXSJ9LCJpYXQiOjE2OTU5NjIzMjMsImV4cCI6MTY5NTk2NTkyM30.B0scvSbwrsGTPnCii24M7otdJcDr-Fc63HG6vTiluRA"
+  Sys.setenv(accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9yZ0lkIjoiRFBNYjZlazJtZ1VOVmNnOHNpU3Fwbkl2RTJpMiIsInNjb3BlcyI6Ilt0ZXN0cy5yZWFkXSJ9LCJpYXQiOjE2OTYwNTgxMzUsImV4cCI6MTY5NjA2MTczNX0.C1YfTKZprFQDVTswDdlDvmVHba807okSTrL12Gs0F98"
 , accessToken_expiration = 169595000)
   expect_error(get_forcetime("X0vGP2xyb1wx8qjaGRFa"))
 })
@@ -30,8 +30,8 @@ test_that("get_forcetime with no access token", {
 test_that("get_forcetime with invalid testId", {
   # Set up access token and expiration environment variables
   Sys.setenv(
-    accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9yZ0lkIjoiRFBNYjZlazJtZ1VOVmNnOHNpU3Fwbkl2RTJpMiIsInNjb3BlcyI6Ilt0ZXN0cy5yZWFkXSJ9LCJpYXQiOjE2OTU5NjIzMjMsImV4cCI6MTY5NTk2NTkyM30.B0scvSbwrsGTPnCii24M7otdJcDr-Fc63HG6vTiluRA",
-    accessToken_expiration = 1695965923
+    accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im9yZ0lkIjoiRFBNYjZlazJtZ1VOVmNnOHNpU3Fwbkl2RTJpMiIsInNjb3BlcyI6Ilt0ZXN0cy5yZWFkXSJ9LCJpYXQiOjE2OTYwNTgxMzUsImV4cCI6MTY5NjA2MTczNX0.C1YfTKZprFQDVTswDdlDvmVHba807okSTrL12Gs0F98",
+    accessToken_expiration = 1696061735
     )
   expect_error(get_forcetime(12345))
 })
