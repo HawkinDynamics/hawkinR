@@ -90,10 +90,10 @@ get_athletes <- function(inactive = FALSE) {
   # Response Table
   Resp <- if(response$status_code == 401) {
     # Invalid Token Response
-    "Invalid Access Token."
+    base::stop("Invalid Access Token.")
   } else  if(response$status_code == 500){
     # Contact Support Response
-    "Something went wrong. Please contact support@hawkindynamics.com"
+    base::stop("Something went wrong. Please contact support@hawkindynamics.com")
   } else  if(response$status_code == 200){
     # Response GOOD - Run rest of script
     x <- data.frame(
@@ -102,26 +102,21 @@ get_athletes <- function(inactive = FALSE) {
       )
     )
 
-    x
+    # Create df
+    df <- x %>%
+      dplyr::transmute(
+        "id" = .data$data.id,
+        "name" = .data$data.name,
+        "active" = .data$data.active,
+        "teams" = base::sapply(.data$data.teams, function(x) base::paste(x, collapse = ",")),
+        "groups" = base::sapply(.data$data.groups, function(x) base::paste(x, collapse = ","))
+      )
+
+    df
   }
 
   #-----#
 
-  return(
-    if(response$status_code == 200) {
-      athlTbl <- Resp %>%
-        dplyr::transmute(
-          "id" = .data$data.id,
-          "name" = .data$data.name,
-          "active" = .data$data.active,
-          "teams" = base::sapply(.data$data.teams, function(x) base::paste(x, collapse = ",")),
-          "groups" = base::sapply(.data$data.groups, function(x) base::paste(x, collapse = ","))
-        )
-
-      athlTbl
-    } else {
-      base::print(Resp)
-    }
-  )
+  return(Resp)
 
 }
