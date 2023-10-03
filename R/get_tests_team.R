@@ -67,6 +67,7 @@
 #' @importFrom tidyr unnest
 #' @export
 
+## Get Tests Data by Team Id -----
 get_tests_team <- function(teamId, from = NULL, to = NULL) {
 
   # Retrieve Access Token and Expiration from Environment Variables
@@ -107,8 +108,16 @@ get_tests_team <- function(teamId, from = NULL, to = NULL) {
     base::paste0("&to=",to)
   }
 
+  # Team Id
+  tId <- if(base::is.character(teamId)) {
+    teamId
+  } else {
+    stop("Error: teamId should be character string of a team ID , or a comma seperated list of
+         team IDs in a single character string. Example: 'team1Id,team2Id,team3Id'")
+  }
+
   # Create URL for request!!!!!!!
-  URL <- base::paste0(urlCloud,"?=teamId=", teamId, fromDT, toDT)
+  URL <- base::paste0(urlCloud,"?=teamId=", tId, fromDT, toDT)
 
   #-----#
 
@@ -130,15 +139,48 @@ get_tests_team <- function(teamId, from = NULL, to = NULL) {
 
   # Response
   Resp <- if(response$status_code == 401) {
-    "Invalid Access token."
+    base::stop("Invalid Access token.")
   } else if(response$status_code == 500) {
-    "Someting went wrong. Please contact support@hawkindynamics.com"
+    base::stop("Someting went wrong. Please contact support@hawkindynamics.com")
   } else if(response$status_code == 200) {
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
+    x <- tryCatch({
+      base::data.frame(
+        jsonlite::fromJSON(
+          httr::content(response, "text")
+        )
       )
-    )
+    }, error = function(e) {
+      # Handle the error here
+      base::stop("No tests returned. If you feel this is incorrect, check the teamId and date range.")
+    })
+
+    # Check if an error occurred
+    if (base::inherits(x, "try-error")) {
+      # Handle the error case here
+    } else {
+      # The code ran successfully, and 'result' contains the data frame
+    }
+
+    # Clean Resp Headers
+    base::names(x) <- base::sub("^data\\.", "", base::names(x))
+
+    # UnNest testType and Athlete data
+    x <- x %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
+
+    # Split the ID string into individual IDs
+    teamIds <- base::unlist(base::strsplit(teamId, ","))
+
+    # Check if any of the IDs in teamIds are present in any of the lists in the 'athlete.teams' column
+    filtered_df <- x %>%
+      dplyr::filter(base::any(base::sapply(.data$athlete.teams, function(ids) base::any(ids %in% teamIds))))
+
+    # Use an if statement to handle the cases
+    x <- if (base::nrow(filtered_df) > 0) {
+      # Data matching the ID(s) was found
+      filtered_df
+    } else {
+      base::stop("No data returned. Check teamId")
+    }
 
     x
   }
@@ -147,20 +189,6 @@ get_tests_team <- function(teamId, from = NULL, to = NULL) {
 
 
   # Return Response
-  return(
-    if(response$status_code == 200) {
-
-      # Clean Resp Headers
-      base::names(Resp) <- base::sub("^data\\.", "", base::names(Resp))
-
-      # UnNest testType and Athlete data
-      Resp <- Resp %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
-
-      Resp
-    } else {
-      base::print(Resp)
-    }
-  )
+  return(Resp)
 
 }
-

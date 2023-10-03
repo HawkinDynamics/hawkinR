@@ -69,6 +69,7 @@
 #' @importFrom tidyr unnest
 #' @export
 
+## Get All Tests or Sync Tests -----
 get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
 
   # Retrieve Access Token and Expiration from Environment Variables
@@ -98,16 +99,18 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
   # From DateTime
   fromDT <- if(base::is.null(from)) {
     ""
-  } else if(base::isTRUE(sync)){
-    base::paste0("?syncFrom=",from)
-  } else {
-    base::paste0("?from=",from)
+  } else if(!is.numeric(from)) {
+    base::stop("date must be in numeric unix format")
+  } else{
+    base::paste0("&from=",from)
   }
 
 
   # To DateTime
   toDT <- if(base::is.null(to)) {
     ""
+  } else if(!is.numeric(to)) {
+    base::stop("date must be in numeric unix format")
   } else if(base::is.null(from)) {
     base::paste0("?to=",to)
   } else if(base::is.null(from) && base::isTRUE(sync)) {
@@ -146,11 +149,29 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
   } else if(response$status_code == 500) {
     "Someting went wrong. Please contact support@hawkindynamics.com"
   } else if(response$status_code == 200) {
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
+    x <- tryCatch({
+      base::data.frame(
+        jsonlite::fromJSON(
+          httr::content(response, "text")
+        )
       )
-    )
+    }, error = function(e) {
+      # Handle the error here
+      base::stop("No tests returned. If you feel this is incorrect, check the date range.")
+    })
+
+    # Check if an error occurred
+    if (base::inherits(x, "try-error")) {
+      # Handle the error case here
+    } else {
+      # The code ran successfully, and 'result' contains the data frame
+    }
+
+    # Clean Resp Headers
+    base::names(x) <- base::sub("^data\\.", "", base::names(x))
+
+    # UnNest testType and Athlete data
+    x <- x %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
 
     x
   }
@@ -158,20 +179,6 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
   #-----#
 
   # Return Response
-  return(
-    if(response$status_code == 200) {
-
-      # Clean Resp Headers
-      base::names(Resp) <- base::sub("^data\\.", "", base::names(Resp))
-
-      # UnNest testType and Athlete data
-      Resp <- Resp %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
-
-      Resp
-    } else {
-      base::print(Resp)
-    }
-  )
+  return(Resp)
 
 }
-
