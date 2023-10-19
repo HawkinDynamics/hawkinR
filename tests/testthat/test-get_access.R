@@ -16,7 +16,7 @@ test_that("get_access token not chr", {
 
 # Successful execution
 test_that("get_access with valid token", {
-  result <- get_access("uI1J4T.f6AYZqUI3XUeuEUaTZdIsCKtl8KML")
+  result <- get_access("50UI0O.LHofQ0pPorgmIlpI2qVtqBlK8qhI9")
   t <- lubridate::with_tz(
     lubridate::as_datetime(
       base::as.numeric(Sys.getenv("accessToken_expiration")),
