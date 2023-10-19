@@ -100,14 +100,50 @@ get_forcetime <- function(testId) {
       httr::content(response, "text")
     )
 
+    # create columns for df
+
+    ## Time
+    t <-  x$`Time(s)`
+
+    ## Force Right
+    rF <- if(length(x$`RightForce(N)`) == 0) {
+      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
+    } else {x$`RightForce(N)`}
+
+    ## Force Left
+    lF <- if(length(x$`LeftForce(N)`) == 0) {
+      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
+    } else {x$`LeftForce(N)`}
+
+    ## Combined Force
+    cF <- if(length(x$`CombinedForce(N)`) == 0) {
+      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
+    } else {x$`CombinedForce(N)`}
+
+    # Velocity
+    v <- if(length(x$`Velocity(m/s)`) == 0) {
+      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
+    } else {x$`Velocity(m/s)`}
+
+    # Displacement
+    d <- if(length(x$`Displacement(m)`) == 0) {
+      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
+    } else {x$`Displacement(m)`}
+
+    # Power
+    p <- if(length(x$`Power(W)`) == 0) {
+      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
+    } else {x$`Power(W)`}
+
+    # create data frame
     tbl <- base::data.frame(
-      "time_s" = x$`Time(s)`,
-      "force_right" = x$`RightForce(N)`,
-      "force_left" = x$`LeftForce(N)`,
-      "force_combined" = x$`CombinedForce(N)`,
-      "velocity_m.s" = x$`Velocity(m/s)`,
-      "displacement_m" = x$`Displacement(m)`,
-      "power_w" = x$`Power(W)`
+      "time_s" = t,
+      "force_right" = rF,
+      "force_left" = lF,
+      "force_combined" = cF,
+      "velocity_m.s" = v,
+      "displacement_m" = d,
+      "power_w" = p
     )
 
     tbl
