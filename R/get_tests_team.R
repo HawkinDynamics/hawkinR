@@ -117,7 +117,7 @@ get_tests_team <- function(teamId, from = NULL, to = NULL) {
   }
 
   # Create URL for request!!!!!!!
-  URL <- base::paste0(urlCloud,"?=teamId=", tId, fromDT, toDT)
+  URL <- base::paste0(urlCloud,"?teamId=", tId, fromDT, toDT)
 
   #-----#
 

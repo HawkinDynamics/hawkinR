@@ -118,7 +118,7 @@ get_tests_group <- function(groupId, from = NULL, to = NULL) {
   }
 
   # Create URL for request!!!!!!!
-  URL <- base::paste0(urlCloud,"?=groupId=", gId, fromDT, toDT)
+  URL <- base::paste0(urlCloud,"?groupId=", gId, fromDT, toDT)
 
   #-----#
 

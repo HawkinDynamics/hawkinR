@@ -1,6 +1,6 @@
 Package: hawkinR
 Title: R package to work with data from the Hawkin Dynamics API
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
     person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
 Description: Provides simple functionality with Hawkin Dynamics API. These functions are for use with 'Hawkin Dynamics Beta API' version 1.8-beta. You must be an Hawkin Dynamics user with active integration account to utilize functions within the package. This API is designed to get data out of your Hawkin Dynamics database into your own database. It is not designed to be accessed from client applications directly. There is a limit on the amount of data that can be returned in a single request. As your database grows, it will be necessary to use the from and to parameters to limit the size of the responses. Responses that exceed the memory limit will fail.
