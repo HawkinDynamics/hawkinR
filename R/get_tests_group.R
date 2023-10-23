@@ -118,7 +118,7 @@ get_tests_group <- function(groupId, from = NULL, to = NULL) {
   }
 
   # Create URL for request!!!!!!!
-  URL <- base::paste0(urlCloud,"?=groupId=", gId, fromDT, toDT)
+  URL <- base::paste0(urlCloud,"?groupId=", gId, fromDT, toDT)
 
   #-----#
 
@@ -174,6 +174,9 @@ get_tests_group <- function(groupId, from = NULL, to = NULL) {
     # Check if any of the IDs in groupIds are present in any of the lists in the 'athlete.teams' column
     filtered_df <- x %>%
       dplyr::filter(base::any(base::sapply(.data$athlete.groups, function(ids) base::any(ids %in% groupIds))))
+
+    # Clean colnames with janitor
+    filtered_df <- janitor::clean_names(filtered_df)
 
     # Use an if statement to handle the cases
     x <- if (base::nrow(filtered_df) > 0) {
