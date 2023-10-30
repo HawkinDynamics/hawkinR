@@ -10,7 +10,7 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2023--10--20-yellowgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2023--10--23-yellowgreen.svg)](/commits/master)
 [![license](https://img.shields.io/badge/license-MIT%20+%20file%20LICENSE-lightgrey.svg)](https://choosealicense.com/)
 [![minimal R
 version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)

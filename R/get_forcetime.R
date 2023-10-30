@@ -141,7 +141,7 @@ get_forcetime <- function(testId) {
       "force_right" = rF,
       "force_left" = lF,
       "force_combined" = cF,
-      "velocity_m.s" = v,
+      "velocity_m_s" = v,
       "displacement_m" = d,
       "power_w" = p
     )

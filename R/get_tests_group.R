@@ -175,6 +175,9 @@ get_tests_group <- function(groupId, from = NULL, to = NULL) {
     filtered_df <- x %>%
       dplyr::filter(base::any(base::sapply(.data$athlete.groups, function(ids) base::any(ids %in% groupIds))))
 
+    # Clean column names with janitor
+    filtered_df <- janitor::clean_names(filtered_df)
+
     # Use an if statement to handle the cases
     x <- if (base::nrow(filtered_df) > 0) {
       # Data matching the ID(s) was found

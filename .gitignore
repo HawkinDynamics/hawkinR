@@ -1,3 +1,5 @@
 .Rproj.user
 inst/doc
-tests/
+# ignore the tests folder
+/tests/
+https://github.com/HawkinDynamics/hawkinR/tree/dev

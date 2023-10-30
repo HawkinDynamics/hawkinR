@@ -161,6 +161,9 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL) {
       # UnNest testType and Athlete data
       df <- df %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
 
+      # Clean column names with janitor
+      df <- janitor::clean_names(df)
+
       df
     } else {
       base::stop("No trials returned. Check athleteId or from/to entries")

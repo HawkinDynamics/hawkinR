@@ -173,6 +173,9 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
     # UnNest testType and Athlete data
     x <- x %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
 
+    # Clean colnames with janitor
+    x <- janitor::clean_names(x)
+
     x
   }
 
