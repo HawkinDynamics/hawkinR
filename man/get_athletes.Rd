@@ -23,6 +23,8 @@ Each athlete includes the following variables:
 \strong{teams}   \emph{chr}   team ids separated by ","
 
 \strong{groups}   \emph{chr}  group ids separated by ","
+
+\strong{external}   \emph{chr} external ids as strings of "externalName:externalId" separated by ","
 }
 \description{
 Get the athletes for an account. Inactive players will only be included if
