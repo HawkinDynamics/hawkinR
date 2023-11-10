@@ -3,3 +3,4 @@ inst/doc
 # ignore the tests folder
 /tests/
 https://github.com/HawkinDynamics/hawkinR/tree/dev
+docs
