@@ -1,0 +1,96 @@
+---
+title: "Accessing Force-Time Data of A Test"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Accessing Force-Time Data of A Test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+dependencies:
+  - knitr
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+library(knitr)
+```
+
+There are many cases in which a user would want to access the raw data from a test trial. Just like the rest of your data, you can access the same data used to create the force plot in your app and cloud. With just a couple of lines of code, you can call in the force-time data from any test in your system.
+
+------------------------------------------------------------------------
+
+## 1. Get Access
+
+Like always, the first step to getting your data is initializing your session. Simply load the hawkinR package and run the `get_access` function.
+
+```{r access, eval=FALSE }
+# load the hawkinR package
+library(hawkinR)
+
+# initialize your current session
+get_access(refreshToken = 'your_integration_key', region = 'your_region')
+
+```
+
+## 2. Get Tests
+
+For this example, I am going to call for only my tests. To do this I am going to need to get my unique ID first. So that I can include that in the `get_tests_ath` function.
+
+```{r getMyTests, eval=FALSE}
+# create a data frame of my athlete info 
+roster <- get_athletes()
+
+# My Athlete ID
+myID <- roster$id[roster$name == "Lauren Green"]
+
+# call your tests
+myTests <- get_tests_ath(athleteId = myID)
+```
+
+```{r testTable, echo=FALSE, message=FALSE}
+
+tests <- data.frame(
+  'id' = c('9Ytz9g1erMXm3SByTyEd','G1yfTWvTj3hAveQYz5wH','YB35oOBAGHNQew0WziDt','2RnV4tM3J6IW2qYKgqg2','qNIZaBguZefAyar4oUtu'),
+  'segment' = c('Countermovement Jump:1','Weigh In:1','Drop Landing:1','Drop Landing:2','Drop Jump:1'),
+  'testType.canonicalId' = c('7nNduHeM5zETPjHxvm7s','ubeWMPN1lJFbuQbAM97s','rKgI4y3ItTAzUekTUpvR','rKgI4y3ItTAzUekTUpvR','gyBETpRXpdr63Ab2E0V8'),
+  'athlete.name' = c("Lauren Green", "Lauren Green", "Lauren Green", "Lauren Green", "Lauren Green")
+)
+
+kable(tests)
+```
+
+## 3. Get Test ID
+
+Now that I have a list of the tests I want to evaluate, I can call for the force-time data I want by using the tests unique ID.
+
+Every test has it's own unique identifier. This is all that's needed to get your test data. The test Id is found in the first column of any of the `get_tests` function returns.
+
+In this example, I am calling the first test of my data frame, which is a CMJ trial.
+
+```{r fakeCall, eval=FALSE}
+# Get the ID of the test
+myTestID <- myTests$id[1]
+
+# Get the force-time data
+myFT <- get_forcetime(testId = myTestID)
+```
+
+```{r dataShort, echo=FALSE}
+
+ftDataShort <- data.frame(
+  'time_s' = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01, 0.011, 0.012, 0.013, 0.014, 0.015,0.016,0.017,0.018, 0.019,0.02),
+  'force_right' = c(622,622,622,623,622,622,623,622,621,620,620,619,619,619,618,618,619,620,620,620),
+  'force_left' = c(564,564,564,564,564,565,566,566,566,566,567,567,568,568,568,568,568,568,569,568),
+  'force_combined' = c(1186,1186,1186,1187,1186,1187,1189,1188,1187,1186,1187,1186,1187,1187,1186,1186,1187,1188,1189,1188),
+  'velocity_m_s' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+  'displacement_m' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+  'power_w' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+)
+
+kable(ftDataShort)
+```
+
+And just like that we have our force-time data. You can do this to with any of your test types.

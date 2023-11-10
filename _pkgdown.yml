@@ -1,0 +1,5 @@
+url: https://hawkindynamics.github.io/hawkinR/
+template:
+  bootstrap: 5
+  bootswatch: spacelab
+

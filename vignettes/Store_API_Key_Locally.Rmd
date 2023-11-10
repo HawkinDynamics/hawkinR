@@ -1,0 +1,70 @@
+---
+title: "How to store your API Key"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How to store your API Key}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+dependencies:
+  - usethis
+---
+
+## Your API Integration Key
+
+If you are using the hawkinR package, you are will need to have access to your sites API integration key. Most of our users who have AMS integrations have already created one for those scenarios. But it most likely that you will create and use a different key for separate interactions and analysis in R. If you are not sure how to create a new API key or need a refresher, [this article](https://learning.hawkindynamics.com/knowledge/how-to-create-an-api-token "How to create an API key") will walk you through all the steps.
+
+We recommend you treat this token the same way you treat your username and password and store it somewhere safe. If you feel your local system and programming environment are safe, there are a couple of ways you can store your API integration key locally to save some steps when accessing your data via the hawkinR package.
+
+### Accessing Your Data
+
+To utilize any of the function's of the hawkinR package, you will first need to run the `get_access()` function to initialize your session by getting a refresh token from the API. To do this successfully, the function requires you to provide your unique integration key (ie `get_access(refreshToken = 'enter_APIkey_here')` ). While this step is necessary to keeping your data secure, it can be an annoyance to have to open a separate text file and copy-paste the key in every time.
+
+### Storing Your Integration Key
+
+If you feel it is safe to do in your environment, there are ways to store your integration key locally. You can store your API token in RStudio by using environment variables or by creating a separate configuration file to store the token securely. Here are two common methods to do this:
+
+#### Using Environment Variables (less secure)
+
+-   Open your RStudio session.
+
+-   In the R console, you can set an environment variable using the `Sys.setenv()` function:
+
+    ``` r
+    Sys.setenv(API_KEY="your_api_key_here")
+    ```
+
+-   You can access this environment variable in your R scripts using `Sys.getenv("API_KEY")`.
+
+-   To make this setting persistent across RStudio sessions, you can add the `Sys.setenv()` line to your R profile or `.Renviron` file. To edit your R profile or create a `.Renviron` file, you can use the `usethis` package:
+
+    ``` r
+    # Install usethis package if you haven't already
+    install.packages("usethis")
+
+    # Edit your R profile
+    usethis::edit_r_profile()
+
+    # Add the Sys.setenv() line to your R profile or create a .Renviron file
+    # and add the environment variable setting there.
+    ```
+
+#### Using a Configuration File (more secure)
+
+-   Create a separate configuration file (e.g., a text file) to store your API token securely. You should not store sensitive information in plain text, but for educational purposes, you can create a file named `config.txt` with the API key in it:
+
+    ```         
+    API_KEY=your_api_key_here
+    ```
+
+-   Then, you can read this configuration file in your R script and extract the API key as a variable:
+
+    ``` r
+    config <- read.table("config.txt", sep = "=", stringsAsFactors = FALSE, col.names = c("key", "value"))
+    api_key <- config[config$key == "API_KEY", "value"]
+    ```
+
+-   Make sure to place the `config.txt` file in a secure location and restrict access to it.
+
+------------------------------------------------------------------------
+
+> Remember that storing sensitive information like API keys in plain text files or environment variables can be a security risk. In production or more secure environments, consider using a dedicated secrets management tool or service to store and retrieve your API keys securely.

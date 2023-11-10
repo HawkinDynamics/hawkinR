@@ -1,0 +1,9 @@
+^hawkinR\.Rproj$
+^\.Rproj\.user$
+^LICENSE\.md$
+^README\.Rmd$
+^\.github$
+^tests/
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
