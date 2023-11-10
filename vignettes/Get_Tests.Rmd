@@ -6,8 +6,6 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 dependencies:
-  - dplyr
-  - hawkinR
   - knitr
 ---
 
@@ -17,8 +15,6 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-library(hawkinR)
-library(dplyr)
 library(knitr)
 ```
 
@@ -103,7 +99,7 @@ As you saw above in the 'roster' data frame, when an athlete is a part of a team
 
 ### Get Team Tests
 
-Now that you have the team IDs , you have everything you need to call in the test data using the `get_tests_team` function. This functionhas 3 parameters: teamId, from, and to. In this function, the same as all of the `get_tests` variations, 'from' and 'to' are optional inputs where a UNIX datetime can be provided to limit the tests called to a specific time frame. They are set to NULL by default, and when left alone will call all tests that meet the teamId criteria. As for the 'teamId' parameter, that is a required string of one or more team IDs. If you want to call in data for more than one team, you simply enter all of the IDs in a single comma separated string.
+Now that you have the team IDs , you have everything you need to call in the test data using the `get_tests_team` function. This function has three parameters: teamId, from, and to. In this function, the same as all of the `get_tests` variations, 'from' and 'to' are optional inputs where a UNIX datetime can be provided to limit the tests called to a specific time frame. They are set to NULL by default, and when left alone will call all tests that meet the teamId criteria. As for the 'teamId' parameter, that is a required string of one or more team IDs. If you want to call in data for more than one team, you simply enter all of the IDs in a single comma separated string.
 
 #### Teams:
 

@@ -6,11 +6,7 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 dependencies:
-  - googlesheets4
-  - dplyr
-  - hawkinR
   - knitr
-  - echarts4r
 ---
 
 ```{r setup, include = FALSE}
@@ -19,20 +15,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-library(dplyr)
-library(hawkinR)
-library(googlesheets4)
 library(knitr)
-library(echarts4r)
-gs4_deauth()
-```
-
-```{r google, include=FALSE}
-# get tests from google sheets
-sheetcode <- "1zXjwP07FPDIan0Le2hCFozmWKSqPumVxJZ_zs2zqgsI"
-
-ftData <- read_sheet(ss = sheetcode, sheet = "Sheet2")
-
 ```
 
 There are many cases in which a user would want to access the raw data from a test trial. Just like the rest of your data, you can access the same data used to create the force plot in your app and cloud. With just a couple of lines of code, you can call in the force-time data from any test in your system.
@@ -67,11 +50,14 @@ myID <- roster$id[roster$name == "Lauren Green"]
 myTests <- get_tests_ath(athleteId = myID)
 ```
 
-```{r, echo=FALSE, message=FALSE}
-tests <- read_sheet(ss = sheetcode, sheet = "Sheet1")
+```{r testTable, echo=FALSE, message=FALSE}
 
-tests <- tests %>%
-  select(id, segment, testType.canonicalId, athlete.name)
+tests <- data.frame(
+  'id' = c('9Ytz9g1erMXm3SByTyEd','G1yfTWvTj3hAveQYz5wH','YB35oOBAGHNQew0WziDt','2RnV4tM3J6IW2qYKgqg2','qNIZaBguZefAyar4oUtu'),
+  'segment' = c('Countermovement Jump:1','Weigh In:1','Drop Landing:1','Drop Landing:2','Drop Jump:1'),
+  'testType.canonicalId' = c('7nNduHeM5zETPjHxvm7s','ubeWMPN1lJFbuQbAM97s','rKgI4y3ItTAzUekTUpvR','rKgI4y3ItTAzUekTUpvR','gyBETpRXpdr63Ab2E0V8'),
+  'athlete.name' = c("Lauren Green", "Lauren Green", "Lauren Green", "Lauren Green", "Lauren Green")
+)
 
 kable(tests)
 ```
@@ -84,7 +70,7 @@ Every test has it's own unique identifier. This is all that's needed to get your
 
 In this example, I am calling the first test of my data frame, which is a CMJ trial.
 
-```{r, eval=FALSE}
+```{r fakeCall, eval=FALSE}
 # Get the ID of the test
 myTestID <- myTests$id[1]
 
@@ -92,99 +78,19 @@ myTestID <- myTests$id[1]
 myFT <- get_forcetime(testId = myTestID)
 ```
 
-```{r,  echo=FALSE, message=FALSE}
+```{r dataShort, echo=FALSE}
 
-ftData <- read_sheet(ss = sheetcode, sheet = "Sheet2")
-
-ftDataShort <- head(ftData)
+ftDataShort <- data.frame(
+  'time_s' = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01, 0.011, 0.012, 0.013, 0.014, 0.015,0.016,0.017,0.018, 0.019,0.02),
+  'force_right' = c(622,622,622,623,622,622,623,622,621,620,620,619,619,619,618,618,619,620,620,620),
+  'force_left' = c(564,564,564,564,564,565,566,566,566,566,567,567,568,568,568,568,568,568,569,568),
+  'force_combined' = c(1186,1186,1186,1187,1186,1187,1189,1188,1187,1186,1187,1186,1187,1187,1186,1186,1187,1188,1189,1188),
+  'velocity_m_s' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+  'displacement_m' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+  'power_w' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+)
 
 kable(ftDataShort)
 ```
 
-------------------------------------------------------------------------
-
 And just like that we have our force-time data. You can do this to with any of your test types.
-
-```{r, echo=FALSE, fig.cap= "Plot made with the echarts4R package"}
-
-df <- ftData %>%
-  transmute(
-    t = time_s,
-    Fc = force_combined,
-    d = displacement_m,
-    v = velocity_m_s
-  )
-
-sw <- mean(df$Fc[1:1000])
-
-sm <- df %>%
-  filter(cumsum(d != 0) > 0) %>%
-  slice_min(order_by = t, n = 1) %>%
-  pull('t')
-
-to <- df %>%
-  filter(Fc < 10 & v > 0) %>%
-  slice_min(order_by = t, n = 1) %>%
-  pull('t')
-
-mv <- df %>%
-  filter(t < to) %>%
-  slice_min(order_by = v, n = 1) %>%
-  pull('t')
-
-
-brk <- df %>%
-  filter(t > mv & t < to & Fc >= sw) %>%
-  slice_min(order_by = v, n = 1) %>%
-  pull('t')
-
-prp <- df %>%
-  filter(t > brk & v > 0)%>%
-  slice_min(order_by = t, n = 1) %>%
-  pull('t')
-
-plotdf <- df %>%
-  filter(t >= sm & t < to) %>%
-  mutate(
-    phase = case_when(
-      t >= sm & t < brk ~ "unw",
-      t >= brk & t < prp ~ "brk",
-      t >= prp & t < to ~ "prp"
-    )
-  ) %>%
-  select(t, Fc, phase) %>%
-  pivot_wider(
-    names_from = "phase",
-    values_from = "Fc"
-  )
-
-plot <- plotdf |>
-  e_chart(t, name = "Time (s)") |>
-  e_area(unw, name = "Unweighting", color = "#e6d800") |>
-  e_area(brk, name = "Breaking", color = "#e60049") |>
-  e_area(prp, name = "Propulsive", color = "#00bfa0") |>
-  e_x_axis(
-    name = "Time (s)",
-    nameLocation = "center",
-    nameGap = "25",
-    max = to,
-    min = sm
-  ) |>
-  e_y_axis(
-    name = "Total Force (N)",
-    nameLocation = "center",
-    nameRotate = "90",
-    nameGap = "45"
-  ) |>
-  e_theme("chalk") |>
-  e_title(
-    text = "CMJ Phases", 
-    subtext = "Force-Time Amalysis of Countermovent Jump", 
-    left = "center"
-  ) |>
-  e_legend(bottom = TRUE) |>
-  e_tooltip(trigger = "axis") |>
-  e_toolbox_feature(feature = "dataZoom")
-
-plot
-```
