@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-library(tidyverse)
+library(dplyr)
 library(hawkinR)
 library(googlesheets4)
 library(knitr)
