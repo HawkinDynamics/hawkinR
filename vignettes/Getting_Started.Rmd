@@ -5,6 +5,10 @@ vignette: >
   %\VignetteIndexEntry{Getting Started With hawkinR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+dependencies:
+  - dplyr
+  - hawkinR
+  - knitr
 ---
 
 ```{r setup, include = FALSE}

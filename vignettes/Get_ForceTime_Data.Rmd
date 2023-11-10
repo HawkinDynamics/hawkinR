@@ -5,6 +5,12 @@ vignette: >
   %\VignetteIndexEntry{Accessing Force-Time Data of A Test}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+dependencies:
+  - googlesheets4
+  - dplyr
+  - hawkinR
+  - knitr
+  - echarts4r
 ---
 
 ```{r setup, include = FALSE}

@@ -5,6 +5,8 @@ vignette: >
   %\VignetteIndexEntry{How to store your API Key}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+dependencies:
+  - usethis
 ---
 
 ## Your API Integration Key
