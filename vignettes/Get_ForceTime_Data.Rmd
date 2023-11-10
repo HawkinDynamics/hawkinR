@@ -2,12 +2,12 @@
 title: "Accessing Force-Time Data of A Test"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Force-Time Data}
+  %\VignetteIndexEntry{Accessing Force-Time Data of A Test}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -21,7 +21,7 @@ library(echarts4r)
 gs4_deauth()
 ```
 
-```{r, include=FALSE}
+```{r google, include=FALSE}
 # get tests from google sheets
 sheetcode <- "1zXjwP07FPDIan0Le2hCFozmWKSqPumVxJZ_zs2zqgsI"
 
@@ -37,7 +37,7 @@ There are many cases in which a user would want to access the raw data from a te
 
 Like always, the first step to getting your data is initializing your session. Simply load the hawkinR package and run the `get_access` function.
 
-```{r, eval=FALSE }
+```{r access, eval=FALSE }
 # load the hawkinR package
 library(hawkinR)
 
@@ -50,7 +50,7 @@ get_access(refreshToken = 'your_integration_key', region = 'your_region')
 
 For this example, I am going to call for only my tests. To do this I am going to need to get my unique ID first. So that I can include that in the `get_tests_ath` function.
 
-```{r, eval=FALSE}
+```{r getMyTests, eval=FALSE}
 # create a data frame of my athlete info 
 roster <- get_athletes()
 

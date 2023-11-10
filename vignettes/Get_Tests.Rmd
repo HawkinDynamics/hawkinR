@@ -2,7 +2,7 @@
 title: "How to Get Tests"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{How to Get Tests By Group/Team}
+  %\VignetteIndexEntry{How to Get Tests}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
