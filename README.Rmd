@@ -9,16 +9,15 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   eval = FALSE,
   comment = "#>",
-  fig.path = "man/figures/README-",
+  fig.path = "man/figures/",
   out.width = "100%"
 )
 ```
 
-# hawkinR
+# hawkinR <img src="man/figures/hdlogo.png" align="right" alt="" width="120" />
 
 **Get your data from the Hawkin Dynamics API**
 
-![](man/figures/hdlogo_sm.png)
 
 <!-- badges: start -->
 
