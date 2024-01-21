@@ -4,7 +4,7 @@
 \alias{get_tests_type}
 \title{Get Test Trials By Test Type}
 \usage{
-get_tests_type(typeId, from, to)
+get_tests_type(typeId, from, to, sync)
 }
 \arguments{
 \item{typeId}{Supply a test type id to only retrieve tests of that type.}
@@ -16,6 +16,10 @@ historical data.}
 \item{to}{Optionally supply a time (Unix timestamp) you want the tests to. If you do not
 supply this value you will receive every test from the beginning of time or the optionally
 supplied \code{from} parameter. This parameter is best suited for bulk exports of historical data.}
+
+\item{sync}{The result set will include updated and newly created tests. This parameter is best
+suited to keep your database in sync with the Hawkin database. If you do not supply this value
+you will receive every test.}
 }
 \value{
 Response will be a data frame containing the trials of the specified type and within the time range (if specified).
