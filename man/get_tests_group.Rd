@@ -4,7 +4,7 @@
 \alias{get_tests_group}
 \title{Get Test Trials By Groups}
 \usage{
-get_tests_group(groupId, from, to)
+get_tests_group(groupId, from, to, sync)
 }
 \arguments{
 \item{groupId}{Supply a group’s or a string of a comma separated list of group id’s to receive tests from
@@ -17,6 +17,10 @@ historical data.}
 \item{to}{Optionally supply a time (Unix timestamp) you want the tests to. If you do not
 supply this value you will receive every test from the beginning of time or the optionally
 supplied \code{from} parameter. This parameter is best suited for bulk exports of historical data.}
+
+\item{sync}{The result set will include updated and newly created tests. This parameter is best
+suited to keep your database in sync with the Hawkin database. If you do not supply this value
+you will receive every test.}
 }
 \value{
 Response will be a data frame containing the trials from the specified team and within the time

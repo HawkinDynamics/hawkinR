@@ -67,6 +67,8 @@
 #'
 #' @importFrom rlang .data
 #' @importFrom tidyr unnest
+#' @importFrom dplyr select
+#' @importFrom dplyr relocate
 #' @export
 
 ## Get All Tests or Sync Tests -----
@@ -99,25 +101,23 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
   # From DateTime
   fromDT <- if(base::is.null(from)) {
     ""
-  } else if(!is.numeric(from)) {
-    base::stop("date must be in numeric unix format")
-  } else{
-    base::paste0("&from=",from)
+  } else if(base::is.numeric(from) && base::isTRUE(sync)) {
+    base::paste0("?syncFrom=",from)
+  } else if(base::is.numeric(from) && base::isFALSE(sync)) {
+    base::paste0("?from=",from)
   }
 
 
   # To DateTime
   toDT <- if(base::is.null(to)) {
     ""
-  } else if(!is.numeric(to)) {
-    base::stop("date must be in numeric unix format")
-  } else if(base::is.null(from)) {
+  } else if(base::is.null(from) && base::isFALSE(sync)) {
     base::paste0("?to=",to)
   } else if(base::is.null(from) && base::isTRUE(sync)) {
     base::paste0("?syncTo=",to)
-  } else if(base::isTRUE(sync)) {
+  } else if(base::is.numeric(to) && base::isTRUE(sync)) {
     base::paste0("&syncTo=",to)
-  } else {
+  } else if(base::is.numeric(to) && base::isFALSE(sync)){
     base::paste0("&to=",to)
   }
 
@@ -167,11 +167,85 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
       # The code ran successfully, and 'result' contains the data frame
     }
 
+    #-----#
+    ### Create data frame ###
+    #-----#
+
     # Clean Resp Headers
     base::names(x) <- base::sub("^data\\.", "", base::names(x))
 
-    # UnNest testType and Athlete data
-    x <- x %>% tidyr::unnest(c(.data$testType, .data$athlete), names_sep = ".")
+    ##-- External IDs --##
+
+    # Create externalId df
+    extDF <- x$athlete$external
+
+    # Prepare externalId vector
+    external <- base::c()
+
+    # Loop externalId columns
+    for (i in 1:base::nrow(extDF)) {
+
+      extRow <- NA
+
+      for (n in 1:base::ncol(extDF)) {
+
+        # get externalId name
+        extN <- base::names(extDF)[n]
+
+        # get ext id
+        extId <- extDF[i,n]
+
+        # create new external id name:id string
+        newExt <- base::paste0(extN, ":", extId)
+
+        # add new externalId string to row list if needed
+        extRow <- if( base::is.na(extId) ) {
+          # if extId NA, no change
+          extRow
+        } else {
+          # Add new string to extId Row
+          extRow <- if( base::is.na(extRow) ) {
+            base::paste0(newExt)
+          } else{
+            base::paste0(extRow, ",", newExt)
+          }
+        }
+
+      }
+
+      external <- base::c(external, extRow)
+    }
+
+    # Athlete df from original df
+    a <- x$athlete
+
+    # Remove old external from athlete df
+    a <- dplyr::select(.data = a, -dplyr::starts_with('external'))
+
+    # Bind external column to athlete df
+    a <- base::cbind(a, external)
+
+    # append Athlete prefix
+    base::names(a) <- base::paste0('athlete_', base::names(a))
+
+    ##-- Test Types --##
+
+    # Create testType df
+    t <- x$testType
+
+    # append testType prefix
+    base::names(t) <- base::paste0('testType_', base::names(t))
+
+    ##-- finish data frame --##
+
+    # select trial metadata metrics from DF
+    x1 <- dplyr::select(.data = x, base::c('id', 'timestamp', 'segment'))
+
+    # select all metrics from DF
+    x2 <- dplyr::select(.data = x, -base::c('id', 'timestamp', 'segment', 'testType', 'athlete'))
+
+    # create new complete DF
+    x <- base::cbind(x1, t, a, x2)
 
     # Clean colnames with janitor
     x <- janitor::clean_names(x)
