@@ -29,7 +29,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-hawkinR provides simple functionality with Hawkin Dynamics API. These functions are for use with 'Hawkin Dynamics Beta API' version 1.8-beta. You must be an Hawkin Dynamics user with active integration account to utilize functions within the package.
+hawkinR provides simple functionality with Hawkin Dynamics API. These functions are for use with 'Hawkin Dynamics Beta API' version 1.9-beta. You must be an Hawkin Dynamics user with active integration account to utilize functions within the package.
 
 ## Installation
 
