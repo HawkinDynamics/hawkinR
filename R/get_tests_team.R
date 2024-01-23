@@ -290,8 +290,12 @@ get_tests_team <- function(teamId, from = NULL, to = NULL, sync = FALSE, active 
       x <- if( base::isTRUE(active) ) {
         filt <- dplyr::filter(.data = x, active == TRUE)
 
+        filt <- dplyr::relocate(.data = filt, 'active', .before = 'timestamp')
+
         filt
       } else if( base::isFALSE(active) ){
+        x <- dplyr::relocate(.data = x, 'active', .before = 'timestamp')
+
         x
       }
 
