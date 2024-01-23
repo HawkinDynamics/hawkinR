@@ -4,7 +4,7 @@
 #' Get the tests for an account. You can specify a time frame from, or to, which the tests should come (or be synced).
 #'
 #' @usage
-#' get_tests(from, to, sync = FALSE)
+#' get_tests(from, to, sync = FALSE, active = TRUE)
 #'
 #' @param from Optionally supply a time (Unix timestamp) you want the tests from. If you do not
 #' supply this value you will receive every test. This parameter is best suited for bulk exports of
@@ -18,30 +18,37 @@
 #' suited to keep your database in sync with the Hawkin database. If you do not supply this value
 #' you will receive every test.
 #'
+#' @param active There was a change to the default API configuration to reflect the majority of
+#' users API configuration. Inactive tests or tests where `active:false` are returned in these
+#' configuration. Be default, `active` is set to TRUE. To return all tests, including disabled
+#' trials, set `active` to FALSE.
+#'
 #' @return
 #' Response will be a data frame containing the trials within the time range (if specified).
 #'
 #' **id**   *str*   Test trial unique ID
 #'
+#' **active**   *logi*   The trial is active and not disabled
+#'
 #' **timestamp**   *int*   UNIX timestamp of trial
 #'
 #' **segment**   *chr*   Description of the test type and trial number of the session (testType:trialNo)
 #'
-#' **testType.id**   *chr*   Id of the test type of the trial
+#' **testType_id**   *chr*   Id of the test type of the trial
 #'
-#' **testType.name**   *chr*   Name of the test type of the trial
+#' **testType_name**   *chr*   Name of the test type of the trial
 #'
-#' **testType.canonicalId**   *chr*   Canonical Id of the test type of the trial
+#' **testType_canonicalId**   *chr*   Canonical Id of the test type of the trial
 #'
-#' **athlete.id**   *chr*   Unique Id of the athlete
+#' **athlete_id**   *chr*   Unique Id of the athlete
 #'
-#' **athlete.name**   *chr*   Athlete given name
+#' **athlete_name**   *chr*   Athlete given name
 #'
-#' **athlete.active**   *logi*   The athlete is active
+#' **athlete_active**   *logi*   The athlete is active
 #'
-#' **athlete.teams**   *list*   List containing Ids of each team the athlete is on
+#' **athlete_teams**   *list*   List containing Ids of each team the athlete is on
 #'
-#' **athlete.groups**   *list*   List containing Ids of each group the athlete is in
+#' **athlete_groups**   *list*   List containing Ids of each group the athlete is in
 #'
 #' All metrics from each test type are included as the remaining variables.
 #' If a trial does not have data for a variable it is returned NA.
@@ -72,7 +79,7 @@
 #' @export
 
 ## Get All Tests or Sync Tests -----
-get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
+get_tests <- function(from = NULL, to = NULL, sync = FALSE, active = TRUE) {
 
   # Retrieve Access Token and Expiration from Environment Variables
   aToken <- base::Sys.getenv("accessToken")
@@ -250,6 +257,20 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE) {
     # Clean colnames with janitor
     x <- janitor::clean_names(x)
 
+    # filter inactive tests
+    x <- if( base::isTRUE(active) ) {
+      filt <- dplyr::filter(.data = x, active == TRUE)
+
+      filt <- dplyr::relocate(.data = filt, 'active', .before = 'timestamp')
+
+      filt
+    } else if( base::isFALSE(active) ){
+      x <- dplyr::relocate(.data = x, 'active', .before = 'timestamp')
+
+      x
+    }
+
+    # return final DF
     x
   }
 

@@ -4,7 +4,7 @@
 #' Get only tests of the specified athlete for an account.
 #'
 #' @usage
-#' get_tests_ath(athleteId, from, to, sync)
+#' get_tests_ath(athleteId, from, to, sync = FALSE, active = TRUE)
 #'
 #' @param athleteId Supply an athlete’s id to receive tests for a specific athlete
 #'
@@ -20,10 +20,18 @@
 #' suited to keep your database in sync with the Hawkin database. If you do not supply this value
 #' you will receive every test.
 #'
+#' @param active There was a change to the default API configuration to reflect the majority of
+#' users API configuration. Inactive tests or tests where `active:false` are returned in these
+#' configuration. Be default, `active` is set to TRUE. To return all tests, including disabled
+#' trials, set `active` to FALSE.
+#'
 #' @return
-#' Response will be a data frame containing the trials from the specified team and within the time range (if specified).
+#' Response will be a data frame containing the trials from the specified team and within the time
+#' range (if specified).
 #'
 #' **id**   *str*   Test trial unique ID
+#'
+#' **active**   *logi*   The trial is active and not disabled
 #'
 #' **timestamp**   *int*   UNIX timestamp of trial
 #'
@@ -73,7 +81,7 @@
 #' @export
 
 ## Get Tests Data by Athlete Id -----
-get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE) {
+get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, active = TRUE) {
 
   # Retrieve Access Token and Expiration from Environment Variables
   aToken <- base::Sys.getenv("accessToken")
@@ -249,6 +257,20 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE) {
       # Clean colnames with janitor
       x <- janitor::clean_names(x)
 
+      # filter inactive tests
+      x <- if( base::isTRUE(active) ) {
+        filt <- dplyr::filter(.data = x, active == TRUE)
+
+        filt <- dplyr::relocate(.data = filt, 'active', .before = 'timestamp')
+
+        filt
+      } else if( base::isFALSE(active) ){
+        x <- dplyr::relocate(.data = x, 'active', .before = 'timestamp')
+
+        x
+      }
+
+      # return final DF
       x
     } else {
       base::stop("No trials returned. Check athleteId or from/to entries")
