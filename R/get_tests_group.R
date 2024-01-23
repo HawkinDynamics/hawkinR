@@ -4,7 +4,7 @@
 #' Get only tests of the specified group for an account.
 #'
 #' @usage
-#' get_tests_group(groupId, from, to, sync)
+#' get_tests_group(groupId, from, to, sync = FALSE, active = TRUE)
 #'
 #' @param groupId Supply a group’s or a string of a comma separated list of group id’s to receive tests from
 #' specific groups. Recommended to use method `paste0()`. A maximum of 10 groups can be fetched at once.
@@ -21,11 +21,18 @@
 #' suited to keep your database in sync with the Hawkin database. If you do not supply this value
 #' you will receive every test.
 #'
+#' @param active There was a change to the default API configuration to reflect the majority of
+#' users API configuration. Inactive tests or tests where `active:false` are returned in these
+#' configuration. Be default, `active` is set to TRUE. To return all tests, including disabled
+#' trials, set `active` to FALSE.
+#'
 #' @return
 #' Response will be a data frame containing the trials from the specified team and within the time
 #' range (if specified).
 #'
 #' **id**   *str*   Test trial unique ID
+#'
+#' **active**   *logi*   The trial is active and not disabled
 #'
 #' **timestamp**   *int*   UNIX timestamp of trial
 #'
@@ -75,7 +82,7 @@
 #' @export
 
 ## Get Tests Data by Group Id -----
-get_tests_group <- function(groupId, from = NULL, to = NULL, sync = FALSE) {
+get_tests_group <- function(groupId, from = NULL, to = NULL, sync = FALSE, active = TRUE) {
 
   # Retrieve Access Token and Expiration from Environment Variables
   aToken <- base::Sys.getenv("accessToken")
@@ -279,6 +286,16 @@ get_tests_group <- function(groupId, from = NULL, to = NULL, sync = FALSE) {
       # Clean colnames with janitor
       x <- janitor::clean_names(x)
 
+      # filter inactive tests
+      x <- if( base::isTRUE(active) ) {
+        filt <- dplyr::filter(.data = x, active == TRUE)
+
+        filt
+      } else if( base::isFALSE(active) ){
+        x
+      }
+
+      # return final DF
       x
 
     } else {
