@@ -1,6 +1,10 @@
 # Change Log
 
-## hawkin v1.0.3
+## hawkinR v1.0.3.1
+
+# bug fixes to get_atheletes function to handle NULL externalIds
+
+## hawkinR v1.0.3
 
 # Updates to all `get_tests_...` functions to include filter parameter for 'active' tests. Ability 
 to include or exclude disabled trials.

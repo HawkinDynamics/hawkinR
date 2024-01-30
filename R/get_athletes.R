@@ -112,30 +112,34 @@ get_athletes <- function(inactive = FALSE) {
 
       extRow <- NA
 
-      for (n in 1:length(x$data.external)) {
+      # Check if data.external is not empty
+      if (length(x$data.external) > 0) {
 
-        # get ext name
-        extN <- base::names(x$data.external)[n]
+        for (n in 1:length(x$data.external)) {
 
-        # get ext id
-        extId <- x$data.external[[i,n]]
+          # get ext name
+          extN <- base::names(x$data.external)[n]
 
-        # create new external id name:id string
-        newExt <- base::paste0(extN, ":", extId)
+          # get ext id
+          extId <- x$data.external[[i, n]]
 
-        # add new externalId string to row list if needed
-        extRow <- if( base::is.na(extId) ) {
-          # if extId NA, no change
-          extRow
-        } else {
-          # Add new string to extId Row
-          extRow <- if( base::is.na(extRow) ) {
-            base::paste0(newExt)
-          } else{
-            base::paste0(extRow, ",", newExt)
+          # create new external id name:id string
+          newExt <- base::paste0(extN, ":", extId)
+
+          # add new externalId string to row list if needed
+          extRow <- if (base::is.na(extId)) {
+            # if extId NA, no change
+            extRow
+          } else {
+            # Add new string to extId Row
+            extRow <- if (base::is.na(extRow)) {
+              base::paste0(newExt)
+            } else {
+              base::paste0(extRow, ",", newExt)
+            }
           }
-        }
 
+        }
       }
 
       external <- base::c(external, extRow)
