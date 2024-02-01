@@ -4,7 +4,7 @@
 \alias{get_tests_ath}
 \title{Get Test Trials By Athlete}
 \usage{
-get_tests_ath(athleteId, from, to)
+get_tests_ath(athleteId, from, to, sync = FALSE, active = TRUE)
 }
 \arguments{
 \item{athleteId}{Supply an athlete’s id to receive tests for a specific athlete}
@@ -16,11 +16,23 @@ historical data}
 \item{to}{Optionally supply a time (Unix timestamp) you want the tests to. If you do not
 supply this value you will receive every test from the beginning of time or the optionally
 supplied \code{from} parameter. This parameter is best suited for bulk exports of historical data.}
+
+\item{sync}{The result set will include updated and newly created tests. This parameter is best
+suited to keep your database in sync with the Hawkin database. If you do not supply this value
+you will receive every test.}
+
+\item{active}{There was a change to the default API configuration to reflect the majority of
+users API configuration. Inactive tests or tests where \code{active:false} are returned in these
+configuration. Be default, \code{active} is set to TRUE. To return all tests, including disabled
+trials, set \code{active} to FALSE.}
 }
 \value{
-Response will be a data frame containing the trials from the specified team and within the time range (if specified).
+Response will be a data frame containing the trials from the specified team and within the time
+range (if specified).
 
 \strong{id}   \emph{str}   Test trial unique ID
+
+\strong{active}   \emph{logi}   The trial is active and not disabled
 
 \strong{timestamp}   \emph{int}   UNIX timestamp of trial
 

@@ -4,7 +4,7 @@
 \alias{get_tests}
 \title{Get All Tests or Sync Tests}
 \usage{
-get_tests(from, to, sync = FALSE)
+get_tests(from, to, sync = FALSE, active = TRUE)
 }
 \arguments{
 \item{from}{Optionally supply a time (Unix timestamp) you want the tests from. If you do not
@@ -18,31 +18,38 @@ supplied \code{from} parameter. This parameter is best suited for bulk exports o
 \item{sync}{The result set will include updated and newly created tests. This parameter is best
 suited to keep your database in sync with the Hawkin database. If you do not supply this value
 you will receive every test.}
+
+\item{active}{There was a change to the default API configuration to reflect the majority of
+users API configuration. Inactive tests or tests where \code{active:false} are returned in these
+configuration. Be default, \code{active} is set to TRUE. To return all tests, including disabled
+trials, set \code{active} to FALSE.}
 }
 \value{
 Response will be a data frame containing the trials within the time range (if specified).
 
 \strong{id}   \emph{str}   Test trial unique ID
 
+\strong{active}   \emph{logi}   The trial is active and not disabled
+
 \strong{timestamp}   \emph{int}   UNIX timestamp of trial
 
 \strong{segment}   \emph{chr}   Description of the test type and trial number of the session (testType:trialNo)
 
-\strong{testType.id}   \emph{chr}   Id of the test type of the trial
+\strong{testType_id}   \emph{chr}   Id of the test type of the trial
 
-\strong{testType.name}   \emph{chr}   Name of the test type of the trial
+\strong{testType_name}   \emph{chr}   Name of the test type of the trial
 
-\strong{testType.canonicalId}   \emph{chr}   Canonical Id of the test type of the trial
+\strong{testType_canonicalId}   \emph{chr}   Canonical Id of the test type of the trial
 
-\strong{athlete.id}   \emph{chr}   Unique Id of the athlete
+\strong{athlete_id}   \emph{chr}   Unique Id of the athlete
 
-\strong{athlete.name}   \emph{chr}   Athlete given name
+\strong{athlete_name}   \emph{chr}   Athlete given name
 
-\strong{athlete.active}   \emph{logi}   The athlete is active
+\strong{athlete_active}   \emph{logi}   The athlete is active
 
-\strong{athlete.teams}   \emph{list}   List containing Ids of each team the athlete is on
+\strong{athlete_teams}   \emph{list}   List containing Ids of each team the athlete is on
 
-\strong{athlete.groups}   \emph{list}   List containing Ids of each group the athlete is in
+\strong{athlete_groups}   \emph{list}   List containing Ids of each group the athlete is in
 
 All metrics from each test type are included as the remaining variables.
 If a trial does not have data for a variable it is returned NA.
