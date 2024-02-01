@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">hawkinR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3.2</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_tests</span><span class="op">(</span><span class="va">from</span>, <span class="va">to</span>, sync <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_tests</span><span class="op">(</span><span class="va">from</span>, <span class="va">to</span>, sync <span class="op">=</span> <span class="cn">FALSE</span>, active <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -82,6 +82,13 @@ supplied <code>from</code> parameter. This parameter is best suited for bulk exp
 suited to keep your database in sync with the Hawkin database. If you do not supply this value
 you will receive every test.</p></dd>
 
+
+<dt>active</dt>
+<dd><p>There was a change to the default API configuration to reflect the majority of
+users API configuration. Inactive tests or tests where <code>active:false</code> are returned in these
+configuration. Be default, <code>active</code> is set to TRUE. To return all tests, including disabled
+trials, set <code>active</code> to FALSE.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -95,6 +102,11 @@ you will receive every test.</p></dd>
 <p><em>str</em>   Test trial unique ID</p>
 
 
+<p><strong>active</strong></p>
+<p></p>
+<p><em>logi</em>   The trial is active and not disabled</p>
+
+
 <p><strong>timestamp</strong></p>
 <p></p>
 <p><em>int</em>   UNIX timestamp of trial</p>
@@ -105,42 +117,42 @@ you will receive every test.</p></dd>
 <p><em>chr</em>   Description of the test type and trial number of the session (testType:trialNo)</p>
 
 
-<p><strong>testType.id</strong></p>
+<p><strong>testType_id</strong></p>
 <p></p>
 <p><em>chr</em>   Id of the test type of the trial</p>
 
 
-<p><strong>testType.name</strong></p>
+<p><strong>testType_name</strong></p>
 <p></p>
 <p><em>chr</em>   Name of the test type of the trial</p>
 
 
-<p><strong>testType.canonicalId</strong></p>
+<p><strong>testType_canonicalId</strong></p>
 <p></p>
 <p><em>chr</em>   Canonical Id of the test type of the trial</p>
 
 
-<p><strong>athlete.id</strong></p>
+<p><strong>athlete_id</strong></p>
 <p></p>
 <p><em>chr</em>   Unique Id of the athlete</p>
 
 
-<p><strong>athlete.name</strong></p>
+<p><strong>athlete_name</strong></p>
 <p></p>
 <p><em>chr</em>   Athlete given name</p>
 
 
-<p><strong>athlete.active</strong></p>
+<p><strong>athlete_active</strong></p>
 <p></p>
 <p><em>logi</em>   The athlete is active</p>
 
 
-<p><strong>athlete.teams</strong></p>
+<p><strong>athlete_teams</strong></p>
 <p></p>
 <p><em>list</em>   List containing Ids of each team the athlete is on</p>
 
 
-<p><strong>athlete.groups</strong></p>
+<p><strong>athlete_groups</strong></p>
 <p></p>
 <p><em>list</em>   List containing Ids of each group the athlete is in</p>
 
