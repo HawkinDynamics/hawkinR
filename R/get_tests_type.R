@@ -208,38 +208,43 @@ get_tests_type <- function(typeId, from = NULL, to = NULL, sync = FALSE, active=
     # Prepare externalId vector
     external <- base::c()
 
-    # Loop externalId columns
-    for (i in 1:base::nrow(extDF)) {
+    # Identify External Ids
+    if( base::ncol(extDF) > 0) {
+      # Loop externalId columns
+      for (i in 1:base::nrow(extDF)) {
 
-      extRow <- NA
+        extRow <- NA
 
-      for (n in 1:base::ncol(extDF)) {
+        for (n in 1:base::ncol(extDF)) {
 
-        # get externalId name
-        extN <- base::names(extDF)[n]
+          # get externalId name
+          extN <- base::names(extDF)[n]
 
-        # get ext id
-        extId <- extDF[i,n]
+          # get ext id
+          extId <- extDF[i,n]
 
-        # create new external id name:id string
-        newExt <- base::paste0(extN, ":", extId)
+          # create new external id name:id string
+          newExt <- base::paste0(extN, ":", extId)
 
-        # add new externalId string to row list if needed
-        extRow <- if( base::is.na(extId) ) {
-          # if extId NA, no change
-          extRow
-        } else {
-          # Add new string to extId Row
-          extRow <- if( base::is.na(extRow) ) {
-            base::paste0(newExt)
-          } else{
-            base::paste0(extRow, ",", newExt)
+          # add new externalId string to row list if needed
+          extRow <- if( base::is.na(extId) ) {
+            # if extId NA, no change
+            extRow
+          } else {
+            # Add new string to extId Row
+            extRow <- if( base::is.na(extRow) ) {
+              base::paste0(newExt)
+            } else{
+              base::paste0(extRow, ",", newExt)
+            }
           }
+
         }
 
+        external <- base::c(external, extRow)
       }
-
-      external <- base::c(external, extRow)
+    } else {
+      external <- base::rep('NA', nrow(x))
     }
 
     # Athlete df from original df
