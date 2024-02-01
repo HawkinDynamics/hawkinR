@@ -1,5 +1,9 @@
 # Change Log
 
+## hawkinR v1.0.3.2
+
+# bug fixes to all `get_tests_...` functions to handle NULL externalIds
+
 ## hawkinR v1.0.3.1
 
 # bug fixes to get_atheletes function to handle NULL externalIds
