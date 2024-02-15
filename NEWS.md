@@ -1,5 +1,11 @@
 # Change Log
 
+## hawkinR v1.0.4
+
+# changes to API endpoint (inclusion of test tag details). All `get_tests_...` function outputs now
+include tag Ids, names, and description columns with the prefix 'test_type_tag_'. These can be
+found after 'test_type_cacnnonicalId' column.
+
 ## hawkinR v1.0.3.2
 
 # bug fixes to all `get_tests_...` functions to handle NULL externalIds
