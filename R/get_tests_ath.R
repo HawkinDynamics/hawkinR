@@ -43,6 +43,12 @@
 #'
 #' **testType.canonicalId**   *chr*   Canonical Id of the test type of the trial
 #'
+#' **test_type_tag_ids**   *chr*   String of Ids associated with tags used during the test trial
+#'
+#' **test_type_tag_names**   *chr*   String of names of tags used during the test trial
+#'
+#' **test_type_tag_desc**   *chr*   String of descriptions of tags used during the test trial
+#'
 #' **athlete.id**   *chr*   Unique Id of the athlete
 #'
 #' **athlete.name**   *chr*   Athlete given name
@@ -244,6 +250,34 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
 
       # Create testType df
       t <- x$testType
+
+      # extract tags array from data frame
+      tagList <- t$tags
+
+      # Define a function to pad empty data frames with NA values
+      # and condense multiple rows into one with values separated by '|'
+      pad_and_condense <- function(df) {
+        if (base::is.null(df) || base::nrow(df) == 0) {
+          return(base::data.frame(tagIds = NA, tagNames = NA, tagDesc = NA))
+        } else {
+          condensed_row <- base::data.frame(
+            tagIds = base::paste(df$id, collapse = ','),
+            tagNames = base::paste(df$name, collapse = ','),
+            tagDesc = base::ifelse(all(df$description == ""), NA, base::paste(df$description, collapse = '|'))
+          )
+          return(condensed_row)
+        }
+      }
+
+      # Apply the padding function to all data frames in the list
+      paddedTagList <- base::lapply(tagList, pad_and_condense)
+
+      # Combine all data frames into one
+      tagsDF <- base::do.call(rbind, paddedTagList)
+
+      # Replace new tags columns to testType df
+      t <-  dplyr::select(t, -'tags')
+      t <- base::cbind(t,tagsDF)
 
       # append testType prefix
       base::names(t) <- base::paste0('testType_', base::names(t))

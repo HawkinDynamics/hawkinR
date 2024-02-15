@@ -43,6 +43,12 @@ Response will be a data frame containing the trials of the specified type and wi
 
 \strong{testType.canonicalId}   \emph{chr}   Canonical Id of the test type of the trial
 
+\strong{test_type_tag_ids}   \emph{chr}   String of Ids associated with tags used during the test trial
+
+\strong{test_type_tag_names}   \emph{chr}   String of names of tags used during the test trial
+
+\strong{test_type_tag_desc}   \emph{chr}   String of descriptions of tags used during the test trial
+
 \strong{athlete.id}   \emph{chr}   Unique Id of the athlete
 
 \strong{athlete.name}   \emph{chr}   Athlete given name
