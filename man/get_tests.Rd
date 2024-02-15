@@ -35,11 +35,17 @@ Response will be a data frame containing the trials within the time range (if sp
 
 \strong{segment}   \emph{chr}   Description of the test type and trial number of the session (testType:trialNo)
 
-\strong{testType_id}   \emph{chr}   Id of the test type of the trial
+\strong{test_type_id}   \emph{chr}   Id of the test type of the trial
 
-\strong{testType_name}   \emph{chr}   Name of the test type of the trial
+\strong{test_type_name}   \emph{chr}   Name of the test type of the trial
 
-\strong{testType_canonicalId}   \emph{chr}   Canonical Id of the test type of the trial
+\strong{test_type_canonicalId}   \emph{chr}   Canonical Id of the test type of the trial
+
+\strong{test_type_tag_ids}   \emph{chr}   String of Ids associated with tags used during the test trial
+
+\strong{test_type_tag_names}   \emph{chr}   String of names of tags used during the test trial
+
+\strong{test_type_tag_desc}   \emph{chr}   String of descriptions of tags used during the test trial
 
 \strong{athlete_id}   \emph{chr}   Unique Id of the athlete
 
