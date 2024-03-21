@@ -57,10 +57,10 @@ get_forcetime <- function(testId) {
   # API Cloud URL
   urlCloud <- base::Sys.getenv("urlRegion")
 
-  tId <- if( base::is.character(testId)) {
-    testId
-  } else {
+  tId <- if( !is.character(testId) ) {
     base::stop("Incorrect testId. Must be a character string.")
+  } else {
+    testId
   }
 
   # Create URL for request
@@ -88,12 +88,12 @@ get_forcetime <- function(testId) {
   # Response Table
   Resp <- if(response$status_code == 401) {
     # Invalid Token Response
-    base::stop("Invalid Access Token.")
+    base::stop("Error 401: Invalid Access Token.")
   } else  if(response$status_code == 404){
-    base::stop("Requested Resource Not Found")
+    base::stop("Error 404: Requested Resource Not Found")
   } else  if(response$status_code == 500){
     # Contact Support Response
-    base::stop("Something went wrong. Please contact support@hawkindynamics.com")
+    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
   } else  if(response$status_code == 200){
     # Response GOOD - Run rest of script
     x <- jsonlite::fromJSON(
@@ -146,7 +146,16 @@ get_forcetime <- function(testId) {
       "power_w" = p
     )
 
-    tbl
+    # Check that given arg returned data
+
+    r <- if(base::nrow(tbl) > 0) {
+      tbl
+    } else {
+      base::stop("Error 404: Requested Resource Not Found")
+    }
+
+    r
+
   }
 
   #-----#
@@ -155,4 +164,3 @@ get_forcetime <- function(testId) {
   return(Resp)
 
 }
-

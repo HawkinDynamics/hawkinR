@@ -99,43 +99,20 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE, active = TRUE) {
   }
 
   # Check for Proper EPOCH Times
-  if(!is.null(from) && !is.numeric(from)) {
-    stop("Error: `from` expecting numeric EPOCH/Unix timestamp.")
-  } else if(!is.null(to) && !is.numeric(to)) {
-    stop("Error: `to` expecting numeric EPOCH/Unix timestamp.")
-  }
+  epochArgCheck(arg.from = from, arg.to = to)
 
   #-----#
 
   # API Cloud URL
   urlCloud <- base::Sys.getenv("urlRegion")
 
-
   # From DateTime
-  fromDT <- if(base::is.null(from)) {
-    ""
-  } else if(base::is.numeric(from) && base::isTRUE(sync)) {
-    base::paste0("?syncFrom=",from)
-  } else if(base::is.numeric(from) && base::isFALSE(sync)) {
-    base::paste0("?from=",from)
-  }
-
+  fromDT <- DateTimeParam(param = 'from', value = from, sync = sync)
 
   # To DateTime
-  toDT <- if(base::is.null(to)) {
-    ""
-  } else if(base::is.null(from) && base::isFALSE(sync)) {
-    base::paste0("?to=",to)
-  } else if(base::is.null(from) && base::isTRUE(sync)) {
-    base::paste0("?syncTo=",to)
-  } else if(base::is.numeric(to) && base::isTRUE(sync)) {
-    base::paste0("&syncTo=",to)
-  } else if(base::is.numeric(to) && base::isFALSE(sync)){
-    base::paste0("&to=",to)
-  }
+  toDT <- DateTimeParam(param = 'to', value = to, sync = sync)
 
-
-  # Create URL for request!!!!!!!
+  # Create URL for request
   URL <- base::paste0(urlCloud, fromDT, toDT)
 
   #-----#
@@ -158,9 +135,9 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE, active = TRUE) {
 
   # Response
   Resp <- if(response$status_code == 401) {
-    "Invalid Access token."
+    "Error 401: Invalid Access token."
   } else if(response$status_code == 500) {
-    "Someting went wrong. Please contact support@hawkindynamics.com"
+    "Error 500: Someting went wrong. Please contact support@hawkindynamics.com"
   } else if(response$status_code == 200) {
     x <- tryCatch({
       base::data.frame(
@@ -173,13 +150,6 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE, active = TRUE) {
       base::stop("No tests returned. If you feel this is incorrect, check the date range.")
     })
 
-    # Check if an error occurred
-    if (base::inherits(x, "try-error")) {
-      # Handle the error case here
-    } else {
-      # The code ran successfully, and 'result' contains the data frame
-    }
-
     #-----#
     ### Create data frame ###
     #-----#
@@ -189,98 +159,13 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE, active = TRUE) {
 
     ##-- External IDs --##
 
-    # Create externalId df
-    extDF <- x$athlete$external
-
-    # Prepare externalId vector
-    external <- base::c()
-
-    # Identify External Ids
-    if( base::ncol(extDF) > 0) {
-      # Loop externalId columns
-      for (i in 1:base::nrow(extDF)) {
-
-        extRow <- NA
-
-        for (n in 1:base::ncol(extDF)) {
-
-          # get externalId name
-          extN <- base::names(extDF)[n]
-
-          # get ext id
-          extId <- extDF[i,n]
-
-          # create new external id name:id string
-          newExt <- base::paste0(extN, ":", extId)
-
-          # add new externalId string to row list if needed
-          extRow <- if( base::is.na(extId) ) {
-            # if extId NA, no change
-            extRow
-          } else {
-            # Add new string to extId Row
-            extRow <- if( base::is.na(extRow) ) {
-              base::paste0(newExt)
-            } else{
-              base::paste0(extRow, ",", newExt)
-            }
-          }
-
-        }
-
-        external <- base::c(external, extRow)
-      }
-    } else {
-      external <- base::rep('NA', nrow(x))
-    }
-
-    # Athlete df from original df
-    a <- x$athlete
-
-    # Remove old external from athlete df
-    a <- dplyr::select(.data = a, -dplyr::starts_with('external'))
-
-    # Bind external column to athlete df
-    a <- base::cbind(a, external)
-
-    # append Athlete prefix
-    base::names(a) <- base::paste0('athlete_', base::names(a))
+    # Create athlete df
+    a <- AthletePrep(arg.df = x$athlete)
 
     ##-- Test Types --##
 
     # Create testType df
-    t <- x$testType
-
-    # extract tags array from data frame
-    tagList <- t$tags
-
-    # Define a function to pad empty data frames with NA values
-    # and condense multiple rows into one with values separated by '|'
-    pad_and_condense <- function(df) {
-      if (base::is.null(df) || base::nrow(df) == 0) {
-        return(base::data.frame(tagIds = NA, tagNames = NA, tagDesc = NA))
-      } else {
-        condensed_row <- base::data.frame(
-          tagIds = base::paste(df$id, collapse = ','),
-          tagNames = base::paste(df$name, collapse = ','),
-          tagDesc = base::ifelse(all(df$description == ""), NA, base::paste(df$description, collapse = '|'))
-        )
-        return(condensed_row)
-      }
-    }
-
-    # Apply the padding function to all data frames in the list
-    paddedTagList <- base::lapply(tagList, pad_and_condense)
-
-    # Combine all data frames into one
-    tagsDF <- base::do.call(rbind, paddedTagList)
-
-    # Replace new tags columns to testType df
-    t <-  dplyr::select(t, -'tags')
-    t <- base::cbind(t,tagsDF)
-
-    # append testType prefix
-    base::names(t) <- base::paste0('testType_', base::names(t))
+    t <- TagPrep(x$testType)
 
     ##-- finish data frame --##
 

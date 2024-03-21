@@ -7,7 +7,12 @@
 get_tests_type(typeId, from, to, sync = FALSE, active = TRUE)
 }
 \arguments{
-\item{typeId}{Supply a test type id to only retrieve tests of that type.}
+\item{typeId}{Supply a value of type string. Must be canonical test Id, test type name, or test
+name abbreviation.
+
+Names | Abbreviations: "Countermovement Jump" | "CMJ", "Squat Jump" | "SJ",
+"Isometric Test" | "ISO", "Drop Jump" | "DJ", "Free Run" | "FREE", "CMJ Rebound" | "CMJR",
+"Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL"}
 
 \item{from}{Optionally supply a time (Unix timestamp) you want the tests from. If you do not
 supply this value you will receive every test. This parameter is best suited for bulk exports of

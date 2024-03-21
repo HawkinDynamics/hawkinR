@@ -1,32 +1,34 @@
-#' Get Test Types
+#' Get Tags
 #'
 #' @description
-#' Get the test type names and ids for all the test types in the system.
+#' Get the tag names and ids for all the tags in the system.
 #'
 #' @usage
-#' get_testTypes()
+#' get_tags()
 #'
 #' @return
-#' Response will be a data frame containing the tests that are in the HD system.
-#' Each test type includes the following variables:
+#' Response will be a data frame containing the tags that are in the organization.
+#' Each tag has the following variables:
 #'
-#' **id**   *chr*   test's unique ID
+#' **id**   *chr*   tag's unique ID
 #'
-#' **name**   *chr*   test's given name
+#' **name**   *chr*   tag's given name
+#'
+#' **description**   *chr*   description of tag provided by user
 #'
 #' @examples
 #' \dontrun{
 #' # This is an example of how the function would be called.
 #'
-#' df_tests <- get_testTypes()
+#' df_tags <- get_tags()
 #'
 #' }
 #'
 #' @importFrom rlang .data
 #' @export
 
-
-get_testTypes <- function() {
+# Get Tags -----
+get_tags <- function() {
 
   # Retrieve access token and expiration from environment variables
   aToken <- base::Sys.getenv("accessToken")
@@ -45,7 +47,7 @@ get_testTypes <- function() {
   urlCloud <- base::Sys.getenv("urlRegion")
 
   # Create URL for request
-  URL <-base::paste0(urlCloud,"/test_types")
+  URL <-base::paste0(urlCloud,"/tags")
 
   #-----#
 
@@ -81,7 +83,15 @@ get_testTypes <- function() {
       )
     )
 
-    x
+    # create df
+    df <- x %>%
+      dplyr::transmute(
+        "id" = .data$data.id,
+        "name" = .data$data.name,
+        "description" = .data$data.name
+      )
+
+    df
   }
 
   #-----#
