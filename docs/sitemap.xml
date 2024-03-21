@@ -34,6 +34,15 @@
     <loc>https://hawkindynamics.github.io/hawkinR/news/index.html</loc>
   </url>
   <url>
+    <loc>https://hawkindynamics.github.io/hawkinR/reference/AthletePrep.html</loc>
+  </url>
+  <url>
+    <loc>https://hawkindynamics.github.io/hawkinR/reference/DateTimeParam.html</loc>
+  </url>
+  <url>
+    <loc>https://hawkindynamics.github.io/hawkinR/reference/epochArgCheck.html</loc>
+  </url>
+  <url>
     <loc>https://hawkindynamics.github.io/hawkinR/reference/get_access.html</loc>
   </url>
   <url>
@@ -44,6 +53,9 @@
   </url>
   <url>
     <loc>https://hawkindynamics.github.io/hawkinR/reference/get_groups.html</loc>
+  </url>
+  <url>
+    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_tags.html</loc>
   </url>
   <url>
     <loc>https://hawkindynamics.github.io/hawkinR/reference/get_teams.html</loc>
@@ -71,5 +83,11 @@
   </url>
   <url>
     <loc>https://hawkindynamics.github.io/hawkinR/reference/pipe.html</loc>
+  </url>
+  <url>
+    <loc>https://hawkindynamics.github.io/hawkinR/reference/TagPrep.html</loc>
+  </url>
+  <url>
+    <loc>https://hawkindynamics.github.io/hawkinR/reference/testIdCheck.html</loc>
   </url>
 </urlset>
