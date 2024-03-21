@@ -40,6 +40,8 @@
 #' }
 #'
 #' @export
+
+# Get Access Token-----
 get_access <- function(refreshToken, region = "Americas") {
 
   rToken <- if( base::is.character(refreshToken) ) {
@@ -93,13 +95,13 @@ get_access <- function(refreshToken, region = "Americas") {
   # Response Table
   tokResp <- if(response$status_code == 401) {
     # Invalid Token Response
-    base::stop("Refresh Token is invalid or expired.")
+    base::stop("Error 401: Refresh Token is invalid or expired.")
   } else  if(response$status_code == 403){
     # Missing Refresh Token Response
-    base::stop("Refresh Token is missing")
+    base::stop("Error 403: Refresh Token is missing")
   } else  if(response$status_code == 500){
     # Contact Support Response
-    base::stop("Something went wrong. Please contact support@hawkindynamics.com")
+    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
   } else  if(response$status_code == 200){
     # Response GOOD - Run rest of script
     x <- data.frame(
