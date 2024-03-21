@@ -44,7 +44,7 @@
 #' @importFrom rlang .data
 #' @export
 
-
+# Get Athletes -----
 get_athletes <- function(inactive = FALSE) {
 
   # Retrieve access token and expiration from environment variables
@@ -92,10 +92,10 @@ get_athletes <- function(inactive = FALSE) {
   # Response Table
   Resp <- if(response$status_code == 401) {
     # Invalid Token Response
-    base::stop("Invalid Access Token.")
+    base::stop("Error 401: Invalid Access Token.")
   } else  if(response$status_code == 500){
     # Contact Support Response
-    base::stop("Something went wrong. Please contact support@hawkindynamics.com")
+    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
   } else  if(response$status_code == 200){
     # Response GOOD - Run rest of script
     x <- data.frame(

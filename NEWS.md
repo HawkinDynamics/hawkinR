@@ -1,10 +1,20 @@
 # Change Log
 
+## hawkinR v1.0.5
+
+# Bug fixes to `get_tests_type`. Now handles test trials with and without tags specified
+
+# Changes to `get_tests_type`. 'typeId' parameter now accepts strings containing either canonical test Id, test type name, or test type abbreviation.  See docs for abbreviations.
+
+# Addition of `get_tags` function. Create data frame of tags within your system, including: id, name, description.
+
+# Addition of utils.R file with utility functions to miniimize code and increase readability.
+
 ## hawkinR v1.0.4
 
 # changes to API endpoint (inclusion of test tag details). All `get_tests_...` function outputs now
 include tag Ids, names, and description columns with the prefix 'test_type_tag_'. These can be
-found after 'test_type_cacnnonicalId' column.
+found after 'test_type_canonicalId' column.
 
 ## hawkinR v1.0.3.2
 
