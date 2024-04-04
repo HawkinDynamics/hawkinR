@@ -105,7 +105,7 @@ get_tests_team <- function(teamId, from = NULL, to = NULL, sync = FALSE, active 
   tId <- if(!is.character(teamId)) {
     stop("Error: teamId should be character string of a team ID , or a comma seperated list of
          team IDs in a single character string. Example: 'team1Id,team2Id,team3Id'")
-  }
+  } else { teamId }
 
   # Check for Proper EPOCH Times
   epochArgCheck(arg.from = from, arg.to = to)

@@ -196,6 +196,8 @@ testIdCheck <- function(arg.id){
 
   a <- if (nrow(filtered_df) > 0) {
     tId <- filtered_df$id[1]
+
+    tId
   } else {
     stop("Error: typeId incorrect. Check your entry")
   }
