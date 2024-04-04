@@ -5,6 +5,7 @@
 #' @param from from argument provided into function.
 #' @param to to argument provided into function.
 #' @return no object returned.
+#' @importFrom stats na.omit
 #' @keywords internal
 epochArgCheck <- function(arg.from, arg.to) {
   if(!is.null(arg.from) && !is.numeric(arg.from)) {
@@ -50,16 +51,23 @@ DateTimeParam <- function(param, value, sync) {
 #' @keywords internal
 TagPrep <- function(arg.df){
 
+
   # Define a function to pad empty data frames with NA values
   # and condense multiple rows into one with values separated by '|'
+  # Define the pad_and_condense function
   pad_and_condense <- function(df) {
-    if (base::is.null(df) || base::nrow(df) == 0) {
-      return(base::data.frame(tagIds = NA, tagNames = NA, tagDesc = NA))
+    if (!is.data.frame(df) || base::is.null(df) || base::nrow(df) == 0) {
+      return(base::data.frame(tagIds = NA, tagNames = NA, tagDesc = NA, stringsAsFactors = FALSE))
     } else {
       condensed_row <- base::data.frame(
         tagIds = base::paste(df$id, collapse = ','),
         tagNames = base::paste(df$name, collapse = ','),
-        tagDesc = base::ifelse(all(df$description == ""), NA, base::paste(df$description, collapse = '|'))
+        tagDesc = if (base::all(base::is.na(df$description) | df$description == "")) {
+          NA
+        } else {
+          base::paste(stats::na.omit(df$description), collapse = '|')
+        },
+        stringsAsFactors = FALSE
       )
       return(condensed_row)
     }
@@ -68,18 +76,18 @@ TagPrep <- function(arg.df){
   # take in arg
   t <- arg.df
 
-  # extract tags array from data frame
-  tagList <- t$tags
+  # Ensure tagList is a list where each element corresponds to a row in t
+  tagList <- base::lapply(t$tags, function(x) if (base::is.null(x)) base::data.frame() else x)
 
-  # Apply the padding function to all data frames in the list
+  # Apply the pad_and_condense function to each element of tagList
   paddedTagList <- base::lapply(tagList, pad_and_condense)
 
   # Combine all data frames into one
   tagsDF <- base::do.call(rbind, paddedTagList)
 
-  # Replace new tags columns to testType df
-  t <-  dplyr::select(t, -'tags')
-  t <- base::cbind(t,tagsDF)
+  # Replace new tags columns in the t data frame
+  t <- dplyr::select(t, -tags)
+  t <- base::cbind(t, tagsDF)
 
   # append testType prefix
   base::names(t) <- base::paste0('testType_', base::names(t))

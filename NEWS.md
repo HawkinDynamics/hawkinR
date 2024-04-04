@@ -1,5 +1,9 @@
 # Change Log
 
+## hawkinR v1.0.5.1
+
+# Bug fixes to `get_tests...`. Corrected pad_and_condense function in utils.R
+
 ## hawkinR v1.0.5
 
 # Bug fixes to `get_tests_type`. Now handles test trials with and without tags specified
