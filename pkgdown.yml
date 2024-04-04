@@ -1,4 +1,4 @@
-pandoc: 2.19.2
+pandoc: 3.1.11
 pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
@@ -6,7 +6,7 @@ articles:
   Get_Tests: Get_Tests.html
   Getting_Started: Getting_Started.html
   Store_API_Key_Locally: Store_API_Key_Locally.html
-last_built: 2024-02-16T06:26Z
+last_built: 2024-03-28T18:19Z
 urls:
   reference: https://hawkindynamics.github.io/hawkinR/reference
   article: https://hawkindynamics.github.io/hawkinR/articles
