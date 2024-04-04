@@ -65,13 +65,13 @@ get_access <- function(refreshToken, region = "Americas") {
 
   # API Cloud URL
   urlCloud <- if(region == "Americas") {
-    "https://cloud.hawkindynamics.com/api/dev/"
+    "https://cloud.hawkindynamics.com/api/dev"
   } else if(region == "Europe") {
-    "https://eu.cloud.hawkindynamics.com/api/dev/"
+    "https://eu.cloud.hawkindynamics.com/api/dev"
   } else if(region == "Asia/Pacific") {
-    "https://apac.cloud.hawkindynamics.com/api/dev/"
+    "https://apac.cloud.hawkindynamics.com/api/dev"
   } else {
-    "https://cloud.dev.hawkindynamics.com/api/dev/"
+    "https://cloud.dev.hawkindynamics.com/api/dev"
   }
 
   #-----#

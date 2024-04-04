@@ -98,7 +98,7 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
   # Athlete Id
   aId <- if(!is.character(athleteId)) {
     base::stop("Error: athleteId should be character string of an athlete ID. Example: 'athleteId'")
-  }
+  } else { athleteId }
 
   #-----#
 
