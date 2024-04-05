@@ -119,7 +119,7 @@ get_tests_team <- function(teamId, from = NULL, to = NULL, sync = FALSE, active 
   fromDT <- DateTimeParam(param= 'from', value = from, sync = sync)
 
   # To DateTime
-  toDT <- DateTimeParam(param= 'to', value = from, sync = sync)
+  toDT <- DateTimeParam(param= 'to', value = to, sync = sync)
 
   # Create URL for request!!!!!!!
   URL <- base::paste0(urlCloud,"?teamId=", tId, fromDT, toDT)
