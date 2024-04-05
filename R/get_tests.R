@@ -106,14 +106,23 @@ get_tests <- function(from = NULL, to = NULL, sync = FALSE, active = TRUE) {
   # API Cloud URL
   urlCloud <- base::Sys.getenv("urlRegion")
 
-  # From DateTime
-  fromDT <- DateTimeParam(param = 'from', value = from, sync = sync)
-
-  # To DateTime
-  toDT <- DateTimeParam(param = 'to', value = to, sync = sync)
+  # Handle Date time args
+  dt <- if(is.null(to) && isFALSE(sync)) {     # from
+    paste0('?from=',from)
+  } else if(is.null(from) && isFALSE(sync)) {     # to
+    paste0('?to=',to)
+  } else if(is.null(to) && isTRUE(sync)) {     # sync from
+    paste0('?syncFrom=',from)
+  } else if(is.null(from) && isTRUE(sync)) {     # sync to
+    paste0('?syncTo=',to)
+  } else if(isFALSE(sync)) {     # from to
+    paste0('?from=', from, '&to=', to)
+  } else if(isTRUE(sync)) {     # sync from to
+    paste0('?syncFrom=', from, '&syncTo=', to)
+  }
 
   # Create URL for request
-  URL <- base::paste0(urlCloud, fromDT, toDT)
+  URL <- base::paste0(urlCloud, dt)
 
   #-----#
 

@@ -105,7 +105,7 @@ get_tests_group <- function(groupId, from = NULL, to = NULL, sync = FALSE, activ
   gId <- if(!is.character(groupId)) {
     stop("Error: groupId should be character string of a group ID , or a comma seperated list of
          group IDs in a single character string. Example: 'group1Id,group2Id,group3Id'")
-  }
+  } else { groupId }
 
   # Check for Proper EPOCH Times
   epochArgCheck(arg.from = from, arg.to = to)
