@@ -1,5 +1,9 @@
 # Change Log
 
+## hawkinR v1.0.5.01
+
+# Bug fix to get_tests_teams / groups `to` parameter
+
 ## hawkinR v1.0.5.1
 
 # Bug fixes to `get_tests...`. Corrected pad_and_condense function in utils.R
