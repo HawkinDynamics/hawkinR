@@ -31,11 +31,19 @@ epochArgCheck <- function(arg.from, arg.to) {
 #' @return A string representing the constructed parameter.
 #' @keywords internal
 DateTimeParam <- function(param, value, sync) {
-  if (is.null(value)) {
+
+  x <- if ( is.null(value) ) {
     ""
+  } else if( isTRUE(sync) & param == 'from' ) {
+    paste0( '&syncFrom=', value )
+  } else if( isTRUE(sync) & param == 'to' ) {
+    paste0( '&syncTo=', value )
   } else {
-    paste0("&", if (sync) "sync" else "", param, "=", value)
+    paste0( '&', param, '=', value )
   }
+
+  return(x)
+
 }
 
 
@@ -86,7 +94,7 @@ TagPrep <- function(arg.df){
   tagsDF <- base::do.call(rbind, paddedTagList)
 
   # Replace new tags columns in the t data frame
-  t <- dplyr::select(t, -tags)
+  t <- dplyr::select(.data = t, -base::c('tags'))
   t <- base::cbind(t, tagsDF)
 
   # append testType prefix
