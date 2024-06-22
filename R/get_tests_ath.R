@@ -77,7 +77,6 @@
 #'
 #' ## Call for all tests since a specific date
 #' dfSince <- get_tests_ath("athleteId", from = 1689958617)
-#'
 #' }
 #'
 #' @importFrom rlang .data
@@ -88,7 +87,6 @@
 
 ## Get Tests Data by Athlete Id -----
 get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, active = TRUE) {
-
   # Retrieve Access Token and Expiration from Environment Variables
   aToken <- base::Sys.getenv("accessToken")
   token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
@@ -96,19 +94,21 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
   #-----#
 
   # Athlete Id
-  aId <- if(!is.character(athleteId)) {
+  aId <- if (!is.character(athleteId)) {
     base::stop("Error: athleteId should be character string of an athlete ID. Example: 'athleteId'")
-  } else { athleteId }
+  } else {
+    athleteId
+  }
 
   #-----#
 
   # Check for Access Token and Expiration
-  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
+  if (base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
     stop("Access token not available or expired. Call accToken() to refresh.")
   }
 
   # Check for Proper EPOCH Times
-  epochArgCheck(arg.from = from, arg.to = to)
+  EpochArgCheck(arg_from = from, arg_to = to)
 
   #-----#
 
@@ -116,13 +116,13 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
   urlCloud <- base::Sys.getenv("urlRegion")
 
   # From DateTime
-  fromDT <- DateTimeParam(param = 'from', value = from, sync = sync)
+  fromDT <- DateTimeParam(param = "from", value = from, sync = sync)
 
   # To DateTime
-  toDT <- DateTimeParam(param = 'to', value = to, sync = sync)
+  toDT <- DateTimeParam(param = "to", value = to, sync = sync)
 
   # Create URL for request
-  URL <- base::paste0(urlCloud,"?athleteId=", aId, fromDT, toDT)
+  URL <- base::paste0(urlCloud, "?athleteId=", aId, fromDT, toDT)
 
   #-----#
 
@@ -134,27 +134,27 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
 
   # GET Request
   response <- httr::VERB("GET",
-                         URL,
-                         body = payload,
-                         httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-                         httr::content_type("application/octet-stream"), encode = encode
+    URL,
+    body = payload,
+    httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
+    httr::content_type("application/octet-stream"), encode = encode
   )
 
   #-----#
 
   # Response
-  Resp <- if(response$status_code == 401) {
+  Resp <- if (response$status_code == 401) {
     base::stop("Error 401: Invalid Access token.")
-  } else if(response$status_code == 500) {
-    base::stop("Error 500: Someting went wrong. Please contact support@hawkindynamics.com")
-  } else if(response$status_code == 200) {
+  } else if (response$status_code == 500) {
+    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
+  } else if (response$status_code == 200) {
     # Convert JSON
     resp <- jsonlite::fromJSON(
       httr::content(response, "text")
     )
 
     # Evaluate Response
-    x <- if(resp$count[1] > 0) {
+    x <- if (resp$count[1] > 0) {
       # Convert to data frame
       x <- base::data.frame(resp)
 
@@ -165,23 +165,23 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
       # Clean Resp Headers
       base::names(x) <- base::sub("^data\\.", "", base::names(x))
 
-      ##-- External IDs --##
+      ## -- External IDs --##
 
       # Create athlete df
       a <- AthletePrep(arg.df = x$athlete)
 
-      ##-- Test Types --##
+      ## -- Test Types --##
 
       # Create testType df
       t <- TagPrep(arg.df = x$testType)
 
-      ##-- finish data frame --##
+      ## -- finish data frame --##
 
       # select trial metadata metrics from DF
-      x1 <- dplyr::select(.data = x, base::c('id', 'timestamp', 'segment'))
+      x1 <- dplyr::select(.data = x, base::c("id", "timestamp", "segment"))
 
       # select all metrics from DF
-      x2 <- dplyr::select(.data = x, -base::c('id', 'timestamp', 'segment', 'testType', 'athlete'))
+      x2 <- dplyr::select(.data = x, -base::c("id", "timestamp", "segment", "testType", "athlete"))
 
       # create new complete DF
       x <- base::cbind(x1, t, a, x2)
@@ -190,14 +190,14 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
       x <- janitor::clean_names(x)
 
       # filter inactive tests
-      x <- if( base::isTRUE(active) ) {
-        filt <- dplyr::filter(.data = x, active == TRUE)
+      x <- if (base::isTRUE(active)) {
+        f <- dplyr::filter(.data = x, active == TRUE)
 
-        filt <- dplyr::relocate(.data = filt, 'active', .before = 'timestamp')
+        f <- dplyr::relocate(.data = f, "active", .before = "timestamp")
 
-        filt
-      } else if( base::isFALSE(active) ){
-        x <- dplyr::relocate(.data = x, 'active', .before = 'timestamp')
+        f
+      } else if (base::isFALSE(active)) {
+        x <- dplyr::relocate(.data = x, "active", .before = "timestamp")
 
         x
       }
@@ -214,5 +214,4 @@ get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, activ
 
   # Return Response
   return(Resp)
-
 }

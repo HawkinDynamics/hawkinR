@@ -18,7 +18,7 @@
 #'
 #' **name**   *chr*   athlete's given name (First Last)
 #'
-#' **active**   *logi*   athlete is active (TRUE)
+#' **active**   *bool*   athlete is active (TRUE)
 #'
 #' **teams**   *chr*   team ids separated by ","
 #'
@@ -45,16 +45,16 @@
 #' @export
 
 # Get Athletes -----
-get_athletes <- function(inactive = FALSE) {
+get_athletes <- function(inactive = FALSE) { # nolint: cyclocomp_linter.
 
   # Retrieve access token and expiration from environment variables
   aToken <- base::Sys.getenv("accessToken")
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration" ))
+  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
 
   #-----#
 
   # Check for Access Token and Expiration
-  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
+  if (base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
     stop("Access token not available or expired. Call accToken() to obtain it.")
   }
 
@@ -64,10 +64,10 @@ get_athletes <- function(inactive = FALSE) {
   urlCloud <- base::Sys.getenv("urlRegion")
 
   # Create URL for request
-  URL <- if( isTRUE(inactive) ) {
-    base::paste0(urlCloud,"/athletes","?includeInactive=true")
+  URL <- if (isTRUE(inactive)) {
+    base::paste0(urlCloud, "/athletes", "?includeInactive=true")
   } else {
-    base::paste0(urlCloud,"/athletes")
+    base::paste0(urlCloud, "/athletes")
   }
 
   #-----#
@@ -79,24 +79,25 @@ get_athletes <- function(inactive = FALSE) {
   #-----#
 
   # GET Request
-  response <- httr::VERB("GET",
-                   URL,
-                   body = payload,
-                   httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-                   httr::content_type("application/octet-stream"),
-                   encode = encode
+  response <- httr::VERB(
+    "GET",
+    URL,
+    body = payload,
+    httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
+    httr::content_type("application/octet-stream"),
+    encode = encode
   )
 
   #-----#
 
   # Response Table
-  Resp <- if(response$status_code == 401) {
+  Resp <- if (response$status_code == 401) {
     # Invalid Token Response
     base::stop("Error 401: Invalid Access Token.")
-  } else  if(response$status_code == 500){
+  } else  if (response$status_code == 500) {
     # Contact Support Response
     base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
-  } else  if(response$status_code == 200){
+  } else  if (response$status_code == 200) {
     # Response GOOD - Run rest of script
     x <- data.frame(
       jsonlite::fromJSON(
@@ -108,14 +109,14 @@ get_athletes <- function(inactive = FALSE) {
     external <- c()
 
     # Loop externalId columns
-    for (i in 1:nrow(x)) {
+    for (i in seq_len(nrow(x))) {
 
       extRow <- NA
 
       # Check if data.external is not empty
       if (length(x$data.external) > 0) {
 
-        for (n in 1:length(x$data.external)) {
+        for (n in seq_len((x$data.external))) {
 
           # get ext name
           extN <- base::names(x$data.external)[n]
