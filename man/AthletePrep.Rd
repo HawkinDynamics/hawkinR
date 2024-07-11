@@ -4,10 +4,10 @@
 \alias{AthletePrep}
 \title{Construct Athlete df}
 \usage{
-AthletePrep(arg.df)
+AthletePrep(arg_df)
 }
 \arguments{
-\item{arg.df}{Data frame to be evaluated.}
+\item{arg_df}{Data frame to be evaluated.}
 }
 \value{
 data frame of test type information

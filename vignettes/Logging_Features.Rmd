@@ -1,0 +1,55 @@
+---
+title: "Initialize and Manage Event Logging Features"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Initialize and Manage Event Logging Features}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+dependencies:
+  - knitr
+---
+
+Beginning with release of v1.1.0 of hawkinR, users will be able to take advantage of event logging with the addition of `logger v0.3.0`. This will now make it easier for users to understand background processes of hawkinR, as well as debug in a more efficient manner.
+
+------------------------------------------------------------------------
+
+## 1. Event Logging With Logger
+
+If you are not only using R in the interactive console for ad-hoc data analysis, but running eg batch jobs (for ETL, reporting, modeling, forecasting etc) as well, then logging the status(changes) of your script is a must so that later on you can review / debug what have happened. Logger is a lightweight, modern and flexibly logging utility for R -- heavily inspired by the futile.logger R package and logging Python module.
+
+## 2. Logs With hawkinR
+
+To simplify logging within hawkinR, the logger package features have been mostly preset with exception to 3 primary attributes that can be initialized and controlled by the `initialize_logger` function: Appender, Threshold, and Log File.
+
+``` r
+initialize_logger(log_output = "stdout", log_threshold_stdout = "INFO", log_file = "hawkinRlog.log", log_threshold_file = "INFO")
+```
+
+### Appender
+
+The appender gives direction as to where the output of the event log messages should go. This can be controlled with the `log_output` argument. Default to "stdout", the log messages with print to the standard output of the console. Users can select have the option to change it to "file", directing the messages to a log file of their choice, or "both".
+
+### Threshold
+
+Depending on the `log_output` argument, you will want to select the message threshold for the selected output (or both). The threshold is the minimum message level of importance that you care to have printed (levels include: "TRACE", "DEBUG", "INFO", "SUCCESS", "WARN", "ERROR", "FATAL", "OFF"). The hawkinR package contains logs from as simple as process execution logs as "TRACE" logs, to process ending "ERROR" logs describing the execution failure. Log thresholds within hawkinR are default to "INFO".
+
+Along with passing `log_outout = "both"`, users can set separate and different thresholds for stdout and log files. This can be helpful when working with the package during app development and stdout messages may be of little to no importance, while an event log can be very helpful for debugging.
+
+### Log File
+
+If `log_output` is set to "file" or "both", log messages will be sent to a `.log` file. By default the file is named "hawkinRlog.log" and will be saved to the project directory. But this behavior can be changed by passing a new name and/or location argument to `log_file`. If you want to change the location of the file, simply provide the desired path before the name of the file.
+
+## Examples
+
+```{r logs, eval=FALSE}
+
+# Log only error messages to the console
+initialize_logger(log_output = "stdout", log_threshold_stdout = "ERROR")
+
+# Log all messages to the default `hawkinRlog.log` file
+initialize_logger(log_output = "file", log_threshold_file = "TRACE")
+
+# Log all messages to the log file in the log folder subdirectory, and only success and above to the console
+initialize_logger(log_output = "both",log_file = "/logFiles/MyLog.log", log_threshold_file = "TRACE", log_threshold_stdout = "SUCCESS")
+
+```

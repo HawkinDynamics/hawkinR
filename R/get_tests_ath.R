@@ -1,18 +1,20 @@
 #' Get Test Trials By Athlete
 #'
 #' @description
+#' **Deprecated**: Use `get_tests` instead, which has been expanded to handle all requests.
+#'
 #' Get only tests of the specified athlete for an account.
 #'
 #' @usage
-#' get_tests_ath(athleteId, from, to, sync = FALSE, active = TRUE)
+#' get_tests_ath(athleteId, from = NULL, to = NULL, sync = FALSE, includeInactive = FALSE)
 #'
 #' @param athleteId Supply an athlete’s id to receive tests for a specific athlete
 #'
-#' @param from Optionally supply a time (Unix timestamp) you want the tests from. If you do not
+#' @param from Optionally supply a time (Unix time stamp) you want the tests from. If you do not
 #' supply this value you will receive every test. This parameter is best suited for bulk exports of
 #' historical data
 #'
-#' @param to Optionally supply a time (Unix timestamp) you want the tests to. If you do not
+#' @param to Optionally supply a time (Unix time stamp) you want the tests to. If you do not
 #' supply this value you will receive every test from the beginning of time or the optionally
 #' supplied `from` parameter. This parameter is best suited for bulk exports of historical data.
 #'
@@ -20,44 +22,31 @@
 #' suited to keep your database in sync with the Hawkin database. If you do not supply this value
 #' you will receive every test.
 #'
-#' @param active There was a change to the default API configuration to reflect the majority of
-#' users API configuration. Inactive tests or tests where `active:false` are returned in these
-#' configuration. Be default, `active` is set to TRUE. To return all tests, including disabled
-#' trials, set `active` to FALSE.
+#' @param includeInactive There was a change to the default API configuration to reflect the majority of
+#' users API configuration. Inactive tests or tests where `active = false` are returned in these
+#' configuration. Be default, `includeInactive` is set to `FALSE`. To return all tests, including disabled
+#' trials, set `includeInactive` to `TRUE`.
 #'
 #' @return
-#' Response will be a data frame containing the trials from the specified team and within the time
-#' range (if specified).
+#' Response will be a data frame containing the trials within the time range (if specified).
 #'
-#' **id**   *str*   Test trial unique ID
-#'
-#' **active**   *logi*   The trial is active and not disabled
-#'
-#' **timestamp**   *int*   UNIX timestamp of trial
-#'
-#' **segment**   *chr*   Description of the test type and trial number of the session (testType:trialNo)
-#'
-#' **testType.id**   *chr*   Id of the test type of the trial
-#'
-#' **testType.name**   *chr*   Name of the test type of the trial
-#'
-#' **testType.canonicalId**   *chr*   Canonical Id of the test type of the trial
-#'
-#' **test_type_tag_ids**   *chr*   String of Ids associated with tags used during the test trial
-#'
-#' **test_type_tag_names**   *chr*   String of names of tags used during the test trial
-#'
-#' **test_type_tag_desc**   *chr*   String of descriptions of tags used during the test trial
-#'
-#' **athlete.id**   *chr*   Unique Id of the athlete
-#'
-#' **athlete.name**   *chr*   Athlete given name
-#'
-#' **athlete.active**   *logi*   The athlete is active
-#'
-#' **athlete.teams**   *list*   List containing Ids of each team the athlete is on
-#'
-#' **athlete.groups**   *list*   List containing Ids of each group the athlete is in
+#' | **Column Name** | **Type** | **Description** |
+#' |-----------------|----------|-----------------|
+#' | **id**          | *str*    | Test trial unique ID |
+#' | **active**      | *logi*   | The trial is active and not disabled |
+#' | **timestamp**   | *int*    | UNIX time stamp of trial |
+#' | **segment**     | *chr*    | Description of the test type and trial number of the session (testType:trialNo) |
+#' | **test_type_id** | *chr*   | Id of the test type of the trial |
+#' | **test_type_name** |  *chr* | Name of the test type of the trial |
+#' | **test_type_canonicalId** | *chr* | Canonical Id of the test type of the trial |
+#' | **test_type_tag_ids** | *chr* | String of Ids associated with tags used during the test trial |
+#' | **test_type_tag_names** | *chr* | String of names of tags used during the test trial |
+#' | **test_type_tag_desc** | *chr* | String of descriptions of tags used during the test trial |
+#' | **athlete_id** | *chr* | Unique Id of the athlete |
+#' | **athlete_name** | *chr* | Athlete given name |
+#' | **athlete_active** | *logi* | The athlete is active |
+#' | **athlete_teams** | *list* | List containing Ids of each team the athlete is on |
+#' | **athlete_groups** | *list* | List containing Ids of each group the athlete is in |
 #'
 #' All metrics from each test type are included as the remaining variables.
 #' If a trial does not have data for a variable it is returned NA.
@@ -79,139 +68,240 @@
 #' dfSince <- get_tests_ath("athleteId", from = 1689958617)
 #' }
 #'
+#' @importFrom magrittr %>%
+#' @importFrom httr2 request req_url_query req_auth_bearer_token req_error req_perform resp_status resp_body_json
 #' @importFrom rlang .data
-#' @importFrom tidyr unnest
-#' @importFrom dplyr select
-#' @importFrom dplyr relocate
+#' @importFrom dplyr filter
+#' @importFrom lubridate as_datetime with_tz
+#' @importFrom janitor clean_names
+#' @importFrom logger log_info
+#'
+#' @seealso `get_tests`
 #' @export
 
+
 ## Get Tests Data by Athlete Id -----
-get_tests_ath <- function(athleteId, from = NULL, to = NULL, sync = FALSE, active = TRUE) {
-  # Retrieve Access Token and Expiration from Environment Variables
-  aToken <- base::Sys.getenv("accessToken")
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
+get_tests_ath <-
+  function(athleteId,
+           from = NULL,
+           to = NULL,
+           sync = FALSE,
+           includeInactive = FALSE) {
 
-  #-----#
+    # 1. ----- Set Logger -----
+    # Log Trace
+    logger::log_trace(base::paste0("hawkinR -> Run: get_tests_ath"))
 
-  # Athlete Id
-  aId <- if (!is.character(athleteId)) {
-    base::stop("Error: athleteId should be character string of an athlete ID. Example: 'athleteId'")
-  } else {
-    athleteId
-  }
+    # Save the current setting
+    old_show_error_messages <- base::getOption("show.error.messages")
+    base::on.exit(base::options(show.error.messages = old_show_error_messages),
+                  add = TRUE)
 
-  #-----#
+    # Disable error messages
+    base::options(show.error.messages = FALSE)
 
-  # Check for Access Token and Expiration
-  if (base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
-    stop("Access token not available or expired. Call accToken() to refresh.")
-  }
+    # 2. ----- Parameter Validation -----
 
-  # Check for Proper EPOCH Times
-  EpochArgCheck(arg_from = from, arg_to = to)
+    # Retrieve access token and expiration from environment variables
+    aToken <- base::Sys.getenv("accessToken")
 
-  #-----#
+    #-----#
 
-  # API Cloud URL
-  urlCloud <- base::Sys.getenv("urlRegion")
+    token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
 
-  # From DateTime
-  fromDT <- DateTimeParam(param = "from", value = from, sync = sync)
+    #-----#
 
-  # To DateTime
-  toDT <- DateTimeParam(param = "to", value = to, sync = sync)
+    # Check for Access Token and Expiration
+    if (base::is.null(aToken) ||
+        token_exp <= base::as.numeric(base::Sys.time())) {
+      stop("Access token not available or expired. Call get_access() to obtain it.")
+    } else {
+      # Log Debug
+      logger::log_debug(base::paste0("hawkinR/get_tests_ath -> Temporary access token expires: ", as.POSIXct(token_exp)))
+    }
 
-  # Create URL for request
-  URL <- base::paste0(urlCloud, "?athleteId=", aId, fromDT, toDT)
+    #-----#
 
-  #-----#
+    # Validate Parameters
+    ParamValidation(arg_from = from,
+                    arg_to = to,
+                    arg_athleteId = athleteId)
 
-  # Call Variables
-  payload <- ""
-  encode <- "raw"
+    #-----#
 
-  #-----#
+    .Deprecated(new = "get_tests", msg = "`get_tests_ath` has been deprecated. Use `get_tests` which has been expanded to handle all requests.")
 
-  # GET Request
-  response <- httr::VERB("GET",
-    URL,
-    body = payload,
-    httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-    httr::content_type("application/octet-stream"), encode = encode
-  )
+    # 3. ----- Build URL Request -----
 
-  #-----#
+    # Initialize query list
+    query <- list()
 
-  # Response
-  Resp <- if (response$status_code == 401) {
-    base::stop("Error 401: Invalid Access token.")
-  } else if (response$status_code == 500) {
-    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
-  } else if (response$status_code == 200) {
-    # Convert JSON
-    resp <- jsonlite::fromJSON(
-      httr::content(response, "text")
-    )
+    # Add Athlete ID to query
+    query$athleteId <- athleteId
 
-    # Evaluate Response
-    x <- if (resp$count[1] > 0) {
-      # Convert to data frame
-      x <- base::data.frame(resp)
+    # Add parameters to query if they are not NULL
 
-      #-----#
-      ### Create data frame ###
-      #-----#
+    # All or Sync
+    if (base::isTRUE(sync)) {
+      # Sync From
+      if (!base::is.null(from)) {
+        query$syncFrom <- from
+      }
+      # Sync To
+      if (!base::is.null(to)) {
+        query$syncTo <- to
+      }
+    } else if (isFALSE(sync)) {
+      # From
+      if (!base::is.null(from)) {
+        query$from <- from
+      }
+      # To
+      if (!base::is.null(to)) {
+        query$to <- to
+      }
+    }
 
-      # Clean Resp Headers
-      base::names(x) <- base::sub("^data\\.", "", base::names(x))
+    #-----#
 
-      ## -- External IDs --##
+    # Build Request
+    request <- httr2::request(base::Sys.getenv("urlRegion")) %>%
+      # Add URL Path
+      httr2::req_url_query(!!!query) %>%
+      # Supply Bearer Authentication
+      httr2::req_auth_bearer_token(token = aToken)
 
-      # Create athlete df
-      a <- AthletePrep(arg.df = x$athlete)
+    # Log Debug
+    reqPath <- httr2::req_dry_run(request, quiet = TRUE)
+    logger::log_debug(base::paste0("hawkinR/get_tests_ath -> ", reqPath$method, ": ", reqPath$headers$host, reqPath$path))
 
-      ## -- Test Types --##
+    # Execute Call
+    resp <- request %>%
+      httr2::req_error(is_error = function(resp) FALSE) %>%
+      httr2::req_perform()
 
-      # Create testType df
-      t <- TagPrep(arg.df = x$testType)
+    # Response Status
+    status <- httr2::resp_status(resp = resp)
 
-      ## -- finish data frame --##
+    # 4. ----- Create Response Outputs -----
 
-      # select trial metadata metrics from DF
-      x1 <- dplyr::select(.data = x, base::c("id", "timestamp", "segment"))
+    # Error Handler
+    error_message <- NULL
 
-      # select all metrics from DF
-      x2 <- dplyr::select(.data = x, -base::c("id", "timestamp", "segment", "testType", "athlete"))
+    if (status == 401) {
+      error_message <- 'Error 401: Refresh Token is invalid or expired.'
+    } else if (status == 500) {
+      error_message <-
+        'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
+    }
 
-      # create new complete DF
-      x <- base::cbind(x1, t, a, x2)
+    if (!base::is.null(error_message)) {
+      stop(logger::log_error(base::paste0(
+        "hawkinR/get_tests_ath -> ", error_message
+      )))
+    }
 
-      # Clean colnames with janitor
-      x <- janitor::clean_names(x)
+    # Response Table
+    if (status == 200) {
+      # Response GOOD - Run rest of script
+      # Convert JSON Response
+      x <- httr2::resp_body_json(resp = resp,
+                                 check_type = TRUE,
+                                 simplifyVector = TRUE)
 
-      # filter inactive tests
-      x <- if (base::isTRUE(active)) {
-        f <- dplyr::filter(.data = x, active == TRUE)
+      # 5. ----- Sort Test Data -----
+      ## Test returned count -----
+      count <- x$count
 
-        f <- dplyr::relocate(.data = f, "active", .before = "timestamp")
+      ## Create Test Data frame -----
+      if (count > 0) {
+        ### Get data frame from .data -----
+        df <- x$data
 
-        f
-      } else if (base::isFALSE(active)) {
-        x <- dplyr::relocate(.data = x, "active", .before = "timestamp")
+        # Trial Info
+        trialInfo <- df[1:3]
 
-        x
+        # Trial Metrics
+        trialMetrics <- df[6:ncol(df)]
+
+        # Clean Trial Metric Names
+        trialMetrics <- janitor::clean_names(trialMetrics)
+
+        ### Test Type Data -----
+        # Index Test Type Data
+        TestTypeData <- df[[4]]
+
+        # Reformat Test Type Data
+        TestTypeData <- TestTypePrep(TestTypeData)
+
+        ### Athlete Data -----
+        # Index Athlete Data
+        AthleteData <- df[[5]]
+
+        # Reformat Athlete Data
+        AthleteData <- AthletePrep(AthleteData)
+
+        ### Test Meta Data -----
+        # Last Synced
+        lastSync <- x$lastSyncTime
+        lastSyncDt <- lubridate::with_tz(lubridate::as_datetime(lastSync, tz = "UTC"),
+                                         tzone = base::Sys.timezone())
+
+        # Last Tested
+        lastTest <- x$lastTestTime
+        lastTestDt <- lubridate::with_tz(lubridate::as_datetime(lastTest, tz = "UTC"),
+                                         tzone = base::Sys.timezone())
+
+        # Build Output Test Data frame
+        outputDF <-
+          base::cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
+
+        # Add Test Meta Data to output data frame
+        outputDF <-
+          dplyr::mutate(outputDF, last_test_time = lastTest, last_sync_time = lastSync)
+
+        # Validate Active Tests
+        if (base::isFALSE(includeInactive)) {
+          # Output DF
+          outputDF <- dplyr::filter(outputDF, outputDF$active == TRUE)
+        }
+      } else {
+        # No Matching Groups
+        stop(logger::log_warn(
+          base::paste0(
+            "hawkinR/get_tests_ath -> Error: No tests returned meeting those query parameters"
+          )
+        ))
       }
 
-      # return final DF
-      x
-    } else {
-      base::stop("No trials returned. Check athleteId or from/to entries")
+      # 6. ----- Returns -----
+
+      if (count > 0) {
+        if (base::isFALSE(includeInactive)) {
+          logger::log_success(
+            base::paste0(
+              "hawkinR/get_tests_ath -> ",
+              nrow(outputDF),
+              " active tests returned. Last tested: ",
+              lastTestDt,
+              " | Last Synced: ",
+              lastSyncDt
+            )
+          )
+          return(outputDF)
+        } else {
+          logger::log_success(
+            base::paste0(
+              "hawkinR/get_tests_ath -> ",
+              count,
+              " tests returned. Last tested: ",
+              lastTestDt,
+              " | Last Synced: ",
+              lastSyncDt
+            )
+          )
+          return(outputDF)
+        }
+      }
     }
   }
-
-  #-----#
-
-
-  # Return Response
-  return(Resp)
-}

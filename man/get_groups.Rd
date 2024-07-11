@@ -8,11 +8,11 @@ get_groups()
 }
 \value{
 Response will be a data frame containing the groups that are in the organization.
-Each group has the following variables:
-
-\strong{id}   \emph{chr}   group's unique ID
-
-\strong{name}   \emph{chr}   group's given name
+Each group has the following variables:\tabular{lll}{
+   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
+   \strong{id} \tab \emph{chr} \tab group's unique ID \cr
+   \strong{name} \tab \emph{chr} \tab group's given name \cr
+}
 }
 \description{
 Get the group names and ids for all the groups in the org.

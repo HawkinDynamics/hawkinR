@@ -11,156 +11,246 @@
 #'
 #' @return
 #' Response will be a data frame containing the following:
-#'
-#' **time_s**   *int*   Elapsed time in seconds, starting from end of identified quiet phase
-#'
-#' **force_right**   *int*   Force recorded from the RIGHT platform coinciding with time point from  `time_s`, measured in Newtons (N)
-#'
-#' **force_Left**   *int*   Force recorded from the LEFT platform coinciding with time point from  `time_s`, measured in Newtons (N)
-#'
-#' **force_combined**   *int*   Sum of forces from LEFT and RIGHT, coinciding with time point from  `time_s`, measured in Newtons (N)
-#'
-#' **velocity_m.s**   *int*   Calculated velocity of center of mass at time interval, measured in meters per second (m/s)
-#'
-#' **displacement_m**   *int*   Calculated displacement of center of mass at time interval, measured in meters (m)
-#'
-#' **power_w**   *int*   Calculated power of mass at time interval, measured in watts (W)
+#' | **Column Name** | **Type** | **Description** |
+#' |-----------------|----------|-----------------|
+#' | **time_s**      | *int*    | Elapsed time in seconds, starting from end of identified quiet phase |
+#' | **force_right** | *int*    | Force recorded from the RIGHT platform coinciding with time point from  `time_s`, measured in Newtons (N) |
+#' | **force_Left**  | *int*    | Force recorded from the LEFT platform coinciding with time point from  `time_s`, measured in Newtons (N) |
+#' | **force_combined** | *int* | Sum of forces from LEFT and RIGHT, coinciding with time point from  `time_s`, measured in Newtons (N) |
+#' | **velocity_m.s** | *int* | Calculated velocity of center of mass at time interval, measured in meters per second (m/s) |
+#' | **displacement_m** | *int* | Calculated displacement of center of mass at time interval, measured in meters (m) |
+#' | **power_w**     | *int*    | Calculated power of mass at time interval, measured in watts (W) |
 #'
 #' @examples
 #' \dontrun{
 #' # This is an example of how the function would be called.
 #'
-#' df_ft <- get_forcetime( testId = `stringId` )
+#' df_ft <- get_forcetime(testId = `stringId`)
 #'
 #' }
 #'
+#' @importFrom magrittr %>%
+#' @importFrom httr2 request req_url_path_append req_auth_bearer_token req_error req_perform resp_status resp_body_json
 #' @importFrom rlang .data
+#' @importFrom stringr str_replace_all
+#' @importFrom lubridate as_datetime
+#' @importFrom logger log_info log_formatter formatter_pander
+#'
 #' @export
 
 
 ## Get Force Time Data -----
 get_forcetime <- function(testId) {
 
+  # 1. ----- Set Logger -----
+  # Log Trace
+  logger::log_trace(base::paste0("hawkinR -> Run: get_forcetime"))
+
+  # Save the current setting
+  old_show_error_messages <- base::getOption("show.error.messages")
+  base::on.exit(base::options(show.error.messages = old_show_error_messages),
+                add = TRUE)
+
+  # Disable error messages
+  base::options(show.error.messages = FALSE)
+
+  # 2. ----- Parameter Validation -----
+
   # Retrieve access token and expiration from environment variables
   aToken <- base::Sys.getenv("accessToken")
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration" ))
+
+  #-----#
+
+  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
 
   #-----#
 
   # Check for Access Token and Expiration
-  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
-    base::stop("Access token not available or expired. Call get_access() to obtain it.")
-  }
-
-  #-----#
-
-  # API Cloud URL
-  urlCloud <- base::Sys.getenv("urlRegion")
-
-  tId <- if( !is.character(testId) ) {
-    base::stop("Incorrect testId. Must be a character string.")
+  if (base::is.null(aToken) ||
+      token_exp <= base::as.numeric(base::Sys.time())) {
+    stop("Access token not available or expired. Call get_access() to obtain it.")
   } else {
-    testId
+    # Log Debug
+    logger::log_debug(base::paste0("hawkinR/get_forcetime -> Temporary access token expires: ", as.POSIXct(token_exp)))
   }
 
-  # Create URL for request
-  URL <-base::paste0(urlCloud,"/forcetime/",tId)
-
   #-----#
 
-  # Call Variables
-  payload <- ""
-  encode <- "raw"
+  # Validate Test Id Parameter
+  if (!base::is.character(testId)) {
+    base::stop(logger::log_error(base::paste0("hawkinR/get_forcetime -> Incorrect testId. Must be a character string.")))
+  }
 
-  #-----#
+  # 2. ----- Build URL Request -----
 
-  # GET Request
-  response <- httr::VERB("GET",
-                         URL,
-                         body = payload,
-                         httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-                         httr::content_type("application/octet-stream"),
-                         encode = encode
-  )
+  # Create URL Path
+  urlPath <- base::paste0("forcetime/", testId)
 
-  #-----#
+  # Build Request
+  request <- httr2::request(base::Sys.getenv("urlRegion")) %>%
+    # Add URL Path
+    httr2::req_url_path_append(urlPath) %>%
+    # Supply Bearer Authentication
+    httr2::req_auth_bearer_token(token = aToken)
+
+  # Log Debug
+  reqPath <- httr2::req_dry_run(request, quiet = TRUE)
+  logger::log_debug(base::paste0(
+    "hawkinR/get_forcetime -> ",reqPath$method, ": ", reqPath$headers$host, reqPath$path))
+
+  # Execute Call
+  resp <- request %>%
+    httr2::req_error(is_error = function(resp) FALSE) %>%
+    httr2::req_perform()
+
+  # Response Status
+  status <- httr2::resp_status(resp = resp)
+
+  # 4. ----- Create Response Outputs -----
+
+  # Error Handler
+  error_message <- NULL
+
+  if (status == 401) {
+    error_message <- 'Error 401: Refresh Token is invalid or expired.'
+  } else if (status == 404) {
+    base::stop("Error 404: Requested Resource Not Found")
+  } else if (status == 500) {
+    error_message <- 'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
+  }
+
+  if (!base::is.null(error_message)) {
+    stop(logger::log_error(base::paste0("hawkinR/get_tforcetime -> ",error_message)))
+  }
 
   # Response Table
-  Resp <- if(response$status_code == 401) {
-    # Invalid Token Response
-    base::stop("Error 401: Invalid Access Token.")
-  } else  if(response$status_code == 404){
-    base::stop("Error 404: Requested Resource Not Found")
-  } else  if(response$status_code == 500){
-    # Contact Support Response
-    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
-  } else  if(response$status_code == 200){
+  if(status == 200){
     # Response GOOD - Run rest of script
-    x <- jsonlite::fromJSON(
-      httr::content(response, "text")
+    x <- httr2::resp_body_json(
+      resp = resp,
+      check_type = TRUE,
+      simplifyVector = TRUE
     )
 
-    # create columns for df
+    # 5. ----- Sort Test Type Data -----
 
-    ## Time
-    t <-  x$`Time(s)`
+    # Test ID
+    testTypeID <- x[[1]][[1]]
 
-    ## Force Right
-    rF <- if(length(x$`RightForce(N)`) == 0) {
-      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
-    } else {x$`RightForce(N)`}
+    # Test Type Name with Tags
+    testName <- stringr::str_replace_all(x[[1]][[2]], "-", " - ")
 
-    ## Force Left
-    lF <- if(length(x$`LeftForce(N)`) == 0) {
-      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
-    } else {x$`LeftForce(N)`}
+    # Test Type Canonical ID
+    testCanonical <- x[[1]][[3]]
 
-    ## Combined Force
-    cF <- if(length(x$`CombinedForce(N)`) == 0) {
-      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
-    } else {x$`CombinedForce(N)`}
+    # 6. ----- Sort Athlete Data -----
+
+    # Athlete ID
+    athleteID <- x[[3]][[1]]
+
+    # Athlete Name
+    athleteName <- x[[3]][[2]]
+
+    # Athlete Active Status
+    athleteStatus <- if (x[[3]][[5]]) "active" else "inactive"
+
+    # 7. ----- Sort Trial Info -----
+
+    # Time stamp
+    timestamp <- x[[4]]
+
+    # Date Time
+    dateTime <- lubridate::as_datetime(x[[4]], tz = base::Sys.timezone())
+
+    # 8. ----- Create Test Data Frame -----
+
+    # Time
+    time_s <- x[[5]]
+
+    # Right Force
+    right_force_N <- x[[6]]
+
+    # Left Force
+    left_force_N <- x[[7]]
+
+    # Combined Force
+    combined_force_N <- x[[8]]
 
     # Velocity
-    v <- if(length(x$`Velocity(m/s)`) == 0) {
-      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
-    } else {x$`Velocity(m/s)`}
+    velocity_m_s <- x[[9]]
 
     # Displacement
-    d <- if(length(x$`Displacement(m)`) == 0) {
-      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
-    } else {x$`Displacement(m)`}
+    displacement_m <- x[[10]]
 
     # Power
-    p <- if(length(x$`Power(W)`) == 0) {
-      seq(from = 0, to=0, length.out = length(x$`Time(s)`))
-    } else {x$`Power(W)`}
+    power_W <- x[[11]]
 
-    # create data frame
-    tbl <- base::data.frame(
-      "time_s" = t,
-      "force_right" = rF,
-      "force_left" = lF,
-      "force_combined" = cF,
-      "velocity_m_s" = v,
-      "displacement_m" = d,
-      "power_w" = p
+    # Data Frame Output
+
+    ft <- data.frame(
+      time_s,
+      right_force_N,
+      left_force_N,
+      combined_force_N,
+      velocity_m_s,
+      displacement_m,
+      power_W
     )
 
-    # Check that given arg returned data
+    # 9. ----- Check For TriAxial data -----
 
-    r <- if(base::nrow(tbl) > 0) {
-      tbl
-    } else {
-      base::stop("Error 404: Requested Resource Not Found")
-    }
+    # X Left Force
+    if (length(x[[12]]) > 0) {ft$x_left_force_N <- x[12]}
 
-    r
+    # X Right Force
+    if (length(x[[13]]) > 0) {ft$x_right_force_N <- x[13]}
 
+    # Y Left Force
+    if (length(x[[14]]) > 0) {ft$y_left_force_N <- x[14]}
+
+    #  Y Right Force
+    if (length(x[[15]]) > 0) {ft$y_right_force_N <- x[15]}
+
+    # X Left Moments
+    if (length(x[[16]]) > 0) {ft$x_left_moments <- x[16]}
+
+    # X Right Moments
+    if (length(x[[17]]) > 0) {ft$x_right_moments <- x[17]}
+
+    # Y Left Moments
+    if (length(x[[18]]) > 0) {ft$y_left_moments <- x[18]}
+
+    # Y Right Moments
+    if (length(x[[19]]) > 0) {ft$y_right_moments <- x[19]}
+
+    # RSI
+    if (length(x[[20]]) > 0) {ft$rsi <- x[20]}
+
+
+    # 10. ----- Returns -----
+
+    # Output Message
+    mssg <- base::paste0( "Test [",
+                          testId,
+                          "] is a `",
+                          testName,
+                          "` by athlete ",
+                          athleteID,
+                          " [",athleteName,
+                          " (", athleteStatus,
+                          ")] at ",
+                          timestamp,
+                          " [",
+                          dateTime,
+                          " ",
+                          base::Sys.timezone(),
+                          "]."
+    )
+
+    # Print to Log
+    logger::log_success(base::paste0("hawkinR/get_forcetime -> ", mssg))
+
+    base::return(ft)
   }
-
-  #-----#
-
-  # Return Response
-  return(Resp)
-
 }
+

@@ -8,11 +8,11 @@ get_teams()
 }
 \value{
 Response will be a data frame containing the teams that are in the organization.
-Each team has the following variables:
-
-\strong{id}   \emph{chr}   team's unique ID
-
-\strong{name}   \emph{chr}   team's given name
+Each team has the following variables:\tabular{lll}{
+   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
+   \strong{id} \tab \emph{chr} \tab team's unique ID \cr
+   \strong{name} \tab \emph{chr} \tab team's given name \cr
+}
 }
 \description{
 Get the team names and ids for all the teams in the org.

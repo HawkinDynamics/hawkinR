@@ -4,31 +4,27 @@
 \alias{get_athletes}
 \title{Get Athletes}
 \usage{
-get_athletes(inactive = FALSE)
+get_athletes(includeInactive = FALSE)
 }
 \arguments{
-\item{inactive}{FALSE by default to exclude inactive players in database. Set to TRUE if you want
+\item{includeInactive}{FALSE by default to exclude inactive players in database. Set to TRUE if you want
 inactive players included in the return.}
 }
 \value{
 Response will be a data frame containing the athletes that match this query.
-Each athlete includes the following variables:
-
-\strong{id}   \emph{chr}   athlete's unique ID
-
-\strong{name}   \emph{chr}   athlete's given name (First Last)
-
-\strong{active}   \emph{logi}   athlete is active (TRUE)
-
-\strong{teams}   \emph{chr}   team ids separated by ","
-
-\strong{groups}   \emph{chr}  group ids separated by ","
-
-\strong{external}   \emph{chr} external ids as strings of "externalName:externalId" separated by ","
+Each athlete includes the following variables:\tabular{lll}{
+   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
+   \strong{id} \tab \emph{chr} \tab athlete's unique ID \cr
+   \strong{name} \tab \emph{chr} \tab athlete's given name (First Last) \cr
+   \strong{active} \tab \emph{bool} \tab athlete is active (TRUE) \cr
+   \strong{teams} \tab \emph{chr} \tab team ids separated by "," \cr
+   \strong{groups} \tab \emph{chr} \tab group ids separated by "," \cr
+   \strong{external} \tab \emph{chr} \tab external properties will have a column of their name with the appropriate values for the athlete of \code{NA} if it does not apply \cr
+}
 }
 \description{
 Get the athletes for an account. Inactive players will only be included if
-\code{inactive} parameter is set to TRUE.
+\code{includeInactive} parameter is set to TRUE.
 }
 \examples{
 \dontrun{
@@ -38,11 +34,10 @@ Get the athletes for an account. Inactive players will only be included if
 df_athletes <- get_athletes()
 
 # If you want to include all athletes, including inactive athletes, include the optional
-# `inactive` parameter.
+# `includeInactive` parameter.
 
-df_wInactive <- get_athletes(inactive = TRUE)
+df_wInactive <- get_athletes( includeInactive = TRUE)
 
 }
-
 
 }

@@ -1,5 +1,17 @@
 # Change Log
 
+## hawkinR v1.1.0
+
+* Update of `get_tests()` functionality.
+
+* Depreciation of `get_tests_...` functions.
+
+* 'teamId' and 'groupId' parameters now accept lists and atomic vectors to go along with single text strings
+
+* Addition of logs functionality and customization
+
+* Updated documentation
+
 ## hawkinR v1.0.5.02
 
 * fix to `DateTimeParam` utility function
@@ -22,7 +34,7 @@
 
 * Addition of `get_tags` function. Create data frame of tags within your system, including: id, name, description.
 
-* Addition of utils.R file with utility functions to miniimize code and increase readability.
+* Addition of utils.R file with utility functions to minimize code and increase readability.
 
 ## hawkinR v1.0.4
 

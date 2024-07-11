@@ -8,11 +8,11 @@ get_testTypes()
 }
 \value{
 Response will be a data frame containing the tests that are in the HD system.
-Each test type includes the following variables:
-
-\strong{id}   \emph{chr}   test's unique ID
-
-\strong{name}   \emph{chr}   test's given name
+Each test type includes the following variables:\tabular{lll}{
+   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
+   \strong{id} \tab \emph{chr} \tab test's unique ID \cr
+   \strong{name} \tab \emph{chr} \tab test's given name \cr
+}
 }
 \description{
 Get the test type names and ids for all the test types in the system.
