@@ -1,14 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hawkinR <img src="man/figures/hdlogo.png" align="right" alt="" width="120" />
+# hawkinR <img src="man/figures/hdlogo.png" align="right" width="120"/>
 
 **Get your data from the Hawkin Dynamics API**
 
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2024--04--08-yellowgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2024--07--10-yellowgreen.svg)](/commits/master)
 [![license](https://img.shields.io/badge/license-MIT%20+%20file%20LICENSE-lightgrey.svg)](https://choosealicense.com/)
 [![minimal R
 version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)
@@ -16,7 +16,7 @@ version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
-[![packageversion](https://img.shields.io/badge/Package%20version-1.0.5.02-orange.svg?style=flat-square)](commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.1.0-orange.svg?style=flat-square)](commits/master)
 [![thanks-md](https://img.shields.io/badge/THANKS-md-ff69b4.svg)](THANKS.md)
 
 <!-- badges: end -->
@@ -95,26 +95,34 @@ primary objectives:
   millisecond). Calculated velocity, displacement, and power at each
   time interval will also be included.
 
-- `get_tests()` - Get the tests for an account. You can specify a time
-  frame from, or to, which the tests should come (or be synced).
-  Response will be a data frame containing the trials within the time
-  range (if specified).
+- `get_tests()` - Get the tests for an account. You can specify none or
+  any 1 of the parameters athlete, test type, teams or groups; as well
+  as a time frame from, or to, which the tests should come (or be
+  synced). Response will be a data frame containing the trials within
+  the time range (if specified).
 
-- `get_tests_type()` - Get only tests of the specified type for an
-  account. Response will be a data frame containing the trials of the
-  specified type and within the time range (if specified).
+*Previous variations of `get_tests_` (found in versions \< hawkinR
+v1.1.0) have been deprecated and are to be phased out in future updates.
+See* `get_tests()` *for the preferred function.*
 
-- `get_tests_ath()` - Get only tests of the specified athlete for an
-  account. Response will be a data frame containing the trials from the
-  specified team and within the time range (if specified).
+- `get_tests_type()` - ***Deprecated*** Get only tests of the specified
+  type for an account. Response will be a data frame containing the
+  trials of the specified type and within the time range (if specified).
 
-- `get_tests_team()` - Get only tests of the specified team for an
-  account. Response will be a data frame containing the trials from the
-  specified team and within the time range (if specified).
+- `get_tests_ath()` - ***Deprecated*** Get only tests of the specified
+  athlete for an account. Response will be a data frame containing the
+  trials from the specified team and within the time range (if
+  specified).
 
-- `get_tests_group()` - Get only tests of the specified group for an
-  account. Response will be a data frame containing the trials from the
-  specified team and within the time range (if specified).
+- `get_tests_team()` - ***Deprecated*** Get only tests of the specified
+  team for an account. Response will be a data frame containing the
+  trials from the specified team and within the time range (if
+  specified).
+
+- `get_tests_group()` - ***Deprecated*** Get only tests of the specified
+  group for an account. Response will be a data frame containing the
+  trials from the specified team and within the time range (if
+  specified).
 
 ## Example
 
@@ -162,10 +170,10 @@ phaseDate2 <- allTests$timestamp[10] # to dateTime
 df_SyncFrom <- get_tests(from = lastSync, sync = TRUE)
 
 ## Get tests by athlete in time frame.
-df_athTests <- get_tests_ath(athleteId = athId, from = phaseDate1, to = phaseDate2)
+df_athTests <- get_tests(athleteId = athId, from = phaseDate1, to = phaseDate2)
 
 ## Get all tests by team
-df_teamTests <- get_tests_team(teamId = teamIds)
+df_teamTests <- get_tests(teamId = teamIds)
 
 ## Get test force-time data
 df_forceData <- get_forcetime(testId = df_athTests$id[10])

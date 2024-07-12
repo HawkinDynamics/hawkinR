@@ -10,21 +10,16 @@ get_forcetime(testId)
 \item{testId}{Give the unique test id of the trial you want to be called.}
 }
 \value{
-Response will be a data frame containing the following:
-
-\strong{time_s}   \emph{int}   Elapsed time in seconds, starting from end of identified quiet phase
-
-\strong{force_right}   \emph{int}   Force recorded from the RIGHT platform coinciding with time point from  \code{time_s}, measured in Newtons (N)
-
-\strong{force_Left}   \emph{int}   Force recorded from the LEFT platform coinciding with time point from  \code{time_s}, measured in Newtons (N)
-
-\strong{force_combined}   \emph{int}   Sum of forces from LEFT and RIGHT, coinciding with time point from  \code{time_s}, measured in Newtons (N)
-
-\strong{velocity_m.s}   \emph{int}   Calculated velocity of center of mass at time interval, measured in meters per second (m/s)
-
-\strong{displacement_m}   \emph{int}   Calculated displacement of center of mass at time interval, measured in meters (m)
-
-\strong{power_w}   \emph{int}   Calculated power of mass at time interval, measured in watts (W)
+Response will be a data frame containing the following:\tabular{lll}{
+   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
+   \strong{time_s} \tab \emph{int} \tab Elapsed time in seconds, starting from end of identified quiet phase \cr
+   \strong{force_right} \tab \emph{int} \tab Force recorded from the RIGHT platform coinciding with time point from  \code{time_s}, measured in Newtons (N) \cr
+   \strong{force_Left} \tab \emph{int} \tab Force recorded from the LEFT platform coinciding with time point from  \code{time_s}, measured in Newtons (N) \cr
+   \strong{force_combined} \tab \emph{int} \tab Sum of forces from LEFT and RIGHT, coinciding with time point from  \code{time_s}, measured in Newtons (N) \cr
+   \strong{velocity_m.s} \tab \emph{int} \tab Calculated velocity of center of mass at time interval, measured in meters per second (m/s) \cr
+   \strong{displacement_m} \tab \emph{int} \tab Calculated displacement of center of mass at time interval, measured in meters (m) \cr
+   \strong{power_w} \tab \emph{int} \tab Calculated power of mass at time interval, measured in watts (W) \cr
+}
 }
 \description{
 Get the force-time data for a specific test by id. This includes both left, right and combined force data at 1000hz (per millisecond).
@@ -34,7 +29,7 @@ Calculated velocity, displacement, and power at each time interval will also be 
 \dontrun{
 # This is an example of how the function would be called.
 
-df_ft <- get_forcetime( testId = `stringId` )
+df_ft <- get_forcetime(testId = `stringId`)
 
 }
 

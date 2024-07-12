@@ -8,13 +8,12 @@ get_tags()
 }
 \value{
 Response will be a data frame containing the tags that are in the organization.
-Each tag has the following variables:
-
-\strong{id}   \emph{chr}   tag's unique ID
-
-\strong{name}   \emph{chr}   tag's given name
-
-\strong{description}   \emph{chr}   description of tag provided by user
+Each tag has the following variables:\tabular{lll}{
+   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
+   \strong{id} \tab \emph{chr} \tab tag's unique ID \cr
+   \strong{name} \tab \emph{chr} \tab tag's given name \cr
+   \strong{description} \tab \emph{chr} \tab description of tag provided by user \cr
+}
 }
 \description{
 Get the tag names and ids for all the tags in the system.

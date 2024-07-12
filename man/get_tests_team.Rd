@@ -4,17 +4,16 @@
 \alias{get_tests_team}
 \title{Get Test Trials By Teams}
 \usage{
-get_tests_team(teamId, from, to, sync = FALSE, active = TRUE)
+get_tests_team(teamId, from = NULL, to = NULL, sync = FALSE, includeInactive = FALSE)
 }
 \arguments{
-\item{teamId}{Supply a team’s or a string of a comma separated list of group id’s to receive tests from
-specific groups. Recommended to use method \code{paste0()}. A maximum of 10 groups can be fetched at once.}
+\item{teamId}{Supply a team’s ID, a list of team IDs, or a string of a comma separated team id’s to receive tests from the specified teams. A maximum of 10 teams can be fetched at once.}
 
-\item{from}{Optionally supply a time (Unix timestamp) you want the tests from. If you do not
+\item{from}{Optionally supply a time (Unix time stamp) you want the tests from. If you do not
 supply this value you will receive every test. This parameter is best suited for bulk exports of
 historical data.}
 
-\item{to}{Optionally supply a time (Unix timestamp) you want the tests to. If you do not
+\item{to}{Optionally supply a time (Unix time stamp) you want the tests to. If you do not
 supply this value you will receive every test from the beginning of time or the optionally
 supplied \code{from} parameter. This parameter is best suited for bulk exports of historical data.}
 
@@ -22,49 +21,38 @@ supplied \code{from} parameter. This parameter is best suited for bulk exports o
 suited to keep your database in sync with the Hawkin database. If you do not supply this value
 you will receive every test.}
 
-\item{active}{There was a change to the default API configuration to reflect the majority of
-users API configuration. Inactive tests or tests where \code{active:false} are returned in these
-configuration. Be default, \code{active} is set to TRUE. To return all tests, including disabled
-trials, set \code{active} to FALSE.}
+\item{includeInactive}{There was a change to the default API configuration to reflect the majority of
+users API configuration. Inactive tests or tests where \code{active = false} are returned in these
+configuration. Be default, \code{includeInactive} is set to \code{FALSE}. To return all tests, including disabled
+trials, set \code{includeInactive} to \code{TRUE}.}
 }
 \value{
-Response will be a data frame containing the trials from the specified team and within the time
-range (if specified).
+Response will be a data frame containing the trials within the time range (if specified).\tabular{lll}{
+   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
+   \strong{id} \tab \emph{str} \tab Test trial unique ID \cr
+   \strong{active} \tab \emph{logi} \tab The trial is active and not disabled \cr
+   \strong{timestamp} \tab \emph{int} \tab UNIX time stamp of trial \cr
+   \strong{segment} \tab \emph{chr} \tab Description of the test type and trial number of the session (testType:trialNo) \cr
+   \strong{test_type_id} \tab \emph{chr} \tab Id of the test type of the trial \cr
+   \strong{test_type_name} \tab \emph{chr} \tab Name of the test type of the trial \cr
+   \strong{test_type_canonicalId} \tab \emph{chr} \tab Canonical Id of the test type of the trial \cr
+   \strong{test_type_tag_ids} \tab \emph{chr} \tab String of Ids associated with tags used during the test trial \cr
+   \strong{test_type_tag_names} \tab \emph{chr} \tab String of names of tags used during the test trial \cr
+   \strong{test_type_tag_desc} \tab \emph{chr} \tab String of descriptions of tags used during the test trial \cr
+   \strong{athlete_id} \tab \emph{chr} \tab Unique Id of the athlete \cr
+   \strong{athlete_name} \tab \emph{chr} \tab Athlete given name \cr
+   \strong{athlete_active} \tab \emph{logi} \tab The athlete is active \cr
+   \strong{athlete_teams} \tab \emph{list} \tab List containing Ids of each team the athlete is on \cr
+   \strong{athlete_groups} \tab \emph{list} \tab List containing Ids of each group the athlete is in \cr
+}
 
-\strong{id}   \emph{str}   Test trial unique ID
-
-\strong{active}   \emph{logi}   The trial is active and not disabled
-
-\strong{timestamp}   \emph{int}   UNIX timestamp of trial
-
-\strong{segment}   \emph{chr}   Description of the test type and trial number of the session (testType:trialNo)
-
-\strong{testType.id}   \emph{chr}   Id of the test type of the trial
-
-\strong{testType.name}   \emph{chr}   Name of the test type of the trial
-
-\strong{testType.canonicalId}   \emph{chr}   Canonical Id of the test type of the trial
-
-\strong{test_type_tag_ids}   \emph{chr}   String of Ids associated with tags used during the test trial
-
-\strong{test_type_tag_names}   \emph{chr}   String of names of tags used during the test trial
-
-\strong{test_type_tag_desc}   \emph{chr}   String of descriptions of tags used during the test trial
-
-\strong{athlete.id}   \emph{chr}   Unique Id of the athlete
-
-\strong{athlete.name}   \emph{chr}   Athlete given name
-
-\strong{athlete.active}   \emph{logi}   The athlete is active
-
-\strong{athlete.teams}   \emph{List}   list containing Ids of each team the athlete is on
-
-\strong{athlete.groups}   \emph{List}   list containing Ids of each group the athlete is in
 
 All metrics from each test type are included as the remaining variables.
 If a trial does not have data for a variable it is returned NA.
 }
 \description{
+\strong{Deprecated}: Use \code{get_tests} instead, which has been expanded to handle all requests.
+
 Get only tests of the specified team for an account.
 }
 \examples{
@@ -85,4 +73,7 @@ df_team1_Since <- get_tests_team("team1", from = 1689958617)
 
 }
 
+}
+\seealso{
+\code{get_tests}
 }

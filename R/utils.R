@@ -1,49 +1,60 @@
-#' Check for Proper EPOCH Times
+#' Validate GetTest Parameters
 #'
-#' Check `from` and `to` parameters for proper class.
+#' Check `from`, `to`, `athleteId`, `testTypeId`, `teamId`, and `groupId` parameters.
 #'
 #' @param from from argument provided into function.
 #' @param to to argument provided into function.
 #' @return no object returned.
 #' @importFrom stats na.omit
 #' @keywords internal
-epochArgCheck <- function(arg.from, arg.to) {
-  if(!is.null(arg.from) && !is.numeric(arg.from)) {
+ParamValidation <- function(arg_from, arg_to, arg_athleteId = NULL, arg_testTypeId = NULL, arg_teamId = NULL, arg_groupId = NULL) {
+
+  # 1. Validate Parameter Classes
+  # From
+  if (!is.null(arg_from) && !is.numeric(arg_from)) {
     stop("Error: `from` expecting numeric EPOCH/Unix timestamp.")
-  } else if(!is.null(arg.to) && !is.numeric(arg.to)) {
+  }
+  # To
+  if (!is.null(arg_to) && !is.numeric(arg_to)) {
     stop("Error: `to` expecting numeric EPOCH/Unix timestamp.")
   }
-}
-
-
-#--------------------#
-
-
-#' Construct DateTime Parameters
-#'
-#' This is an internal function used for constructing date-time parameters
-#' for API requests within the package.
-#'
-#' @param param The name of the parameter.
-#' @param value The value of the parameter.
-#' @param sync Logical indicating whether to use "sync" prefix.
-#'
-#' @return A string representing the constructed parameter.
-#' @keywords internal
-DateTimeParam <- function(param, value, sync) {
-
-  x <- if ( is.null(value) ) {
-    ""
-  } else if( isTRUE(sync) & param == 'from' ) {
-    paste0( '&syncFrom=', value )
-  } else if( isTRUE(sync) & param == 'to' ) {
-    paste0( '&syncTo=', value )
-  } else {
-    paste0( '&', param, '=', value )
+  # Athlete Id
+  if (!is.null(arg_athleteId) && !is.character(arg_athleteId)) {
+    stop("Error: athleteId should be a character string of an athlete ID. Example: 'athleteId'")
+  }
+  # Test Type Id
+  if (!is.null(arg_testTypeId) && !is.character(arg_testTypeId)) {
+    stop("Error: typeId incorrect. Check your entry")
+  }
+  # Team Id
+  if (!is.null(arg_teamId) && !(is.character(arg_teamId) || is.list(arg_teamId))) {
+    stop("Error: teamId should be a character string or a list of team IDs.")
+  }
+  # Group Id
+  if (!is.null(arg_groupId) && !(is.character(arg_groupId) || is.list(arg_groupId))) {
+    stop("Error: groupId should be a character string or a list of group IDs.")
   }
 
-  return(x)
+  # Validate that only one or none of athleteId, testTypeId, teamId, or groupId is provided
+  is_active <- function(id) {
+    if (is.null(id)) {
+      return(FALSE)
+    }
+    if (!is.null(id)) {
+      return(TRUE)
+    }
+  }
 
+  # List of params provided
+  ids <- list(arg_athleteId, arg_testTypeId, arg_teamId, arg_groupId)
+
+  # Remove nulls and empty lists/strings from list
+  provided_ids <- sapply(ids, is_active)
+
+  # Count active ids and validate no more than 1 exist
+  if (sum(provided_ids) > 1) {
+    stop("You can only specify one or none of 'athleteId', 'testTypeId', 'teamId', or 'groupId'.")
+  }
 }
 
 
@@ -54,53 +65,58 @@ DateTimeParam <- function(param, value, sync) {
 #'
 #' Take testType section from data frame and prep for final data frame
 #'
-#' @param arg.df Data frame to be evaluated.
+#' @param arg_df Data frame to be evaluated.
 #' @return data frame of test type information
 #' @keywords internal
-TagPrep <- function(arg.df){
+TestTypePrep <- function(arg_df) {
 
+  # 1. Separate Test Type Columns from Tags
+  testTypeData <- arg_df[1:3]
+  base::colnames(testTypeData) <- base::paste0("testType_", base::colnames(testTypeData))
 
-  # Define a function to pad empty data frames with NA values
-  # and condense multiple rows into one with values separated by '|'
-  # Define the pad_and_condense function
-  pad_and_condense <- function(df) {
-    if (!is.data.frame(df) || base::is.null(df) || base::nrow(df) == 0) {
-      return(base::data.frame(tagIds = NA, tagNames = NA, tagDesc = NA, stringsAsFactors = FALSE))
-    } else {
-      condensed_row <- base::data.frame(
-        tagIds = base::paste(df$id, collapse = ','),
-        tagNames = base::paste(df$name, collapse = ','),
-        tagDesc = if (base::all(base::is.na(df$description) | df$description == "")) {
-          NA
-        } else {
-          base::paste(stats::na.omit(df$description), collapse = '|')
-        },
-        stringsAsFactors = FALSE
-      )
-      return(condensed_row)
+  # 2. Create Empty Tags Data frame
+  testType_tags_id <- rep(NA, nrow(arg_df))
+  testType_tags_name <- rep(NA, nrow(arg_df))
+  testType_tags_desc <- rep(NA, nrow(arg_df))
+
+  tagsData <- base::data.frame(
+    testType_tags_id,
+    testType_tags_name,
+    testType_tags_desc
+  )
+
+  # 3. Loop rows to find cases with tags and apply to Tags data frame
+  for (row in 1:nrow(arg_df)) {
+    if (base::nrow(arg_df[[row, 4]]) > 0) {
+      # Isolate Row with nested data frame
+      t <- arg_df[[row, 4]]
+      # extract and apply tag ID
+      tagsData$testType_tags_id[[row]] <- base::list(t$id)
+      # extract and apply tag name
+      tagsData$testType_tags_name[[row]] <- base::list(t$name)
+      # extract and apply tag desc
+      tagsData$testType_tags_desc[[row]] <- base::list(t$description)
     }
   }
 
-  # take in arg
-  t <- arg.df
+  # 4. Use unwrap function to remove tags values from lists
+  unwrap <- function(x) {
+    if (is.list(x)) {
+      lapply(x, function(y) if (length(y) == 1) y[[1]] else y)
+    } else {
+      x
+    }
+  }
 
-  # Ensure tagList is a list where each element corresponds to a row in t
-  tagList <- base::lapply(t$tags, function(x) if (base::is.null(x)) base::data.frame() else x)
+  # Unwrap tag IDs
+  tagsData$testType_tags_id <- unwrap(tagsData$testType_tags_id)
+  # Unwrap tag names
+  tagsData$testType_tags_name <- unwrap(tagsData$testType_tags_name)
+  # Unwrap tag desc
+  tagsData$testType_tags_desc <- unwrap(tagsData$testType_tags_desc)
 
-  # Apply the pad_and_condense function to each element of tagList
-  paddedTagList <- base::lapply(tagList, pad_and_condense)
-
-  # Combine all data frames into one
-  tagsDF <- base::do.call(rbind, paddedTagList)
-
-  # Replace new tags columns in the t data frame
-  t <- dplyr::select(.data = t, -base::c('tags'))
-  t <- base::cbind(t, tagsDF)
-
-  # append testType prefix
-  base::names(t) <- base::paste0('testType_', base::names(t))
-
-  return(t)
+  # 5. Combine Tag data back to Test Type data
+  return(base::cbind(testTypeData, tagsData))
 }
 
 
@@ -111,68 +127,30 @@ TagPrep <- function(arg.df){
 #'
 #' Take athlete section from data frame and prep for final data frame
 #'
-#' @param arg.df Data frame to be evaluated.
+#' @param arg_df Data frame to be evaluated.
 #' @return data frame of test type information
 #' @keywords internal
-AthletePrep <- function(arg.df){
-  # Athlete df from original df
-  a <- arg.df
+AthletePrep <- function(arg_df) {
 
-  # Create externalId df
-  extDF <- a$external
+  # 1. Isolate Expected Athlete Columns from Athlete Section
+  athleteData <- arg_df[1:5]
+  base::colnames(athleteData) <- base::paste0("athlete_", base::colnames(athleteData))
 
-  # Prepare externalId vector
-  external <- base::c()
+  # 2. Check for External
+  externalData <- arg_df[[6]]
 
-  # Identify External Ids
-  if( base::ncol(extDF) > 0) {
-    # Loop externalId columns
-    for (i in 1:base::nrow(extDF)) {
+  # 3. Reformat and Add External Data if Present
+  if (ncol(externalData) > 0) {
+    # A. Reformat External Data names
+    externalData <- janitor::clean_names(externalData)
+    base::colnames(externalData) <- base::paste0("athlete_", base::colnames(externalData))
 
-      extRow <- NA
-
-      for (n in 1:base::ncol(extDF)) {
-
-        # get externalId name
-        extN <- base::names(extDF)[n]
-
-        # get ext id
-        extId <- extDF[i,n]
-
-        # create new external id name:id string
-        newExt <- base::paste0(extN, ":", extId)
-
-        # add new externalId string to row list if needed
-        extRow <- if( base::is.na(extId) ) {
-          # if extId NA, no change
-          extRow
-        } else {
-          # Add new string to extId Row
-          extRow <- if( base::is.na(extRow) ) {
-            base::paste0(newExt)
-          } else{
-            base::paste0(extRow, ",", newExt)
-          }
-        }
-
-      }
-
-      external <- base::c(external, extRow)
-    }
+    # B. Combine Basic Athlete and External data
+    return(base::cbind(athleteData, externalData))
   } else {
-    external <- base::rep('NA', base::nrow(a))
+    # A. Return Basic Athlete Data
+    return(athleteData)
   }
-
-  # Remove old external from athlete df
-  a <- dplyr::select(.data = a, -dplyr::starts_with('external'))
-
-  # Bind external column to athlete df
-  a <- base::cbind(a, external)
-
-  # append Athlete prefix
-  base::names(a) <- base::paste0('athlete_', base::names(a))
-
-  return(a)
 }
 
 
@@ -183,34 +161,188 @@ AthletePrep <- function(arg.df){
 #'
 #' Take testId argument and assess for correct format and validate before API call
 #'
-#' @param arg.id the testId argument provided in the function
+#' @param arg_id the testId argument provided in the function
 #' @return testId or error
 #' @importFrom dplyr filter
 #' @keywords internal
-testIdCheck <- function(arg.id){
+TestIdCheck <- function(arg_id) {
 
   # Create the data frame
   type_df <- base::data.frame(
-    id = c("7nNduHeM5zETPjHxvm7s", "QEG7m7DhYsD6BrcQ8pic", "2uS5XD5kXmWgIZ5HhQ3A",
-           "gyBETpRXpdr63Ab2E0V8", "5pRSUQVSJVnxijpPMck3", "pqgf2TPUOQOQs6r0HQWb",
-           "r4fhrkPdYlLxYQxEeM78", "ubeWMPN1lJFbuQbAM97s", "rKgI4y3ItTAzUekTUpvR"),
-    name = c("Countermovement Jump", "Squat Jump", "Isometric Test", "Drop Jump",
-             "Free Run", "CMJ Rebound", "Multi Rebound", "Weigh In", "Drop Landing"),
-    abrv = c("CMJ", "SJ", "ISO", "DJ", "FR", "CMJR", "MR", "WI", "DL")
+    id = c(
+      "7nNduHeM5zETPjHxvm7s", "QEG7m7DhYsD6BrcQ8pic", "2uS5XD5kXmWgIZ5HhQ3A",
+      "gyBETpRXpdr63Ab2E0V8", "5pRSUQVSJVnxijpPMck3", "pqgf2TPUOQOQs6r0HQWb",
+      "r4fhrkPdYlLxYQxEeM78", "ubeWMPN1lJFbuQbAM97s", "rKgI4y3ItTAzUekTUpvR"
+    ),
+    name = c(
+      "Countermovement Jump", "Squat Jump", "Isometric Test", "Drop Jump",
+      "Free Run", "CMJ Rebound", "Multi Rebound", "Weigh In", "Drop Landing"
+    ),
+    abbreviation = c("CMJ", "SJ", "ISO", "DJ", "FR", "CMJR", "MR", "WI", "DL")
   )
 
   # Check typeId and extract corresponding id
-  filtered_df <- dplyr::filter(type_df, .data$id == arg.id | .data$name == arg.id | .data$abrv == arg.id)
+  filtered_df <- dplyr::filter(type_df, .data$id == arg_id | .data$name == arg_id | .data$abbreviation == arg_id)
 
-  a <- if (nrow(filtered_df) > 0) {
+  if (nrow(filtered_df) > 0) {
     tId <- filtered_df$id[1]
-
-    tId
+    return(tId)
   } else {
     stop("Error: typeId incorrect. Check your entry")
   }
+}
 
-  return(a)
+
+#--------------------#
+
+
+#' Add Athlete Data Frame to JSON
+#'
+#' Take the athlete data frame passed and convert to JSON for POST method payload
+#'
+#' @param arg_df the athlete data frame argument provided in the function
+#' @return JSON string
+#' @importFrom jsonlite toJSON
+#' @keywords internal
+AddAthleteJSON <- function(arg_df) {
+  # Create blank list for athletes
+  x <- list()
+
+  for (i in seq_len(nrow(arg_df))) {
+    # create list with required name
+    ath <- list(
+      name = arg_df$name[i]
+    )
+
+    # Check for IMAGE column
+    if ("image" %in% base::names(arg_df)) {
+      if (!is.na(arg_df$image[i])) {
+        ath$image <- arg_df$image[i]
+      }
+    }
+
+    # Check for ACTIVE column
+    if ("active" %in% base::names(arg_df)) {
+      if (!is.na(arg_df$active[i])) {
+        ath$active <- arg_df$active[i]
+      }
+    }
+
+    # Check for TEAMS column
+    if ("teams" %in% base::names(arg_df)) {
+      if (!is.na(arg_df$teams[i])) {
+        ath$teams <- base::ifelse(is.list(arg_df$teams[i]), arg_df$teams[i], list(arg_df$teams[i]))
+      }
+    }
+
+    # Check for GROUPS column
+    if ("groups" %in% base::names(arg_df)) {
+      if (!is.na(arg_df$groups[i])) {
+        ath$groups <- base::ifelse(is.list(arg_df$groups[i]), arg_df$groups[i], list(arg_df$groups[i]))
+      }
+    }
+
+    # Create external list
+    ath$external <- list()
+
+    # Handle columns that are not "name", "image", "active", "teams", "groups"
+    other_columns <- base::setdiff(base::names(arg_df), c("name", "image", "active", "teams", "groups"))
+
+    for (column in other_columns) {
+      if (!is.na(arg_df[[column]][i])) {
+        ath$external[[column]] <- arg_df[[column]][i]
+      }
+    }
+
+    x <- base::append(x, list(ath))
+  }
+
+  # Convert lists to JSON format
+  y <- jsonlite::toJSON(x, pretty = TRUE, auto_unbox = TRUE)
+
+  return(y)
+}
+
+
+#--------------------#
+
+
+#' Update Athlete Data Frame to JSON
+#'
+#' Take the athlete data frame passed and convert to JSON for PUT method payload
+#'
+#' @param arg_df the athlete data frame argument provided in the function
+#' @return JSON string
+#' @importFrom jsonlite toJSON
+#' @keywords internal
+UpdateAthleteJSON <- function(arg_df) {
+  # Create blank list for athletes
+  x <- list()
+
+  if ("id" %in% base::names(arg_df)) {
+    for (i in seq_len(nrow(arg_df))) {
+      # create list with required id
+      ath <- list(
+        id = arg_df$id[i]
+      )
+
+      # Check for NAME column
+      if ("name" %in% base::names(arg_df)) {
+        if (!is.na(arg_df$name[i])) {
+          ath$name <- arg_df$name[i]
+        }
+      }
+
+      # Check for IMAGE column
+      if ("image" %in% base::names(arg_df)) {
+        if (!is.na(arg_df$image[i])) {
+          ath$image <- arg_df$image[i]
+        }
+      }
+
+      # Check for ACTIVE column
+      if ("active" %in% base::names(arg_df)) {
+        if (!is.na(arg_df$active[i])) {
+          ath$active <- arg_df$active[i]
+        }
+      }
+
+      # Check for TEAMS column
+      if ("teams" %in% base::names(arg_df)) {
+        if (!is.na(arg_df$teams[i])) {
+          ath$teams <- base::ifelse(is.list(arg_df$teams[i]), arg_df$teams[i], list(arg_df$teams[i]))
+        }
+      }
+
+      # Check for GROUPS column
+      if ("groups" %in% base::names(arg_df)) {
+        if (!is.na(arg_df$groups[i])) {
+          ath$groups <- base::ifelse(is.list(arg_df$groups[i]), arg_df$groups[i], list(arg_df$groups[i]))
+        }
+      }
+
+      # Create external list
+      ath$external <- list()
+
+      # Handle columns that are not "name", "image", "active", "teams", "groups"
+      other_columns <- base::setdiff(base::names(arg_df), c("id","name", "image", "active", "teams", "groups"))
+
+      for (column in other_columns) {
+        if (!is.na(arg_df[[column]][i])) {
+          ath$external[[column]] <- arg_df[[column]][i]
+        }
+      }
+
+      x <- base::append(x, list(ath))
+    }
+
+    # Convert lists to JSON format
+    y <- jsonlite::toJSON(x, pretty = TRUE, auto_unbox = TRUE)
+
+    return(y)
+  } else {
+    stop(logger::log_error("athleteData must contain ID column"))
+  }
 }
 
 
