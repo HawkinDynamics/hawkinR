@@ -1,93 +1,40 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/404.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/articles/Get_ForceTime_Data.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/articles/Get_Tests.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/articles/Getting_Started.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/articles/Store_API_Key_Locally.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/index.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/news/index.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/AthletePrep.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/DateTimeParam.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/TagPrep.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/epochArgCheck.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_access.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_athletes.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_forcetime.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_groups.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_tags.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_teams.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_testTypes.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_ath.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_group.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_team.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_type.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/pipe.html</loc>
-  </url>
-  <url>
-    <loc>https://hawkindynamics.github.io/hawkinR/reference/testIdCheck.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://hawkindynamics.github.io/hawkinR/404.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/LICENSE-text.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/LICENSE.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/articles/Get_ForceTime_Data.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/articles/Get_Tests.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/articles/Getting_Started.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/articles/Logging_Features.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/articles/Store_API_Key_Locally.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/articles/index.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/authors.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/index.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/news/index.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/AddAthleteJSON.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/AthletePrep.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/ParamValidation.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/TestTypePrep.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/UpdateAthleteJSON.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/create_athletes.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/dot-onLoad.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_access.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_athletes.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_forcetime.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_groups.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_metrics.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_tags.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_teams.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_testTypes.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_ath.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_group.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_team.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_type.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/index.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/initialize_logger.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/pipe.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/testIdCheck.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/update_athletes.html</loc></url>
 </urlset>
+

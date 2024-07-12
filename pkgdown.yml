@@ -1,13 +1,13 @@
 pandoc: 3.1.11
-pkgdown: 2.0.7
+pkgdown: 2.1.0
 pkgdown_sha: ~
 articles:
   Get_ForceTime_Data: Get_ForceTime_Data.html
   Get_Tests: Get_Tests.html
   Getting_Started: Getting_Started.html
+  Logging_Features: Logging_Features.html
   Store_API_Key_Locally: Store_API_Key_Locally.html
-last_built: 2024-04-09T15:09Z
+last_built: 2024-07-12T20:14Z
 urls:
   reference: https://hawkindynamics.github.io/hawkinR/reference
   article: https://hawkindynamics.github.io/hawkinR/articles
-
