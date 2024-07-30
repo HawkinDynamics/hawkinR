@@ -2,7 +2,7 @@
 
 ## hawkinR v1.1.1
 
-* Fix of error log suppression
+* fixes (or removes) log suppression:  surface more useful logging to end-users by removing log suppression present in v1.1.0 and earlier
 
 ## hawkinR v1.1.0
 
