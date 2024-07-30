@@ -1,5 +1,9 @@
 # Change Log
 
+## hawkinR v1.1.1
+
+* Fix of error log suppression
+
 ## hawkinR v1.1.0
 
 * Update of `get_tests()` functionality.

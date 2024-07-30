@@ -37,14 +37,6 @@ get_testTypes <- function() {
   # Log Trace
   logger::log_trace(base::paste0("hawkinR -> Run: get_testTypes"))
 
-  # Save the current setting
-  old_show_error_messages <- base::getOption("show.error.messages")
-  base::on.exit(base::options(show.error.messages = old_show_error_messages),
-                add = TRUE)
-
-  # Disable error messages
-  base::options(show.error.messages = FALSE)
-
   # 2. ----- Parameter Validation -----
 
   # Retrieve access token and expiration from environment variables
@@ -59,10 +51,11 @@ get_testTypes <- function() {
   # Check for Access Token and Expiration
   if (base::is.null(aToken) ||
       token_exp <= base::as.numeric(base::Sys.time())) {
+    logger::log_error("hawkinR/get_testTypes -> Access token not available or expired. Call get_access() to obtain it.")
     stop("Access token not available or expired. Call get_access() to obtain it.")
   } else {
     # Log Debug
-    logger::log_debug(base::paste0("hawkinR/get_testTypes -> Temporary access token expires: ", as.POSIXct(token_exp)))
+    logger::log_debug(base::paste0("hawkinR/get_testTypes -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
   }
 
   # 3. ----- Build URL Request -----
@@ -104,9 +97,10 @@ get_testTypes <- function() {
   }
 
   if (!is.null(error_message)) {
-    stop(logger::log_error(base::paste0(
+    logger::log_error(base::paste0(
       "hawkinR/get_testTypes ->", error_message
-    )))
+    ))
+    stop(error_message)
   }
 
   # Response Table

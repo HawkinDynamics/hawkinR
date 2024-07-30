@@ -48,14 +48,6 @@ get_metrics <- function(testType = "all") {
   # Log Trace
   logger::log_trace(base::paste0("hawkinR -> Run: get_metrics"))
 
-  # Save the current setting
-  old_show_error_messages <- base::getOption("show.error.messages")
-  base::on.exit(base::options(show.error.messages = old_show_error_messages),
-                add = TRUE)
-
-  # Disable error messages
-  base::options(show.error.messages = FALSE)
-
   # 2. ----- Parameter Validation -----
 
   # Retrieve access token and expiration from environment variables
@@ -70,10 +62,11 @@ get_metrics <- function(testType = "all") {
   # Check for Access Token and Expiration
   if (base::is.null(aToken) ||
       token_exp <= base::as.numeric(base::Sys.time())) {
+    logger::log_error("hawkinR/get_metrics -> Access token not available or expired. Call get_access() to obtain it.")
     stop("Access token not available or expired. Call get_access() to obtain it.")
   } else {
     # Log Debug
-    logger::log_debug(base::paste0("hawkinR/get_metrics -> Temporary access token expires: ", as.POSIXct(token_exp)))
+    logger::log_debug(base::paste0("hawkinR/get_metrics -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
   }
 
   #-----#
@@ -125,9 +118,10 @@ get_metrics <- function(testType = "all") {
   }
 
   if (!base::is.null(error_message)) {
-    stop(logger::log_error(base::paste0(
+    logger::log_error(base::paste0(
       "hawkinR/get_metrics -> ", error_message
-    )))
+    ))
+    stop(error_message)
   }
 
   # Response Table
@@ -178,6 +172,7 @@ get_metrics <- function(testType = "all") {
     } else {
       # Filter for Test Type
       tests <- dplyr::filter(x, x[[1]] == tId)
+      tests <- tests[[1, 3]]
 
       # Create Data Frame and Return Output
       logger::log_success(
@@ -188,7 +183,7 @@ get_metrics <- function(testType = "all") {
           testType
         )
       )
-      base::return(tests[[1, 3]])
+      base::return(tests)
     }
   }
 }

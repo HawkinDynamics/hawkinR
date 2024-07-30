@@ -18,13 +18,13 @@ knitr::opts_chunk$set(
 library(knitr)
 ```
 
-<!--# As of July 10, 2024, the use of `get_tests_...` functions has been deprecated in favour of the expanded usage of `get_tests`. The base `get_tests` function has been expanded to accept all arguments from the other `get_tests_...` variations. All `get_tests_...` functions will be superseded January 01, 2025. -->
+> As of July 10, 2024, the use of \`get_tests\_\...\` functions has been deprecated in favor of the expanded usage of \`get_tests\`. The base \`get_tests\` function has been expanded to accept all arguments from the other \`get_tests\_\...\` variations. All \`get_tests\_\...\` functions will be superseded January 01, 2025.
 
 The most common functions used in the hawkinR package are obviously the multiple `get_tests` functions. They are the primary functions of the package that supports it's main purpose: querying your tests data. To minimize code and simplify the API requests, the `get_tests` function has a couple of variations for specific use cases.
 
 ## Request Any and All Tests
 
-The primary function to call tests is `get_tests`. This is an base request for tests that, as of 2024-07-10, accepts all arguments : 'from', 'to', 'sync', 'active', 'athleteId', 'testTypeId', 'teamId', and 'groupId'. Using this function, you have complete control of the tests being requested from the cloud.
+The primary function to call tests is `get_tests`. This is a base request for tests that, as of 2024-07-10, accepts all arguments : 'from', 'to', 'sync', 'active', 'athleteId', 'testTypeId', 'teamId', and 'groupId'. Using this function, you have complete control of the tests being requested from the cloud.
 
 It is important to understand that requests can **NOT** include any combination of 'athleteId', 'testTypeId', 'teamId', or 'groupId'. This will result in and error. Any of these arguments **CAN** be used with 'from', 'to', 'active', and 'sync'.
 

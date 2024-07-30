@@ -127,14 +127,6 @@ get_tests <- function(from = NULL,
   # Log Trace
   logger::log_trace(base::paste0("hawkinR -> Run: get_tests"))
 
-  # Save the current setting
-  old_show_error_messages <- base::getOption("show.error.messages")
-  base::on.exit(base::options(show.error.messages = old_show_error_messages),
-                add = TRUE)
-
-  # Disable error messages
-  base::options(show.error.messages = FALSE)
-
   # 2. ----- Parameter Validation -----
 
   # Retrieve access token and expiration from environment variables
@@ -149,13 +141,14 @@ get_tests <- function(from = NULL,
   # Check for Access Token and Expiration
   if (base::is.null(aToken) ||
       token_exp <= base::as.numeric(base::Sys.time())) {
+    logger::log_error("hawkinR/get_tests -> Access token not available or expired. Call get_access() to obtain it.")
     stop("Access token not available or expired. Call get_access() to obtain it.")
   } else {
     # Log Debug
     logger::log_debug(
       base::paste0(
         "hawkinR/get_tests -> Temporary access token expires: ",
-        as.POSIXct(token_exp)
+        base::as.POSIXct(token_exp)
       )
     )
   }

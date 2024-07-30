@@ -93,14 +93,6 @@ get_tests_team <-
     # Log Trace
     logger::log_trace(base::paste0("hawkinR -> Run: get_tests_team"))
 
-    # Save the current setting
-    old_show_error_messages <- base::getOption("show.error.messages")
-    base::on.exit(base::options(show.error.messages = old_show_error_messages),
-                  add = TRUE)
-
-    # Disable error messages
-    base::options(show.error.messages = FALSE)
-
     # 2. ----- Parameter Validation -----
 
     # Retrieve access token and expiration from environment variables
@@ -115,10 +107,11 @@ get_tests_team <-
     # Check for Access Token and Expiration
     if (base::is.null(aToken) ||
         token_exp <= base::as.numeric(base::Sys.time())) {
+      logger::log_error("hawkinR/get_tests_team -> Access token not available or expired. Call get_access() to obtain it.")
       stop("Access token not available or expired. Call get_access() to obtain it.")
     } else {
       # Log Debug
-      logger::log_debug(base::paste0("hawkinR/get_tests_team -> Temporary access token expires: ", as.POSIXct(token_exp)))
+      logger::log_debug(base::paste0("hawkinR/get_tests_team -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
     }
 
     #-----#
@@ -135,11 +128,12 @@ get_tests_team <-
     # Initialize Team Id string
 
     if (base::length(teamId) > 10) {
-      base::stop(logger::log_error(
+      logger::log_error(
         base::paste0(
           "hawkinR/get_tests_team -> Too many groups. A maximum of 10 groups can be fetched at once"
         )
-      ))
+      )
+      base::stop("Too many groups. A maximum of 10 groups can be fetched at once")
     } else {
       tId <- teamId
     }
@@ -205,9 +199,10 @@ get_tests_team <-
     }
 
     if (!base::is.null(error_message)) {
-      stop(logger::log_error(base::paste0(
+      logger::log_error(base::paste0(
         "hawkinR/get_tests_team -> ", error_message
-      )))
+      ))
+      stop(error_message)
     }
 
     # Response Table
@@ -276,11 +271,12 @@ get_tests_team <-
         }
       } else {
         # No Matching Groups
-        stop(logger::log_warn(
+        logger::log_warn(
           base::paste0(
             "hawkinR/get_tests_team -> Error: No tests returned meeting those query parameters"
           )
-        ))
+        )
+        stop("No tests returned meeting those query parameters")
       }
 
       # 6. ----- Returns -----
@@ -314,3 +310,4 @@ get_tests_team <-
       }
     }
   }
+

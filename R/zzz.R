@@ -16,5 +16,6 @@
   suppressPackageStartupMessages({
     logger::log_appender(logger::appender_console)
     logger::log_formatter(logger::formatter_glue_or_sprintf)
+    logger::log_layout(logger::layout_glue_colors)
   })
 }
