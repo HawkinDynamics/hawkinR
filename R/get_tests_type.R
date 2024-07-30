@@ -97,14 +97,6 @@ get_tests_type <-
     # Log Trace
     logger::log_trace(base::paste0("hawkinR -> Run: get_tests_type"))
 
-    # Save the current setting
-    old_show_error_messages <- base::getOption("show.error.messages")
-    base::on.exit(base::options(show.error.messages = old_show_error_messages),
-                  add = TRUE)
-
-    # Disable error messages
-    base::options(show.error.messages = FALSE)
-
     # 2. ----- Parameter Validation -----
 
     # Retrieve access token and expiration from environment variables
@@ -119,6 +111,7 @@ get_tests_type <-
     # Check for Access Token and Expiration
     if (base::is.null(aToken) ||
         token_exp <= base::as.numeric(base::Sys.time())) {
+      logger::log_error("hawkinR/get_tests_type -> Access token not available or expired. Call get_access() to obtain it.")
       stop("Access token not available or expired. Call get_access() to obtain it.")
     } else {
       # Log Debug
@@ -204,9 +197,10 @@ get_tests_type <-
     }
 
     if (!base::is.null(error_message)) {
-      stop(logger::log_error(base::paste0(
+      logger::log_error(base::paste0(
         "hawkinR/get_tests_type -> ", error_message
-      )))
+      ))
+      stop(error_message)
     }
 
     # Response Table
@@ -275,11 +269,12 @@ get_tests_type <-
         }
       } else {
         # No Matching Groups
-        stop(logger::log_warn(
+        logger::log_warn(
           base::paste0(
             "hawkinR/get_tests_type -> Error: No tests returned meeting those query parameters"
           )
-        ))
+        )
+        stop("No tests returned meeting those query parameters")
       }
 
       # 6. ----- Returns -----

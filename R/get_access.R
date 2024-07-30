@@ -55,14 +55,6 @@ get_access <- function(refreshToken, region = "Americas") {
   # Log Trace
   logger::log_trace(paste0("hawkinR -> Run: get_access"))
 
-  # Save the current setting
-  old_show_error_messages <- base::getOption("show.error.messages")
-  base::on.exit(options(show.error.messages = old_show_error_messages),
-                add = TRUE)
-
-  # Disable error messages
-  base::options(show.error.messages = FALSE)
-
   # 2. ----- Parameter Validation -----
 
   if (base::is.character(refreshToken)) {
@@ -139,9 +131,10 @@ get_access <- function(refreshToken, region = "Americas") {
   }
 
   if (!base::is.null(error_message)) {
-    stop(logger::log_error(paste0(
+    logger::log_error(paste0(
       "hawkinR/get_access -> ", error_message
-    )))
+    ))
+    stop(error_message)
   }
 
   # Response Table

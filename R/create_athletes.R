@@ -55,17 +55,10 @@
 
 # Create Athletes -----
 create_athletes <- function(athleteData) {
+
   # 1. ----- Set Logger -----
   # Log Trace
   logger::log_trace(base::paste0("hawkinR -> Run: create_athletes"))
-
-  # Save the current setting
-  old_show_error_messages <- base::getOption("show.error.messages")
-  base::on.exit(base::options(show.error.messages = old_show_error_messages),
-                add = TRUE)
-
-  # Disable error messages
-  base::options(show.error.messages = FALSE)
 
   # 2. ----- Parameter Validation -----
 
@@ -81,10 +74,11 @@ create_athletes <- function(athleteData) {
   # Check for Access Token and Expiration
   if (base::is.null(aToken) ||
       token_exp <= base::as.numeric(base::Sys.time())) {
+    logger::log_error("hawkinR/create_athletes -> Access token not available or expired. Call get_access() to obtain it.")
     stop("Access token not available or expired. Call get_access() to obtain it.")
   } else {
     # Log Debug
-    logger::log_debug(base::paste0("hawkinR/create_athletes -> Temporary access token expires: ", as.POSIXct(token_exp)))
+    logger::log_debug(base::paste0("hawkinR/create_athletes -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
   }
 
   # 3. ----- Build URL Request -----
@@ -132,9 +126,10 @@ create_athletes <- function(athleteData) {
   }
 
   if (!base::is.null(error_message)) {
-    stop(logger::log_error(
+    logger::log_error(
       base::paste0("hawkinR/create_athletes -> ", error_message)
-    ))
+    )
+    stop(error_message)
   }
 
   # Response Table
