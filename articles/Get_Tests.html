@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hawkinR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,13 +63,19 @@
       <h1>How to Get Tests</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/HawkinDynamics/hawkinR/blob/v1.1.0/vignettes/Get_Tests.Rmd" class="external-link"><code>vignettes/Get_Tests.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/HawkinDynamics/hawkinR/blob/main/vignettes/Get_Tests.Rmd" class="external-link"><code>vignettes/Get_Tests.Rmd</code></a></small>
       <div class="d-none name"><code>Get_Tests.Rmd</code></div>
     </div>
 
     
     
-<!--# As of July 10, 2024, the use of `get_tests_...` functions has been deprecated in favour of the expanded usage of `get_tests`. The base `get_tests` function has been expanded to accept all arguments from the other `get_tests_...` variations. All `get_tests_...` functions will be superseded January 01, 2025. -->
+<blockquote>
+<p>As of July 10, 2024, the use of `get_tests_...` functions has been
+deprecated in favor of the expanded usage of `get_tests`. The base
+`get_tests` function has been expanded to accept all arguments from the
+other `get_tests_...` variations. All `get_tests_...` functions will be
+superseded January 01, 2025.</p>
+</blockquote>
 <p>The most common functions used in the hawkinR package are obviously
 the multiple <code>get_tests</code> functions. They are the primary
 functions of the package that supports it’s main purpose: querying your
@@ -80,10 +86,10 @@ use cases.</p>
 <h2 id="request-any-and-all-tests">Request Any and All Tests<a class="anchor" aria-label="anchor" href="#request-any-and-all-tests"></a>
 </h2>
 <p>The primary function to call tests is <code>get_tests</code>. This is
-an base request for tests that, as of 2024-07-10, accepts all arguments
-: ‘from’, ‘to’, ‘sync’, ‘active’, ‘athleteId’, ‘testTypeId’, ‘teamId’,
-and ‘groupId’. Using this function, you have complete control of the
-tests being requested from the cloud.</p>
+a base request for tests that, as of 2024-07-10, accepts all arguments :
+‘from’, ‘to’, ‘sync’, ‘active’, ‘athleteId’, ‘testTypeId’, ‘teamId’, and
+‘groupId’. Using this function, you have complete control of the tests
+being requested from the cloud.</p>
 <p>It is important to understand that requests can <strong>NOT</strong>
 include any combination of ‘athleteId’, ‘testTypeId’, ‘teamId’, or
 ‘groupId’. This will result in and error. Any of these arguments
