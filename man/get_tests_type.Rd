@@ -12,7 +12,8 @@ name abbreviation.
 
 Names | Abbreviations: "Countermovement Jump" | "CMJ", "Squat Jump" | "SJ",
 "Isometric Test" | "ISO", "Drop Jump" | "DJ", "Free Run" | "FREE", "CMJ Rebound" | "CMJR",
-"Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL"}
+"Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL", "TS Free Run" | "TSFR",
+"TS Isometric Test" | "TSISO"}
 
 \item{from}{Optionally supply a time (Unix time stamp) you want the tests from. If you do not
 supply this value you will receive every test. This parameter is best suited for bulk exports of
