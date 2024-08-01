@@ -37,7 +37,7 @@ or test name abbreviation.
 Names | Abbreviations: "Countermovement Jump" | "CMJ", "Squat Jump" | "SJ",
 "Isometric Test" | "ISO", "Drop Jump" | "DJ", "Free Run" | "FREE",
 "CMJ Rebound" | "CMJR", "Multi Rebound" | "MR", "Weigh In" | "WI",
-"Drop Landing" | "DL"}
+"Drop Landing" | "DL", "TS Free Run" | "TSFR", "TS Isometric Test" | "TSISO"}
 
 \item{teamId}{Supply a team’s ID, a list of team IDs, or a string of a comma separated
 team id’s to receive tests from the specified teams. A maximum of 10 teams can be
