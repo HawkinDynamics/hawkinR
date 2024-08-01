@@ -172,13 +172,15 @@ TestIdCheck <- function(arg_id) {
     id = c(
       "7nNduHeM5zETPjHxvm7s", "QEG7m7DhYsD6BrcQ8pic", "2uS5XD5kXmWgIZ5HhQ3A",
       "gyBETpRXpdr63Ab2E0V8", "5pRSUQVSJVnxijpPMck3", "pqgf2TPUOQOQs6r0HQWb",
-      "r4fhrkPdYlLxYQxEeM78", "ubeWMPN1lJFbuQbAM97s", "rKgI4y3ItTAzUekTUpvR"
+      "r4fhrkPdYlLxYQxEeM78", "ubeWMPN1lJFbuQbAM97s", "rKgI4y3ItTAzUekTUpvR",
+      "4KlQgKmBxbOY6uKTLDFL", "umnEZPgi6zaxuw0KhUpM"
     ),
     name = c(
       "Countermovement Jump", "Squat Jump", "Isometric Test", "Drop Jump",
-      "Free Run", "CMJ Rebound", "Multi Rebound", "Weigh In", "Drop Landing"
+      "Free Run", "CMJ Rebound", "Multi Rebound", "Weigh In", "Drop Landing",
+      "TS Free Run", "TS Isometric Test"
     ),
-    abbreviation = c("CMJ", "SJ", "ISO", "DJ", "FR", "CMJR", "MR", "WI", "DL")
+    abbreviation = c("CMJ", "SJ", "ISO", "DJ", "FR", "CMJR", "MR", "WI", "DL","TSFR","TSISO")
   )
 
   # Check typeId and extract corresponding id

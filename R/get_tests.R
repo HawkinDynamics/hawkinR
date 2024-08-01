@@ -43,7 +43,7 @@
 #' Names | Abbreviations: "Countermovement Jump" | "CMJ", "Squat Jump" | "SJ",
 #' "Isometric Test" | "ISO", "Drop Jump" | "DJ", "Free Run" | "FREE",
 #' "CMJ Rebound" | "CMJR", "Multi Rebound" | "MR", "Weigh In" | "WI",
-#' "Drop Landing" | "DL"
+#' "Drop Landing" | "DL", "TS Free Run" | "TSFR", "TS Isometric Test" | "TSISO"
 #'
 #' @param groupId Supply a group’s ID, a list of group IDs, or a string of a comma
 #' separated group id’s to receive tests from the specified groups. A maximum of 10 groups
