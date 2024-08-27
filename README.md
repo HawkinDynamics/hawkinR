@@ -1,14 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hawkinR v1.1.2 <img src="man/figures/hdlogo.png" align="right" width="120"/>
+# hawkinR v1.1.3 <img src="man/figures/hdlogo.png" align="right" width="120"/>
 
 **Get your data from the Hawkin Dynamics API**
 
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2024--07--31-yellowgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2024--08--27-yellowgreen.svg)](/commits/master)
 [![license](https://img.shields.io/badge/license-MIT%20+%20file%20LICENSE-lightgrey.svg)](https://choosealicense.com/)
 [![minimal R
 version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)
@@ -16,7 +16,7 @@ version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
-[![packageversion](https://img.shields.io/badge/Package%20version-1.1.2-orange.svg?style=flat-square)](commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.1.3-orange.svg?style=flat-square)](commits/master)
 [![thanks-md](https://img.shields.io/badge/THANKS-md-ff69b4.svg)](THANKS.md)
 
 <!-- badges: end -->
