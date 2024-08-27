@@ -1,5 +1,9 @@
 # Change Log
 
+## hawkinR v1.1.3
+
+* Bug fix: removes errors thrown for tests returned without tags
+
 ## hawkinR v1.1.2
 
 * Bug fix: addition of TruStrength test types to typeId validation methods

@@ -87,7 +87,8 @@ TestTypePrep <- function(arg_df) {
 
   # 3. Loop rows to find cases with tags and apply to Tags data frame
   for (row in 1:nrow(arg_df)) {
-    if (base::nrow(arg_df[[row, 4]]) > 0) {
+    # Check if the 4th column (tags) is not NULL and is a data frame
+    if (!is.null(arg_df[[row, 4]]) && is.data.frame(arg_df[[row, 4]]) && base::nrow(arg_df[[row, 4]]) > 0) {
       # Isolate Row with nested data frame
       t <- arg_df[[row, 4]]
       # extract and apply tag ID
@@ -101,8 +102,8 @@ TestTypePrep <- function(arg_df) {
 
   # 4. Use unwrap function to remove tags values from lists
   unwrap <- function(x) {
-    if (is.list(x)) {
-      lapply(x, function(y) if (length(y) == 1) y[[1]] else y)
+    if (base::is.list(x)) {
+      base::lapply(x, function(y) if (length(y) == 1) y[[1]] else y)
     } else {
       x
     }
