@@ -87,16 +87,19 @@
 #' \dontrun{
 #' # This is an example of how the function would be called.
 #'
-#' ## Call for all tests
+#' # Call for all tests
+#'
 #' dfAllTests <- get_tests()
 #'
 #'
-#' ## Call for all tests within a specific time frame
+#' # Call for all tests within a specific time frame
+#'
 #' dfFromTo <- get_tests(from = 1689958617, to = 1691207356)
 #'
 #'
-#' ## Call for all new tests since a specific date, or any tests that have been
+#' # Call for all new tests since a specific date, or any tests that have been
 #' updated/changed since that date
+#'
 #' dfSync <- get_tests(from = 1689958617, sync=TRUE)
 #'
 #' }
@@ -176,20 +179,24 @@ get_tests <- function(from = NULL,
   if (base::isTRUE(sync)) {
     # Sync From
     if (!base::is.null(from)) {
-      query$syncFrom <- from
+      f <- validate_timestamp(from)
+      query$syncFrom <- f
     }
     # Sync To
     if (!base::is.null(to)) {
-      query$syncTo <- to
+      t <- validate_timestamp(to)
+      query$syncTo <- t
     }
   } else if (isFALSE(sync)) {
     # From
     if (!base::is.null(from)) {
-      query$from <- from
+      f <- validate_timestamp(from)
+      query$from <- f
     }
     # To
     if (!base::is.null(to)) {
-      query$to <- to
+      t <- validate_timestamp(to)
+      query$to <- t
     }
   }
 

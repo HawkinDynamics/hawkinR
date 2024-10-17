@@ -1,3 +1,60 @@
+#' Validate time stamp arguments and allow for date character
+#'
+#' This function checks `from` and `to` arguments for valid inputs of epoch or
+#' a date as a character string.
+#'
+#' @param x A data frame containing flattened athlete test data.
+#' @return An epoch time stamp
+#' @keywords internal
+validate_timestamp <- function(x) {
+
+  # Helper function to check if a string is in "yyyy-mm-dd" format
+  is_valid_date <- function(date_str) {
+    tryCatch({
+      base::as.Date(date_str, format = "%Y-%m-%d")
+      TRUE
+    }, error = function(e) {
+      FALSE
+    })
+  }
+
+  # If argument is numeric, assume it's an epoch timestamp
+  if (base::is.numeric(x)) {
+    return(x)
+  }
+
+  # If argument is a character, check if it's a valid date string
+  if (base::is.character(x)) {
+    if (is_valid_date(x)) {
+      # Convert date string to epoch timestamp
+      return(
+        base::as.numeric(
+          base::as.POSIXct(x, format = "%Y-%m-%d", tz = "UTC")
+        )
+      )
+    } else {
+      stop(
+        logger::log_error(
+          paste("Error: The argument is not a valid date in 'yyyy-mm-dd' format.")
+        )
+      )
+    }
+  }
+
+  # If neither, return an error
+  stop(
+    logger::log_error(
+      paste(
+        "Error: The argument is neither a valid epoch timestamp nor a valid date string."
+      )
+    )
+  )
+}
+
+
+#--------------------#
+
+
 #' Validate GetTest Parameters
 #'
 #' Check `from`, `to`, `athleteId`, `testTypeId`, `teamId`, and `groupId` parameters.
@@ -347,5 +404,122 @@ UpdateAthleteJSON <- function(arg_df) {
     stop(logger::log_error("athleteData must contain ID column"))
   }
 }
+
+
+#--------------------#
+
+
+#' Flatten Nested Lists in Athlete Test Output
+#'
+#' This function takes a data frame of athlete test output, which may contain
+#' nested lists or tables, and flattens them into a simple data frame. It works
+#' specifically on the columns that contain lists or other complex structures.
+#'
+#' @param arg_df A data frame containing athlete test data, including columns with nested lists or tables.
+#' @return A data frame where nested lists or tables have been flattened, making it easier to manipulate.
+#' @importFrom dplyr mutate
+#' @importFrom dplyr across
+#' @keywords internal
+dfTests_flat <- function(arg_df) {
+
+  # Supplied data frame
+  df <- arg_df
+
+  # Mutate Selected Columns to single comma-seperated character strings
+  df <- df %>%
+    dplyr::mutate(
+      dplyr::across(
+        c("testType_tags_id",
+          "testType_tags_name",
+          "testType_tags_desc",
+          "athlete_teams",
+          "athlete_groups"
+        ),
+        ~ sapply(., function(x) paste(unlist(x), collapse = ","))
+      )
+    )
+
+  return(df)
+}
+
+
+#--------------------#
+
+
+#' Expand Comma-Separated Values To Nested Lists
+#'
+#' This function takes a data frame of athlete test output, which contains
+#' comma-separated strings (test tag name, test tag id, test tag description,
+#' athlete team, and athlete group), and expands them into nested lists.
+#'
+#' @param arg_df A data frame containing flattened athlete test data.
+#' @return A data frame where the specified columns have been converted to nested lists.
+#' @importFrom dplyr mutate across
+#' @keywords internal
+dfTests_expand <- function(arg_df) {
+
+  # Supplied data frame
+  df <- arg_df
+
+  # Revert the specified columns back to lists using column names
+  df <- df %>%
+    mutate(
+      across(
+        c("testType_tags_id",
+          "testType_tags_name",
+          "testType_tags_desc",
+          "athlete_teams",
+          "athlete_groups"),
+        ~ strsplit(., ",")
+      )
+    )
+
+  return(df)
+}
+
+
+#--------------------#
+
+
+#' Convert Date-Time formats to Character Strings
+#'
+#' This function takes a data frame of test trials and searches for any columns
+#' with a date class. Then it will convert them to a character class.
+#'
+#' @param arg_df A data frame containing flattened athlete test data.
+#' @return A data frame where the specified columns have been converted to nested lists.
+#' @importFrom dplyr mutate across
+#' @importFrom tidyselect where
+#' @keywords internal
+dfDatetoChar <- function(arg_df) {
+
+  # Supplied data frame
+  df <- arg_df
+
+  # Identify date formats and convert to character
+  df <- df %>%
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::where(~ base::inherits(., c("Date", "POSIXct", "POSIXt"))), as.character
+      )
+    )
+
+  # Convert any columns that start with 'athlete_' (excluding specific columns) to character
+  df <- df %>%
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::starts_with("athlete_") &
+          !dplyr::all_of(c("athlete_teams", "athlete_groups", "athlete_active")),
+        as.character
+      )
+    )
+
+  return(df)
+}
+
+
+#--------------------#
+
+
 
 

@@ -1,5 +1,11 @@
 # Change Log
 
+## hawkinR v1.2.0
+
+* Addition of `buildDB()` and `syncDB()` functions for storing and updating local database
+
+* Improved functionality to `get_tests()` to accept character strings in the format "YYYY-MM-DD" for `from` and `to`
+
 ## hawkinR v1.1.3
 
 * Bug fix: removes errors thrown for tests returned without tags

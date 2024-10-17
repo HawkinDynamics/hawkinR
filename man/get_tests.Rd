@@ -91,16 +91,19 @@ come (or be synced).
 \dontrun{
 # This is an example of how the function would be called.
 
-## Call for all tests
+# Call for all tests
+
 dfAllTests <- get_tests()
 
 
-## Call for all tests within a specific time frame
+# Call for all tests within a specific time frame
+
 dfFromTo <- get_tests(from = 1689958617, to = 1691207356)
 
 
-## Call for all new tests since a specific date, or any tests that have been
+# Call for all new tests since a specific date, or any tests that have been
 updated/changed since that date
+
 dfSync <- get_tests(from = 1689958617, sync=TRUE)
 
 }

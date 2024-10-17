@@ -147,20 +147,24 @@ get_tests_team <-
     if (base::isTRUE(sync)) {
       # Sync From
       if (!base::is.null(from)) {
-        query$syncFrom <- from
+        f <- validate_timestamp(from)
+        query$syncFrom <- f
       }
       # Sync To
       if (!base::is.null(to)) {
-        query$syncTo <- to
+        t <- validate_timestamp(to)
+        query$syncTo <- t
       }
     } else if (isFALSE(sync)) {
       # From
       if (!base::is.null(from)) {
-        query$from <- from
+        f <- validate_timestamp(from)
+        query$from <- f
       }
       # To
       if (!base::is.null(to)) {
-        query$to <- to
+        t <- validate_timestamp(to)
+        query$to <- t
       }
     }
 

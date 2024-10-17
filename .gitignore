@@ -4,3 +4,5 @@ inst/doc
 /tests/
 https://github.com/HawkinDynamics/hawkinR/tree/dev
 docs
+hawkinR.Rproj
+.Rhistory
