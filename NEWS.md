@@ -6,6 +6,12 @@
 
 * Improved functionality to `get_tests()` to accept character strings in the format "YYYY-MM-DD" for `from` and `to`
 
+* Addition of 'Metric Library' returned from `get_metrics()` 
+
+* Changes to `get_tests()` metric headers. Improved consistency of naming reflective of the metric library
+
+* Improved functionality to `get_forcetime()`to return all test types
+
 ## hawkinR v1.1.3
 
 * Bug fix: removes errors thrown for tests returned without tags

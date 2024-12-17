@@ -26,10 +26,12 @@ Imports:
     readr (>= 1.0.0),
     writexl (>= 0.1.0),
     readxl (>= 1.0.0),
-    tidyselect(>= 1.2.1)
+    tidyselect(>= 1.2.1),
+    later(>= 0.7.3)
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+LazyData: true

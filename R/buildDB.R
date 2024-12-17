@@ -146,8 +146,12 @@ buildDB <- function(
     })
 
     # Add tests to df
-    df <- base::unique(dplyr::bind_rows(x,df)) %>%
-      dplyr::arrange(dplyr::desc(.data$timestamp))
+    if (length(df) > 0) {
+      df <- base::unique(dplyr::bind_rows(x,df)) %>%
+        dplyr::arrange(dplyr::desc(.data$timestamp))
+    } else {
+      df <- base::unique(dplyr::bind_rows(x,df))
+    }
   }
 
   logger::log_info(base::paste0(

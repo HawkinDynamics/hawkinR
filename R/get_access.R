@@ -148,8 +148,10 @@ get_access <- function(refreshToken, region = "Americas") {
     Sys.setenv(
       "accessToken" = x$access_token[1],
       "accessToken_expiration" = x$expires_at[1],
-      "urlRegion" = urlCloud
+      "urlRegion" = urlCloud,
+      "accessToken_valid" = TRUE
     )
+
 
     # Log Debug
     logger::log_debug(paste0("hawkinR/get_access -> Temp Access Token: ", x$access_token[1]))
@@ -172,6 +174,11 @@ get_access <- function(refreshToken, region = "Americas") {
     )
   )
 
+
+  # Start looping validity check
+  monitor_token()
+
+  # Return success message
   return(logger::log_success(paste0("hawkinR/get_access -> ", outMsg)))
 }
 

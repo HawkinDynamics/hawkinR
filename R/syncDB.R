@@ -191,8 +191,20 @@ syncDB <- function(file, includeInactive = FALSE, newFile = NULL) {
       base::as.list(df$id)
     )
 
-    # Combine Rows
-    df <- dplyr::bind_rows(df, newdf[newdf$id %in% new_ids, ]) %>%
+    # Ensure all columns exist in both data frames and have the same type
+    common_cols <- intersect(names(df), names(newdf))
+
+    # Align column types for consistency
+    for (col in common_cols) {
+      if (is.list(df[[col]]) && !is.list(newdf[[col]])) {
+        newdf[[col]] <- as.list(newdf[[col]])  # Convert logical to list
+      } else if (!is.list(df[[col]]) && is.list(newdf[[col]])) {
+        df[[col]] <- as.list(df[[col]])  # Convert non-list to list
+      }
+    }
+
+    # Bind rows safely
+    df <- dplyr::bind_rows(df[, common_cols], newdf[newdf$id %in% new_ids, common_cols]) %>%
       dplyr::arrange(dplyr::desc(.data$timestamp))
 
     # Return Data Frame

@@ -233,7 +233,7 @@ get_tests_group <-
         trialMetrics <- df[6:ncol(df)]
 
         # Clean Trial Metric Names
-        trialMetrics <- janitor::clean_names(trialMetrics)
+        trialMetrics <- replace_headers(df = trialMetrics, typeId = "all")
 
         ### Test Type Data -----
         # Index Test Type Data

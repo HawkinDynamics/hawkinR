@@ -1,3 +1,47 @@
+#--------------------#
+
+
+#' Check Authentication Validity
+#'
+#' Takes the current token expiration and validates it
+#' @keywords internal
+check_token_validity <- function() {
+  token_expiration <- as.numeric(Sys.getenv("accessToken_expiration"))
+  if (Sys.time() > as.POSIXct(token_expiration, origin = "1970-01-01")) {
+    Sys.setenv(accessToken_valid = FALSE)
+  } else {
+    Sys.setenv(accessToken_valid = TRUE)
+  }
+  invisible(NULL)  # To avoid printing
+}
+
+
+#--------------------#
+
+
+#' Monitor Authentication Validity
+#'
+#' Looped checks of access taken validation
+#'
+#' @keywords internal
+monitor_token <- function() {
+  tryCatch(
+    {
+      check_token_validity()  # Perform the validity check
+      later::later(monitor_token, 5)  # Schedule the next check
+    },
+    error = function(e) {
+      message("An error occurred in monitor_token: ", e$message)
+      # Optionally retry scheduling in case of recoverable errors
+      later::later(monitor_token, 5)
+    }
+  )
+}
+
+
+#--------------------#
+
+
 #' Validate time stamp arguments and allow for date character
 #'
 #' This function checks `from` and `to` arguments for valid inputs of epoch or
@@ -27,11 +71,21 @@ validate_timestamp <- function(x) {
   if (base::is.character(x)) {
     if (is_valid_date(x)) {
       # Convert date string to epoch timestamp
-      return(
-        base::as.numeric(
-          base::as.POSIXct(x, format = "%Y-%m-%d", tz = "UTC")
-        )
+      d <- base::as.numeric(
+        base::as.POSIXct(x, format = "%Y-%m-%d", tz = "UTC")
       )
+
+      # Check for incorrect format
+      if (base::is.na(d)) {
+        stop(
+          logger::log_error(
+            paste("Error: The argument is not a valid date in 'yyyy-mm-dd' format.")
+          )
+        )
+      } else {
+        return(d)
+      }
+
     } else {
       stop(
         logger::log_error(
@@ -129,7 +183,9 @@ TestTypePrep <- function(arg_df) {
 
   # 1. Separate Test Type Columns from Tags
   testTypeData <- arg_df[1:3]
-  base::colnames(testTypeData) <- base::paste0("testType_", base::colnames(testTypeData))
+  TestTypeData <-
+
+  base::colnames(testTypeData) <- c("testType_uuid", "testType_name", "testType_canonicalId")
 
   # 2. Create Empty Tags Data frame
   testType_tags_id <- rep(NA, nrow(arg_df))
@@ -425,17 +481,28 @@ dfTests_flat <- function(arg_df) {
   # Supplied data frame
   df <- arg_df
 
-  # Mutate Selected Columns to single comma-seperated character strings
+  # Columns to flatten
+  flatten_cols <- c(
+    "testType_tags_id",
+    "testType_tags_name",
+    "testType_tags_desc",
+    "athlete_teams",
+    "athlete_groups"
+  )
+
+  # Add missing columns as empty vectors
+  for (col in flatten_cols) {
+    if (!col %in% base::colnames(df)) {
+      df[[col]] <- NA_character_  # Add column with NA as placeholder
+    }
+  }
+
+  # Mutate Selected Columns to single comma-separated character strings
   df <- df %>%
     dplyr::mutate(
       dplyr::across(
-        c("testType_tags_id",
-          "testType_tags_name",
-          "testType_tags_desc",
-          "athlete_teams",
-          "athlete_groups"
-        ),
-        ~ sapply(., function(x) paste(unlist(x), collapse = ","))
+        dplyr::all_of(flatten_cols),
+        ~ base::sapply(., function(x) paste(unlist(x), collapse = ","))
       )
     )
 
@@ -519,6 +586,51 @@ dfDatetoChar <- function(arg_df) {
 
 
 #--------------------#
+
+
+#' Clean Test Metric headers
+#'
+#' This function calls metric ids from the metric dictionary to clean metric name headers for test outputs.
+#'
+#' @param df A data frame containing flattened test metric data.
+#' @param testType the testType of the query
+#' @return A data frame with cleaned headers
+#' #' @importFrom tidyselect everything
+#' @keywords internal
+
+# Function to clean test metric headers
+replace_headers <- function(df, typeId) {
+  # Get the metrics lookup table
+  metrics_lookup <- if (!base::is.null(typeId)) {
+    get_metrics(testType = typeId)
+  } else {
+    get_metrics(testType = "all")
+  }
+
+  # Create a named vector for lookup: id as the value, header as the name
+  header_lookup <- stats::setNames(metrics_lookup$id, metrics_lookup$label_unit)
+
+  # Trial Metrics
+  trialMetrics <- df
+
+  # Deduplicate column mapping to keep only the first occurrence
+  deduplicated_lookup <- header_lookup[!duplicated(header_lookup)]
+
+  # Check for missing headers
+  missing_headers <- setdiff(names(trialMetrics), names(deduplicated_lookup))
+  if (length(missing_headers) > 0) {
+    warning("The following columns have no match in the header lookup: ", paste(missing_headers, collapse = ", "))
+  }
+
+  # Rename columns using deduplicated lookup
+  trialMetrics <- trialMetrics %>%
+    dplyr::rename_with(
+      ~ ifelse(!is.na(deduplicated_lookup[.]), deduplicated_lookup[.], .),
+      .cols = tidyselect::everything()
+    )
+
+  return(trialMetrics)
+}
 
 
 
