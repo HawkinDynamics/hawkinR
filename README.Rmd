@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# hawkinR v1.2.0 <img src="man/figures/hdlogo.png" align="right" width="120"/>
+# hawkinR <img src="man/figures/hdlogo.png" align="right" width="120"/>
 
 **Get your data from the Hawkin Dynamics API**
 
@@ -156,9 +156,9 @@ df_forceData <- get_forcetime(testId = df_athTests$id[10])
 
 ## Build Local DB File
 buildDB(
-  startDate = "2023-01-01", # begining date to recall from. Date string or timestamp
-  includeInactive = FALSE , # Include intactive tests in data
-  testType = "all", # specificy individual test type or all combined
+  startDate = "2023-01-01", # beginning date to recall from. Date string or timestamp
+  includeInactive = FALSE , # Include inactive tests in data
+  testType = "all", # Specify individual test type or all combined
   fileName = "C:/Users/My-Force-Plate-Project/my-database.rds", # file name and path
   fileType = "rds", # file type extension
   span = 30 # number of days to iterate over when calling tests
@@ -167,8 +167,8 @@ buildDB(
 ## Update Local File
 syncDB(
   file = "C:/Users/My-Force-Plate-Project/my-database.rds", # path to current file
-  includeInactive = FALSE, # Include intactive tests in data
-  newFile = NULL # Optionally provide new file path to duplicate orignal file 
+  includeInactive = FALSE, # Include inactive tests in data
+  newFile = NULL # Optionally provide new file path to duplicate original file 
 )
 
 ```

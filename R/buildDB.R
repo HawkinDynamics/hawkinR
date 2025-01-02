@@ -92,7 +92,7 @@ buildDB <- function(
   logger::log_info(base::paste0(
     "hawkinR/buildDB -> Calling tests starting from ",
     base::as.Date.POSIXct(xDate),
-    " in ", span, " day incriments"
+    " in ", span, " day increments"
   ))
 
   #----------------------------------------------------------------------------#

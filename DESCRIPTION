@@ -1,5 +1,5 @@
 Package: hawkinR
-Title: hawkinR v1.2.0 - Hawkin Dynamics API
+Title: hawkinR - Hawkin Dynamics API
 Version: 1.2.0
 Authors@R: 
     person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
