@@ -20,15 +20,16 @@
 #'
 #' The returned data frame will follow the following schema:
 #'
-#' | **Column Name**         | **Type** | **Description**                     |
-#' |-------------------------|----------|-------------------------------------|
-#' | **canonicalTestTypeID** | *chr*    | Canonical Test Id                   |
-#' | **testTypeName**        | *chr*    | Given Test Name                     |
-#' | **id**                  | *chr*    | camelCase Test Name                 |
-#' | **label**               | *chr*    | Outward facing label or title       |
-#' | **header**              | *chr*    | API metric header                   |
-#' | **units**               | *chr*    | Unit of measure (if any)            |
-#' | **description**         | *chr*    | Description or definition of metric |
+#' | **Column Name**         | **Type** | **Description**                                  |
+#' |-------------------------|----------|--------------------------------------------------|
+#' | **canonicalTestTypeID** | *chr*    | Canonical Test Id                                |
+#' | **testTypeName**        | *chr*    | Given Test Name                                  |
+#' | **id**                  | *chr*    | camelCase Test Name                              |
+#' | **label**               | *chr*    | Outward facing label or title                    |
+#' | **label_unit**          | *chr*    | Outward facing label or title w/ unit of measure |
+#' | **header**              | *chr*    | header of data frame output                      |
+#' | **units**               | *chr*    | Unit of measure (if any)                         |
+#' | **description**         | *chr*    | Description or definition of metric              |
 #'
 #' @examples
 #' \dontrun{
