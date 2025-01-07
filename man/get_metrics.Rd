@@ -25,7 +25,8 @@ The returned data frame will follow the following schema:\tabular{lll}{
    \strong{testTypeName} \tab \emph{chr} \tab Given Test Name \cr
    \strong{id} \tab \emph{chr} \tab camelCase Test Name \cr
    \strong{label} \tab \emph{chr} \tab Outward facing label or title \cr
-   \strong{header} \tab \emph{chr} \tab API metric header \cr
+   \strong{label_unit} \tab \emph{chr} \tab Outward facing label or title w/ unit of measure \cr
+   \strong{header} \tab \emph{chr} \tab header of data frame output \cr
    \strong{units} \tab \emph{chr} \tab Unit of measure (if any) \cr
    \strong{description} \tab \emph{chr} \tab Description or definition of metric \cr
 }
