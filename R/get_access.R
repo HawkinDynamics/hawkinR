@@ -82,7 +82,7 @@ get_access <- function(refreshToken, region = "Americas") {
     "Americas" = "https://cloud.hawkindynamics.com/api/dev",
     "Europe" = "https://eu.cloud.hawkindynamics.com/api/dev",
     "Asia/Pacific" = "https://apac.cloud.hawkindynamics.com/api/dev",
-    "dev" = "https://cloud.dev.hawkindynamics.com/api/dev"
+    "Dev" = "https://cloud.dev.hawkindynamics.com/api/dev"
   )
 
   # Log Debug
