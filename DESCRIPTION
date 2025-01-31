@@ -1,6 +1,6 @@
 Package: hawkinR
 Title: hawkinR - Hawkin Dynamics API
-Version: 1.2.0
+Version: 1.1.4
 Authors@R: 
     person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
 Description: Provides simple functionality with Hawkin Dynamics API. These functions are for use with 'Hawkin Dynamics Beta API' version 1.8-beta. You must be an Hawkin Dynamics user with active integration account to utilize functions within the package. This API is designed to get data out of your Hawkin Dynamics database into your own database. It is not designed to be accessed from client applications directly. There is a limit on the amount of data that can be returned in a single request. As your database grows, it will be necessary to use the from and to parameters to limit the size of the responses. Responses that exceed the memory limit will fail.
@@ -22,10 +22,6 @@ Imports:
     httr2 (>= 1.0.1),
     logger (>= 0.3.0),
     stringr (>= 1.4.0),
-    arrow (>= 0.11.0),
-    readr (>= 1.0.0),
-    writexl (>= 0.1.0),
-    readxl (>= 1.0.0),
     tidyselect(>= 1.2.1),
     later(>= 0.7.3)
 Suggests: 

@@ -1,8 +1,8 @@
 # Change Log
 
-## hawkinR v1.2.0
+## hawkinR v1.1.4
 
-* Addition of `buildDB()` and `syncDB()` functions for storing and updating local database
+* Addition of `org_name` to `get_access()` parameters.
 
 * Improved functionality to `get_tests()` to accept character strings in the format "YYYY-MM-DD" for `from` and `to`
 

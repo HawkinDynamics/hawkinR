@@ -261,18 +261,17 @@ get_tests_team <-
                                          tzone = base::Sys.timezone())
 
         # Build Output Test Data frame
-        outputDF <-
-          base::cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
+        outputDF <- base::cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
 
         # Add Test Meta Data to output data frame
-        outputDF <-
-          dplyr::mutate(outputDF, last_test_time = lastTest, last_sync_time = lastSync)
+        outputDF <- dplyr::mutate(outputDF, last_test_time = lastTest, last_sync_time = lastSync)
 
         # Validate Active Tests
         if (base::isFALSE(includeInactive)) {
           # Output DF
           outputDF <- dplyr::filter(outputDF, outputDF$active == TRUE)
         }
+
       } else {
         # No Matching Groups
         logger::log_warn(
