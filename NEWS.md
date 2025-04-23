@@ -10,7 +10,7 @@
 
 * Changes to `get_tests()` metric headers. Improved consistency of naming reflective of the metric library
 
-* Improved functionality to `get_forcetime()`to return all test types
+* Improved functionality for `get_forcetime()` to return all test types
 
 ## hawkinR v1.1.3
 

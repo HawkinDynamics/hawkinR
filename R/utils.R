@@ -113,8 +113,8 @@ validate_timestamp <- function(x) {
 #'
 #' Check `from`, `to`, `athleteId`, `testTypeId`, `teamId`, and `groupId` parameters.
 #'
-#' @param from from argument provided into function.
-#' @param to to argument provided into function.
+#' @param arg_from from argument provided into function.
+#' @param arg_to to argument provided into function.
 #' @return no object returned.
 #' @importFrom stats na.omit
 #' @keywords internal
@@ -584,6 +584,5 @@ dfDatetoChar <- function(arg_df) {
   return(df)
 }
 
+
 #--------------------#
-
-

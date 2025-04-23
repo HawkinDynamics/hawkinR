@@ -15,13 +15,24 @@ Names | Abbreviations: "Countermovement Jump" | "CMJ", "Squat Jump" | "SJ",
 "Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL", "TS Free Run" | "TSFR",
 "TS Isometric Test" | "TSISO"}
 
-\item{from}{Optionally supply a time (Unix time stamp) you want the tests from. If you do not
-supply this value you will receive every test. This parameter is best suited for bulk exports of
-historical data.}
+\item{from}{Optionally supply a time frame \strong{start} value. Accepts either:
+\itemize{
+\item A Unix timestamp as an \code{integer} (e.g., \code{1689958617}), or
+\item A date as a \code{character} string in \code{"YYYY-MM-DD"} format (e.g., \code{"2023-08-01"}).
+}
 
-\item{to}{Optionally supply a time (Unix time stamp) you want the tests to. If you do not
-supply this value you will receive every test from the beginning of time or the optionally
-supplied \code{from} parameter. This parameter is best suited for bulk exports of historical data.}
+If not supplied, all available tests from the earliest record will be returned.
+Use this parameter for bulk exports or to define a starting point for data retrieval.}
+
+\item{to}{Optionally supply a time frame \strong{end} value. Accepts either:
+\itemize{
+\item A Unix timestamp as an \code{integer} (e.g., \code{1691207356}), or
+\item A date as a \code{character} string in \code{"YYYY-MM-DD"} format (e.g., \code{"2023-08-10"}).
+}
+
+If not supplied, all available tests up to the latest record will be returned,
+or up to the \code{from} parameter if specified. Use this parameter to limit the
+range of historical data retrieved.}
 
 \item{sync}{The result set will include updated and newly created tests. This parameter is best
 suited to keep your database in sync with the Hawkin database. If you do not supply this value

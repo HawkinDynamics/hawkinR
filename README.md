@@ -124,19 +124,6 @@ See* `get_tests()` *for the preferred function.*
   trials from the specified team and within the time range (if
   specified).
 
-#### Create Local Database
-
-- `buildDB()` - Builds a data frame of prior test data from a set amount
-  of prior days until today, then saves it to a file in in your
-  designated location. It allows setting increments to control the
-  number of days downloaded at a time for more efficient download
-  speeds.
-
-- `syncDB()` - This function updates an existing test database by
-  retrieving new tests and syncing updates for previous tests. It reads
-  the current database from the specified file and returns an updated
-  version.
-
 ## Example
 
 This is a basic example which shows common workflow:
@@ -202,26 +189,4 @@ df_teamTests <- get_tests(teamId = teamIds)
 
 ## Get test force-time data
 df_forceData <- get_forcetime(testId = df_athTests$id[10])
-
-
-#------------------------------------------------------------------------------------#
-# 4. Store Data In Local File
-#------------------------------------------------------------------------------------#
-
-## Build Local DB File
-buildDB(
-  startDate = "2023-01-01", # beginning date to recall from. Date string or timestamp
-  includeInactive = FALSE , # Include inactive tests in data
-  testType = "all", # Specify individual test type or all combined
-  fileName = "C:/Users/My-Force-Plate-Project/my-database.rds", # file name and path
-  fileType = "rds", # file type extension
-  span = 30 # number of days to iterate over when calling tests
-)
-
-## Update Local File
-syncDB(
-  file = "C:/Users/My-Force-Plate-Project/my-database.rds", # path to current file
-  includeInactive = FALSE, # Include inactive tests in data
-  newFile = NULL # Optionally provide new file path to duplicate original file 
-)
 ```
