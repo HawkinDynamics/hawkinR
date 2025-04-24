@@ -11,7 +11,8 @@
 #'
 #' Names | Abbreviations: "Countermovement Jump" | "CMJ", "Squat Jump" | "SJ",
 #' "Isometric Test" | "ISO", "Drop Jump" | "DJ", "Free Run" | "FREE", "CMJ Rebound" | "CMJR",
-#' "Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL"
+#' "Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL", "TS Isometric Test" | "TSISO",
+#' "TS Free Run" | "TSFREE"
 #'
 #' @return
 #' Response will be a data frame containing the tests metrics that are in the HD system. The parameter
@@ -19,12 +20,16 @@
 #'
 #' The returned data frame will follow the following schema:
 #'
-#' | **Column Name** | **Type** | **Description** |
-#' |-----------------|----------|-----------------|
-#' | **id**          | *chr*    | System metric ID |
-#' | **label**       | *chr*    | Outward facing label or title |
-#' | **units**       | *chr*    | Unit of measure (if any) |
-#' | **description** | *chr*    | Description or definition of metric |
+#' | **Column Name**         | **Type** | **Description**                                  |
+#' |-------------------------|----------|--------------------------------------------------|
+#' | **canonicalTestTypeID** | *chr*    | Canonical Test Id                                |
+#' | **testTypeName**        | *chr*    | Given Test Name                                  |
+#' | **id**                  | *chr*    | camelCase Test Name                              |
+#' | **label**               | *chr*    | Outward facing label or title                    |
+#' | **label_unit**          | *chr*    | Outward facing label or title w/ unit of measure |
+#' | **header**              | *chr*    | header of data frame output                      |
+#' | **units**               | *chr*    | Unit of measure (if any)                         |
+#' | **description**         | *chr*    | Description or definition of metric              |
 #'
 #' @examples
 #' \dontrun{
@@ -35,156 +40,64 @@
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom httr2 request req_url_path_append req_auth_bearer_token req_error req_perform resp_status resp_body_json
 #' @importFrom dplyr filter
 #'
 #' @export
 
-
 # Get Test Metrics -----
 get_metrics <- function(testType = "all") {
 
-  # 1. ----- Set Logger -----
-  # Log Trace
-  logger::log_trace(base::paste0("hawkinR -> Run: get_metrics"))
+  # Load Data frame from data folder
+  df <- get("MetricDictionary", envir = asNamespace("hawkinR"))
 
-  # 2. ----- Parameter Validation -----
+  # Create a named vector to match abbreviations with testTypeNames
+  testTypeMap <- c(
+    "Countermovement Jump" = "Countermovement Jump",
+    "CMJ" = "Countermovement Jump",
+    "7nNduHeM5zETPjHxvm7s" = "Countermovement Jump",
+    "Squat Jump" = "Squat Jump",
+    "SJ" = "Squat Jump",
+    "QEG7m7DhYsD6BrcQ8pic" = "Squat Jump",
+    "Isometric Test" = "Isometric Test",
+    "ISO" = "Isometric Test",
+    "2uS5XD5kXmWgIZ5HhQ3A" = "Isometric Test",
+    "Drop Jump" = "Drop Jump",
+    "DJ" = "Drop Jump",
+    "gyBETpRXpdr63Ab2E0V8" = "Drop Jump",
+    "Free Run" = "Free Run",
+    "FREE" = "Free Run",
+    "5pRSUQVSJVnxijpPMck3" = "Free Run",
+    "CMJ Rebound" = "CMJ Rebound",
+    "CMJR" = "CMJ Rebound",
+    "pqgf2TPUOQOQs6r0HQWb" = "CMJ Rebound",
+    "Multi Rebound" = "Multi Rebound",
+    "MR" = "Multi Rebound",
+    "r4fhrkPdYlLxYQxEeM78" = "Multi Rebound",
+    "Weigh In" = "Weigh In",
+    "WI" = "Weigh In",
+    "ubeWMPN1lJFbuQbAM97s" = "Weigh In",
+    "Drop Landing" = "Drop Landing",
+    "DL" = "Drop Landing",
+    "rKgI4y3ItTAzUekTUpvR" = "Drop Landing",
+    "TS Isometric Test" = "TS Isometric Test",
+    "TSISO" = "TS Isometric Test",
+    "umnEZPgi6zaxuw0KhUpM" = "TS Isometric Test",
+    "TS Free Run" = "TS Free Run",
+    "TSFREE" = "TS Free Run",
+    "4KlQgKmBxbOY6uKTLDFL" = "TS Free Run"
+  )
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
-
-  #-----#
-
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
-
-  #-----#
-
-  # Check for Access Token and Expiration
-  if (base::is.null(aToken) ||
-      token_exp <= base::as.numeric(base::Sys.time())) {
-    logger::log_error("hawkinR/get_metrics -> Access token not available or expired. Call get_access() to obtain it.")
-    stop("Access token not available or expired. Call get_access() to obtain it.")
-  } else {
-    # Log Debug
-    logger::log_debug(base::paste0("hawkinR/get_metrics -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
-  }
-
-  #-----#
-
-  # Validate Test Type Id argument
-  tId <- if (testType == "all") {
-    "all"
-  } else {
-    TestIdCheck(arg_id = testType)
-  }
-
-  # Log Trace
-  logger::log_trace(base::paste0("hawkinR/get_metrics -> Test Type: ", tId))
-
-  # 3. ----- Build URL Request -----
-
-  # Build Request
-  request <- httr2::request(base::Sys.getenv("urlRegion")) %>%
-    # Add URL Path
-    httr2::req_url_path_append("/metrics") %>%
-    # Supply Bearer Authentication
-    httr2::req_auth_bearer_token(token = aToken)
-
-  # Log Debug
-  reqPath <- httr2::req_dry_run(request, quiet = TRUE)
-  logger::log_debug(base::paste0("hawkinR/get_metrics -> ", reqPath$method, ": ", reqPath$headers$host, reqPath$path))
-
-  # Execute Call
-  resp <- request %>%
-    httr2::req_error(
-      is_error = function(resp)
-        FALSE
-    ) %>%
-    httr2::req_perform()
-
-  # Response Status
-  status <- httr2::resp_status(resp = resp)
-
-  # 4. ----- Create Response Outputs -----
-
-  # Error Handler
-  error_message <- NULL
-
-  if (status == 401) {
-    error_message <- 'Error 401: Refresh Token is invalid or expired.'
-  } else if (status == 500) {
-    error_message <-
-      'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
-  }
-
-  if (!base::is.null(error_message)) {
-    logger::log_error(base::paste0(
-      "hawkinR/get_metrics -> ", error_message
-    ))
-    stop(error_message)
-  }
-
-  # Response Table
-  if (status == 200) {
-    # Response GOOD - Run rest of script
-    # Convert JSON Response
-    x <- httr2::resp_body_json(resp = resp,
-                               check_type = TRUE,
-                               simplifyVector = TRUE)
-
-    # 5. ----- Sort Test Type Data -----
-
-    if (tId == "all") {
-      # Validate current metrics
-      tests <- dplyr::filter(x, !base::is.na(x[[2]]))
-
-      # Build Empty Data Frame
-      df <- base::data.frame(
-        canonicalTestTypeID = c(),
-        testTypeName = c(),
-        id = c(),
-        label = c(),
-        units = c(),
-        description = c()
-      )
-
-      # Loop and Fill Data Frame
-      for (i in 1:base::nrow(tests)) {
-        r <- tests[i, ]
-        metric <- r[[1, 3]]
-        canonicalTestTypeID <-
-          base::rep_len(r[[1, 1]], base::nrow(metric))
-        testTypeName <- base::rep_len(r[[1, 2]], base::nrow(metric))
-
-        newdf <-
-          base::cbind(canonicalTestTypeID, testTypeName, metric)
-
-        df <- base::rbind(df, newdf)
-      }
-
-      # Return Output
-      logger::log_success(base::paste0(
-        "hawkinR/get_metrics -> All ",
-        base::nrow(df),
-        " metrics returned"
-      ))
-      base::return(df)
+  # If testType is not "all", filter the data frame
+  if (testType != "all") {
+    if (testType %in% names(testTypeMap)) {
+      selectedTestType <- testTypeMap[[testType]]
+      df <- df %>% filter(.data$testTypeName == selectedTestType)
     } else {
-      # Filter for Test Type
-      tests <- dplyr::filter(x, x[[1]] == tId)
-      tests <- tests[[1, 3]]
-
-      # Create Data Frame and Return Output
-      logger::log_success(
-        base::paste0(
-          "hawkinR/get_metrics -> Returned ",
-          base::nrow(tests),
-          " metrics from ",
-          testType
-        )
-      )
-      base::return(tests)
+      stop("Invalid testType. Please provide a valid testType name or abbreviation.")
     }
   }
+
+  # Return filtered data frame
+  return(df)
 }
 

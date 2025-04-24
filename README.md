@@ -1,14 +1,14 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hawkinR v1.1.3 <img src="man/figures/hdlogo.png" align="right" width="120"/>
+# hawkinR <img src="man/figures/hdlogo.png" align="right" width="120"/>
 
 **Get your data from the Hawkin Dynamics API**
 
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml)
-[![Last-changedate](https://img.shields.io/badge/last%20change-2024--08--27-yellowgreen.svg)](/commits/master)
+[![Last-changedate](https://img.shields.io/badge/last%20change-%60r%20gsub('-',%20'--',%20Sys.Date())%60-yellowgreen.svg)](/commits/master)
 [![license](https://img.shields.io/badge/license-MIT%20+%20file%20LICENSE-lightgrey.svg)](https://choosealicense.com/)
 [![minimal R
 version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)
@@ -16,7 +16,7 @@ version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
-[![packageversion](https://img.shields.io/badge/Package%20version-1.1.3-orange.svg?style=flat-square)](commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.1.4-orange.svg?style=flat-square)](commits/master)
 [![thanks-md](https://img.shields.io/badge/THANKS-md-ff69b4.svg)](THANKS.md)
 
 <!-- badges: end -->
@@ -131,40 +131,52 @@ This is a basic example which shows common workflow:
 ``` r
 library(hawkinR) 
 
+
+#------------------------------------------------------------------------------------#
 # 1. Get access to your site
+#------------------------------------------------------------------------------------#
+
 
 ## Store you secret API key
 refreshToken <- 'your-secret-api-key'
-#
+
 ## Get access token. When successful, access token is stored for use in the session.
 get_access("refreshToken", region = "Americas")
 
 
+#------------------------------------------------------------------------------------#
 # 2. Get Org data
+#------------------------------------------------------------------------------------#
 
 ## Team data frame
 teamList <- get_teams()
-#
+
 ## Create list of teams
 teamIds <- paste0(teamList$id[1],teamList$id[3],teamList$id[4])
 
 ## Athlete data frame
 athList <- get_athletes()
-#
+
 ## Create athleteId
 athId <- athList$id[6]
 
+#------------------------------------------------------------------------------------#
 # 3. Get Test Data
+#------------------------------------------------------------------------------------#
 
 ## Initial test call
 allTests <- get_tests()
-#
+
 ## Create last test or sync date
 lastSync <- max(allTests$lastSyncTime)
-#
-## Create phase to review
+
+## Create phase to review with timestamp from records
 phaseDate1 <- allTests$timestamp[30] # from dateTime
 phaseDate2 <- allTests$timestamp[10] # to dateTime
+
+## Dates can also be entered as character strings in "YYYY-MM-DD" format
+phaseDate1_string <- "2024-01-01"
+phaseDate2_string <- "2024-06-01"
 
 ## Sync tests since a time point.
 df_SyncFrom <- get_tests(from = lastSync, sync = TRUE)

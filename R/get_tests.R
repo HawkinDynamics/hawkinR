@@ -17,14 +17,20 @@
 #'  includeInactive = FALSE
 #'  )
 #'
-#' @param from Optionally supply a time (Unix time stamp) you want the tests from. If you
-#' do not supply this value you will receive every test. This parameter is best suited
-#' for bulk exports of historical data
+#' @param from Optionally supply a time frame **start** value. Accepts either:
+#' - A Unix timestamp as an `integer` (e.g., `1689958617`), or
+#' - A date as a `character` string in `"YYYY-MM-DD"` format (e.g., `"2023-08-01"`).
 #'
-#' @param to Optionally supply a time (Unix time stamp) you want the tests to. If you do
-#' not supply this value you will receive every test from the beginning of time or the
-#' optionally supplied `from` parameter. This parameter is best suited for bulk exports
-#' of historical data.
+#' If not supplied, all available tests from the earliest record will be returned.
+#' Use this parameter for bulk exports or to define a starting point for data retrieval.
+#'
+#' @param to Optionally supply a time frame **end** value. Accepts either:
+#' - A Unix timestamp as an `integer` (e.g., `1691207356`), or
+#' - A date as a `character` string in `"YYYY-MM-DD"` format (e.g., `"2023-08-10"`).
+#'
+#' If not supplied, all available tests up to the latest record will be returned,
+#' or up to the `from` parameter if specified. Use this parameter to limit the
+#' range of historical data retrieved.
 #'
 #' @param sync The result set will include updated and newly created tests. This parameter
 #' is best suited to keep your database in sync with the Hawkin database. If you do not
@@ -87,16 +93,19 @@
 #' \dontrun{
 #' # This is an example of how the function would be called.
 #'
-#' ## Call for all tests
+#' # Call for all tests
+#'
 #' dfAllTests <- get_tests()
 #'
 #'
-#' ## Call for all tests within a specific time frame
+#' # Call for all tests within a specific time frame
+#'
 #' dfFromTo <- get_tests(from = 1689958617, to = 1691207356)
 #'
 #'
-#' ## Call for all new tests since a specific date, or any tests that have been
+#' # Call for all new tests since a specific date, or any tests that have been
 #' updated/changed since that date
+#'
 #' dfSync <- get_tests(from = 1689958617, sync=TRUE)
 #'
 #' }
@@ -176,20 +185,24 @@ get_tests <- function(from = NULL,
   if (base::isTRUE(sync)) {
     # Sync From
     if (!base::is.null(from)) {
-      query$syncFrom <- from
+      f <- validate_timestamp(from)
+      query$syncFrom <- f
     }
     # Sync To
     if (!base::is.null(to)) {
-      query$syncTo <- to
+      t <- validate_timestamp(to)
+      query$syncTo <- t
     }
   } else if (isFALSE(sync)) {
     # From
     if (!base::is.null(from)) {
-      query$from <- from
+      f <- validate_timestamp(from)
+      query$from <- f
     }
     # To
     if (!base::is.null(to)) {
-      query$to <- to
+      t <- validate_timestamp(to)
+      query$to <- t
     }
   }
 
@@ -308,12 +321,10 @@ get_tests <- function(from = NULL,
                                        tzone = base::Sys.timezone())
 
       # Build Output Test Data frame
-      outputDF <-
-        base::cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
+      outputDF <- base::cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
 
       # Add Test Meta Data to output data frame
-      outputDF <-
-        dplyr::mutate(outputDF, last_test_time = lastTest, last_sync_time = lastSync)
+      outputDF <- dplyr::mutate(outputDF, last_test_time = lastTest, last_sync_time = lastSync)
 
       # Validate Active Tests
       if (base::isFALSE(includeInactive)) {

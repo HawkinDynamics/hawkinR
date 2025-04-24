@@ -10,8 +10,9 @@ get_testTypes()
 Response will be a data frame containing the tests that are in the HD system.
 Each test type includes the following variables:\tabular{lll}{
    \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
-   \strong{id} \tab \emph{chr} \tab test's unique ID \cr
+   \strong{canonicalId} \tab \emph{chr} \tab test's unique canonical ID \cr
    \strong{name} \tab \emph{chr} \tab test's given name \cr
+   \strong{abbreviation} \tab \emph{chr} \tab test given name abbreviation \cr
 }
 }
 \description{

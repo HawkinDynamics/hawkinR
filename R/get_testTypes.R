@@ -10,10 +10,11 @@
 #' Response will be a data frame containing the tests that are in the HD system.
 #' Each test type includes the following variables:
 #'
-#' | **Column Name** | **Type** | **Description** |
-#' |-----------------|----------|-----------------|
-#' | **id**          | *chr*    | test's unique ID |
-#' | **name**        | *chr*    | test's given name |
+#' | **Column Name**  | **Type** | **Description**              |
+#' |------------------|----------|------------------------------|
+#' | **canonicalId**  | *chr*    | test's unique canonical ID   |
+#' | **name**         | *chr*    | test's given name            |
+#' | **abbreviation** | *chr*    | test given name abbreviation |
 #'
 #' @examples
 #' \dontrun{
@@ -23,8 +24,6 @@
 #'
 #' }
 #'
-#' @importFrom magrittr %>%
-#' @importFrom httr2 request req_url_path_append req_auth_bearer_token req_error req_perform resp_status resp_body_json
 #' @importFrom logger log_info
 #'
 #' @export
@@ -33,87 +32,28 @@
 # Get Test Types -----
 get_testTypes <- function() {
 
-  # 1. ----- Set Logger -----
-  # Log Trace
-  logger::log_trace(base::paste0("hawkinR -> Run: get_testTypes"))
+  # Return Data Frame of Test Types and Abbreviations
 
-  # 2. ----- Parameter Validation -----
+  # Create the data frame
+  type_df <- base::data.frame(
+    canonicalId = c(
+      "7nNduHeM5zETPjHxvm7s", "QEG7m7DhYsD6BrcQ8pic", "2uS5XD5kXmWgIZ5HhQ3A",
+      "gyBETpRXpdr63Ab2E0V8", "5pRSUQVSJVnxijpPMck3", "pqgf2TPUOQOQs6r0HQWb",
+      "r4fhrkPdYlLxYQxEeM78", "ubeWMPN1lJFbuQbAM97s", "rKgI4y3ItTAzUekTUpvR",
+      "4KlQgKmBxbOY6uKTLDFL", "umnEZPgi6zaxuw0KhUpM"
+    ),
+    name = c(
+      "Countermovement Jump", "Squat Jump", "Isometric Test", "Drop Jump",
+      "Free Run", "CMJ Rebound", "Multi Rebound", "Weigh In", "Drop Landing",
+      "TS Free Run", "TS Isometric Test"
+    ),
+    abbreviation = c("CMJ", "SJ", "ISO", "DJ", "FR", "CMJR", "MR", "WI", "DL","TSFR","TSISO")
+  )
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
+  # Print Outcome
+  logger::log_success(base::paste0("hawkinR/get_testTypes -> 11 test types returned"))
 
-  #-----#
+  return(type_df)
 
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
-
-  #-----#
-
-  # Check for Access Token and Expiration
-  if (base::is.null(aToken) ||
-      token_exp <= base::as.numeric(base::Sys.time())) {
-    logger::log_error("hawkinR/get_testTypes -> Access token not available or expired. Call get_access() to obtain it.")
-    stop("Access token not available or expired. Call get_access() to obtain it.")
-  } else {
-    # Log Debug
-    logger::log_debug(base::paste0("hawkinR/get_testTypes -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
-  }
-
-  # 3. ----- Build URL Request -----
-
-  # Build Request
-  request <- httr2::request(base::Sys.getenv("urlRegion")) %>%
-    # Add URL Path
-    httr2::req_url_path_append("/test_types") %>%
-    # Supply Bearer Authentication
-    httr2::req_auth_bearer_token(token = aToken)
-
-  # Log Debug
-  reqPath <- httr2::req_dry_run(request, quiet = TRUE)
-  logger::log_debug(base::paste0(
-    "hawkinR/get_testTypes -> ",reqPath$method, ": ", reqPath$headers$host, reqPath$path))
-
-  # Execute Call
-  resp <- request %>%
-    httr2::req_error(
-      is_error = function(resp)
-        FALSE
-    ) %>%
-    httr2::req_perform()
-
-
-  # Response Status
-  status <- httr2::resp_status(resp = resp)
-
-  # 4. ----- Create Response Outputs -----
-
-  # Error Handler
-  error_message <- NULL
-
-  if (status == 401) {
-    error_message <- 'Error 401: Refresh Token is invalid or expired.'
-  } else if (status == 500) {
-    error_message <-
-      'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
-  }
-
-  if (!is.null(error_message)) {
-    logger::log_error(base::paste0(
-      "hawkinR/get_testTypes ->", error_message
-    ))
-    stop(error_message)
-  }
-
-  # Response Table
-  if (status == 200) {
-    # Response GOOD - Run rest of script
-    # Convert JSON Response
-    x <- httr2::resp_body_json(resp = resp,
-                               check_type = TRUE,
-                               simplifyVector = TRUE)
-
-    # Print Outcome
-    logger::log_success(base::paste0(base::nrow(x), " test types returned"))
-    return(x)
-  }
 }
 

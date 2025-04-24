@@ -114,7 +114,7 @@ get_forcetime <- function(testId) {
   }
 
   if (!base::is.null(error_message)) {
-    logger::log_error(base::paste0("hawkinR/get_tforcetime -> ",error_message))
+    logger::log_error(base::paste0("hawkinR/get_forcetime -> ",error_message))
     stop(error_message)
   }
 
@@ -126,6 +126,12 @@ get_forcetime <- function(testId) {
       check_type = TRUE,
       simplifyVector = TRUE
     )
+
+    # Check For Returned Test Results
+    if(length(x) < 1) {
+      logger::log_error(base::paste0("hawkinR/get_forcetime -> No test data returned"))
+      stop("No test data returned")
+    }
 
     # 5. ----- Sort Test Type Data -----
 
@@ -147,7 +153,7 @@ get_forcetime <- function(testId) {
     athleteName <- x[[3]][[2]]
 
     # Athlete Active Status
-    athleteStatus <- if (x[[3]][[5]]) "active" else "inactive"
+    athleteStatus <- if(x[[3]][[5]]) "active" else "inactive"
 
     # 7. ----- Sort Trial Info -----
 
@@ -181,16 +187,35 @@ get_forcetime <- function(testId) {
     power_W <- x[[11]]
 
     # Data Frame Output
-
-    ft <- data.frame(
-      time_s,
-      right_force_N,
-      left_force_N,
-      combined_force_N,
-      velocity_m_s,
-      displacement_m,
-      power_W
-    )
+    ft <- if(testCanonical %in% c(
+      "r4fhrkPdYlLxYQxEeM78", # Multi Rebound
+      "2uS5XD5kXmWgIZ5HhQ3A", # Isometric
+      "5pRSUQVSJVnxijpPMck3", # Free Run
+      "ubeWMPN1lJFbuQbAM97s"  # Weigh In
+    )) {
+      base::data.frame(
+        time_s,
+        right_force_N,
+        left_force_N,
+        combined_force_N
+      )
+    } else if(testCanonical %in% c("4KlQgKmBxbOY6uKTLDFL", # TruStrength
+                                   "umnEZPgi6zaxuw0KhUpM")) {
+      base::data.frame(
+        time_s,
+        combined_force_N
+      )
+    } else {
+      base::data.frame(
+        time_s,
+        right_force_N,
+        left_force_N,
+        combined_force_N,
+        velocity_m_s,
+        displacement_m,
+        power_W
+      )
+    }
 
     # 9. ----- Check For TriAxial data -----
 
@@ -217,10 +242,6 @@ get_forcetime <- function(testId) {
 
     # Y Right Moments
     if (length(x[[19]]) > 0) {ft$y_right_moments <- x[19]}
-
-    # RSI
-    if (length(x[[20]]) > 0) {ft$rsi <- x[20]}
-
 
     # 10. ----- Returns -----
 

@@ -4,7 +4,7 @@
 \alias{get_access}
 \title{Get Access Token}
 \usage{
-get_access(`refreshToken`, `region` = "Americas")
+get_access(`refreshToken`, `region` = "Americas", `org_name` = NULL)
 }
 \arguments{
 \item{refreshToken}{Use the Refresh Token generated from
@@ -12,6 +12,8 @@ get_access(`refreshToken`, `region` = "Americas")
 
 \item{region}{The region to define the URL to be used. Options: "Americas" (default),
 "Europe", "Asia/Pacific".}
+
+\item{org_name}{The organization endpoint created by our tech support team.}
 }
 \value{
 A data frame with necessary information for accessing API (access token, token expiration,
@@ -31,6 +33,8 @@ functions during this session.
 
 The accessToken is set to expire every 60 minutes. If the token has expired, and you attempt to use
 a dependent function, you will be prompted to run this function again to receive a new access token.
+
+Shown as <org_name> in the API docs, the \code{org_name} parameter allows for custom configurations to take effect.
 }
 \examples{
 \dontrun{
@@ -42,7 +46,7 @@ get_access('refreshToken')
 # If you are in a different region and use one of the other URLs, declare your region by using the
 #`region` parameter.
 
-get_access('refreshToken', region = "Europe")
+get_access('refreshToken', region = "Europe", org_name = "MyOrgName")
 }
 
 }

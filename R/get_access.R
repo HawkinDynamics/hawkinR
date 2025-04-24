@@ -4,13 +4,15 @@
 #' administrator account has the ability to generate API tokens.
 #'
 #' @usage
-#' get_access(`refreshToken`, `region` = "Americas")
+#' get_access(`refreshToken`, `region` = "Americas", `org_name` = NULL)
 #'
 #' @param refreshToken Use the Refresh Token generated from
 #' 'https://cloud.hawkindynamics.com/integrations'.
 #'
 #' @param region The region to define the URL to be used. Options: "Americas" (default),
 #' "Europe", "Asia/Pacific".
+#'
+#' @param org_name The organization endpoint created by our tech support team.
 #'
 #' @details
 #' Use this function to initiate access to your data in the cloud. All other hawkinR functions will
@@ -22,6 +24,8 @@
 #'
 #' The accessToken is set to expire every 60 minutes. If the token has expired, and you attempt to use
 #' a dependent function, you will be prompted to run this function again to receive a new access token.
+#'
+#' Shown as <org_name> in the API docs, the `org_name` parameter allows for custom configurations to take effect.
 #'
 #' @return A data frame with necessary information for accessing API (access token, token expiration,
 #' URL region). The contents of the data frame are stored in the system environment.
@@ -36,7 +40,7 @@
 #' # If you are in a different region and use one of the other URLs, declare your region by using the
 #' #`region` parameter.
 #'
-#' get_access('refreshToken', region = "Europe")
+#' get_access('refreshToken', region = "Europe", org_name = "MyOrgName")
 #' }
 #'
 #' @importFrom magrittr %>%
@@ -49,7 +53,7 @@
 
 
 # Get Access Token-----
-get_access <- function(refreshToken, region = "Americas") {
+get_access <- function(refreshToken, region = "Americas", org_name = NULL) {
 
   # 1. ----- Set Logger -----
   # Log Trace
@@ -77,12 +81,19 @@ get_access <- function(refreshToken, region = "Americas") {
     stop("Invalid region specified.")
   )
 
+  # Set Organization Name
+  orgName <- if(!is.null(org_name)) {
+    org_name
+  } else {
+    "dev"
+  }
+
   urlCloud <- base::switch(
     region,
-    "Americas" = "https://cloud.hawkindynamics.com/api/dev",
-    "Europe" = "https://eu.cloud.hawkindynamics.com/api/dev",
-    "Asia/Pacific" = "https://apac.cloud.hawkindynamics.com/api/dev",
-    "dev" = "https://cloud.dev.hawkindynamics.com/api/dev"
+    "Americas" = paste0("https://cloud.hawkindynamics.com/api/", orgName),
+    "Europe" = paste0("https://eu.cloud.hawkindynamics.com/api/", orgName),
+    "Asia/Pacific" = paste0("https://apac.cloud.hawkindynamics.com/api/", orgName),
+    "Dev" = "https://cloud.dev.hawkindynamics.com/api/dev"
   )
 
   # Log Debug
@@ -148,8 +159,10 @@ get_access <- function(refreshToken, region = "Americas") {
     Sys.setenv(
       "accessToken" = x$access_token[1],
       "accessToken_expiration" = x$expires_at[1],
-      "urlRegion" = urlCloud
+      "urlRegion" = urlCloud,
+      "accessToken_valid" = TRUE
     )
+
 
     # Log Debug
     logger::log_debug(paste0("hawkinR/get_access -> Temp Access Token: ", x$access_token[1]))
@@ -172,6 +185,11 @@ get_access <- function(refreshToken, region = "Americas") {
     )
   )
 
+
+  # Start looping validity check
+  monitor_token()
+
+  # Return success message
   return(logger::log_success(paste0("hawkinR/get_access -> ", outMsg)))
 }
 

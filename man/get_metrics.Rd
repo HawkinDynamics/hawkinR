@@ -12,7 +12,8 @@ name abbreviation.
 
 Names | Abbreviations: "Countermovement Jump" | "CMJ", "Squat Jump" | "SJ",
 "Isometric Test" | "ISO", "Drop Jump" | "DJ", "Free Run" | "FREE", "CMJ Rebound" | "CMJR",
-"Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL"}
+"Multi Rebound" | "MR", "Weigh In" | "WI", "Drop Landing" | "DL", "TS Isometric Test" | "TSISO",
+"TS Free Run" | "TSFREE"}
 }
 \value{
 Response will be a data frame containing the tests metrics that are in the HD system. The parameter
@@ -20,8 +21,12 @@ Response will be a data frame containing the tests metrics that are in the HD sy
 
 The returned data frame will follow the following schema:\tabular{lll}{
    \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
-   \strong{id} \tab \emph{chr} \tab System metric ID \cr
+   \strong{canonicalTestTypeID} \tab \emph{chr} \tab Canonical Test Id \cr
+   \strong{testTypeName} \tab \emph{chr} \tab Given Test Name \cr
+   \strong{id} \tab \emph{chr} \tab camelCase Test Name \cr
    \strong{label} \tab \emph{chr} \tab Outward facing label or title \cr
+   \strong{label_unit} \tab \emph{chr} \tab Outward facing label or title w/ unit of measure \cr
+   \strong{header} \tab \emph{chr} \tab header of data frame output \cr
    \strong{units} \tab \emph{chr} \tab Unit of measure (if any) \cr
    \strong{description} \tab \emph{chr} \tab Description or definition of metric \cr
 }
