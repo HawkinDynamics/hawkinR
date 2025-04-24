@@ -13,10 +13,15 @@
 <url><loc>https://hawkindynamics.github.io/hawkinR/news/index.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/AddAthleteJSON.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/AthletePrep.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/MetricDictionary.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/ParamValidation.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/TestTypePrep.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/UpdateAthleteJSON.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/check_token_validity.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/create_athletes.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/dfDatetoChar.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/dfTests_expand.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/dfTests_flat.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/dot-onLoad.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_access.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_athletes.html</loc></url>
@@ -33,8 +38,10 @@
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/get_tests_type.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/index.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/initialize_logger.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/monitor_token.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/pipe.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/testIdCheck.html</loc></url>
 <url><loc>https://hawkindynamics.github.io/hawkinR/reference/update_athletes.html</loc></url>
+<url><loc>https://hawkindynamics.github.io/hawkinR/reference/validate_timestamp.html</loc></url>
 </urlset>
 
