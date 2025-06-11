@@ -166,8 +166,6 @@ get_tests <- function(from = NULL,
 
   # Validate Parameters
   ParamValidation(
-    arg_from = from,
-    arg_to = to,
     arg_athleteId = athleteId,
     arg_testTypeId = typeId,
     arg_teamId = teamId,

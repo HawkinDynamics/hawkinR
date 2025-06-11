@@ -1,5 +1,9 @@
 # Change Log
 
+## hawkinR v1.1.5
+
+* fix to R/utils/ParamValidation duplicated date format check.
+
 ## hawkinR v1.1.4
 
 * Addition of `org_name` to `get_access()` parameters.
