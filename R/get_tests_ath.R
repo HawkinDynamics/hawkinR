@@ -123,9 +123,7 @@ get_tests_ath <-
     #-----#
 
     # Validate Parameters
-    ParamValidation(arg_from = from,
-                    arg_to = to,
-                    arg_athleteId = athleteId)
+    ParamValidation(arg_athleteId = athleteId)
 
     #-----#
 
