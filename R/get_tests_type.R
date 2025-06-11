@@ -129,9 +129,7 @@ get_tests_type <-
     #-----#
 
     # Validate Parameters
-    ParamValidation(arg_from = from,
-                    arg_to = to,
-                    arg_testTypeId = typeId)
+    ParamValidation(arg_testTypeId = typeId)
 
     # Validate typeId argument
     tId <- TestIdCheck(arg_id = typeId)

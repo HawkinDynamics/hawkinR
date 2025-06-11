@@ -111,24 +111,14 @@ validate_timestamp <- function(x) {
 
 #' Validate GetTest Parameters
 #'
-#' Check `from`, `to`, `athleteId`, `testTypeId`, `teamId`, and `groupId` parameters.
+#' Check `athleteId`, `testTypeId`, `teamId`, and `groupId` parameters.
 #'
-#' @param arg_from from argument provided into function.
-#' @param arg_to to argument provided into function.
 #' @return no object returned.
 #' @importFrom stats na.omit
 #' @keywords internal
-ParamValidation <- function(arg_from, arg_to, arg_athleteId = NULL, arg_testTypeId = NULL, arg_teamId = NULL, arg_groupId = NULL) {
+ParamValidation <- function(arg_athleteId = NULL, arg_testTypeId = NULL, arg_teamId = NULL, arg_groupId = NULL) {
 
   # 1. Validate Parameter Classes
-  # From
-  if (!is.null(arg_from) && !is.numeric(arg_from)) {
-    stop("Error: `from` expecting numeric EPOCH/Unix timestamp.")
-  }
-  # To
-  if (!is.null(arg_to) && !is.numeric(arg_to)) {
-    stop("Error: `to` expecting numeric EPOCH/Unix timestamp.")
-  }
   # Athlete Id
   if (!is.null(arg_athleteId) && !is.character(arg_athleteId)) {
     stop("Error: athleteId should be a character string of an athlete ID. Example: 'athleteId'")

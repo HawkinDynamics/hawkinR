@@ -124,9 +124,7 @@ get_tests_team <-
     #-----#
 
     # Validate Parameters
-    ParamValidation(arg_from = from,
-                    arg_to = to,
-                    arg_teamId = teamId)
+    ParamValidation(arg_teamId = teamId)
 
     #-----#
 

@@ -125,9 +125,7 @@ get_tests_group <-
     #-----#
 
     # Validate Parameters
-    ParamValidation(arg_from = from,
-                    arg_to = to,
-                    arg_groupId = groupId)
+    ParamValidation(arg_groupId = groupId)
 
     #-----#
     .Deprecated(new = "get_tests", msg = "`get_tests_group` has been deprecated. Use `get_tests` which has been expanded to handle all requests.")

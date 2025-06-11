@@ -5,23 +5,16 @@
 \title{Validate GetTest Parameters}
 \usage{
 ParamValidation(
-  arg_from,
-  arg_to,
   arg_athleteId = NULL,
   arg_testTypeId = NULL,
   arg_teamId = NULL,
   arg_groupId = NULL
 )
 }
-\arguments{
-\item{arg_from}{from argument provided into function.}
-
-\item{arg_to}{to argument provided into function.}
-}
 \value{
 no object returned.
 }
 \description{
-Check \code{from}, \code{to}, \code{athleteId}, \code{testTypeId}, \code{teamId}, and \code{groupId} parameters.
+Check \code{athleteId}, \code{testTypeId}, \code{teamId}, and \code{groupId} parameters.
 }
 \keyword{internal}
