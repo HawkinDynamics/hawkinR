@@ -1,0 +1,69 @@
+---
+title: "Initialize and Manage Event Logging Features"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Initialize and Manage Event Logging Features}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Beginning with **v2.0.0**, logging is now a core component of the `HawkinAuth` object. This ensures that every API request, token refresh, and data transformation is recorded according to your preferred verbosity.
+
+------------------------------------------------------------------------
+
+## 1. Event Logging With Logger
+
+hawkinR utilizes the `logger` package to provide status changes, background processes, and debugging information. This is particularly useful for batch jobs (ETL) where monitoring the health of the connection is critical.
+
+## 2. Logs With hawkinR v2.0
+
+In the current version, logging is initialized when you establish your connection via `hd_connect()`. You no longer need a separate initialization step.
+
+### Log Levels
+
+You can set the `log_level` parameter in `hd_connect()` to one of the following: \* `"TRACE"`: Detailed execution logs (including request paths). \* `"DEBUG"`: Information useful for debugging. \* `"INFO"`: (Default) Standard process updates. \* `"WARN"`: Warnings about token expiration or non-critical issues. \* `"ERROR"`: Critical failures.
+
+## 3. Examples
+
+### Basic Logging
+
+By default, `hd_connect()` sets the log level to "INFO", which prints successful connection and data retrieval messages to the console.
+
+```{r logs_info, eval=FALSE}
+library(hawkinR)
+
+# Standard connection with INFO logging
+hd_connect(profile = "default")
+```
+
+### Verbose Debugging
+
+If you are troubleshooting a specific issue (e.g., an "Unauthorized" error or unexpected data filtering), use the "DEBUG" or "TRACE" levels.
+
+```{r verbose_debugging, eval=FALSE}
+# Detailed TRACE logging to see exact API request parameters
+hd_connect(profile = "default", log_level = "TRACE")
+
+# Fetch data; logs will show the URL and parameters being sent
+tests <- get_tests(from = "2023-01-01")
+```
+
+### Silent Operation
+
+For production environments where you only want to see critical failures, set the level to "WARN" or "ERROR".
+
+```{r, eval=FALSE}
+# Only log if something goes wrong
+hd_connect(profile = "default", log_level = "ERROR")
+```
+
+## 4. Advanced: Logging to Files
+
+The package handles console output (stdout) by default. If you wish to redirect logs to a file for long-term auditing, you can use the logger package functions directly after connecting:
+
+```{r advanced_logging, eval=FALSE}
+hd_connect()
+
+# Direct all subsequent hawkinR logs to a file
+logger::log_appender(logger::appender_file("hawkin_audit.log"))
+```

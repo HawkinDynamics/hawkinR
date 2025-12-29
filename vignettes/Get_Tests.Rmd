@@ -5,8 +5,6 @@ vignette: >
   %\VignetteIndexEntry{How to Get Tests}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-dependencies:
-  - knitr
 ---
 
 ```{r setup, include = FALSE}
@@ -14,32 +12,51 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-
 library(knitr)
 ```
 
-The most common functions used in the hawkinR package are obviously the multiple `get_tests` functions. They are the primary functions of the package that supports it's main purpose: querying your tests data. To minimize code and simplify the API requests, the `get_tests` function has a couple of variations for specific use cases.
+> As of January 01, 2026, the use of \`get_tests\_...\` functions have been superseded in favor of the expanded usage of \`get_tests\`. The base \`get_tests\` function has been expanded to accept all arguments from the other \`get_tests\_...\` variations.
 
-## Request All Tests
+The get_tests() function is the primary tool for querying performance data from the Hawkin Dynamics Cloud. In v2.0, this single function replaces all previous variations, providing a unified way to filter by date, athlete, team, group, or test type.
 
-The most common and straight forward function to call tests will be `get_tests`. This is an base request for tests that only has two optional parameters: 'from' and 'to'. Using this function, you can call for all tests of all athletes, and optionally limit the request to a specific time frame.
+## 1. Basic Usage
 
-In this function, the same as all of the `get_tests` variations, 'from' and 'to' are optional inputs where a UNIX datetime can be provided to limit the tests called to a specific time frame. They are set to NULL by default, and when left alone will call all tests.
+The simplest way to use `get_tests()` is to provide a date range. You can use standard date strings (`"YYYY-MM-DD"`) or Unix timestamps.
 
 ```{r alltests, eval=FALSE}
+library(hawkinR)
+hd_connect()
+
 # Call all tests
-tests <- get_tests()
+all_tests <- get_tests()
 
-# Tests in 2022
-# as.numeric() and as.POSIXct are base R functions
-fromDate <- as.numeric(as.POSIXct("2022-01-01")) # returns a UNIX datetime value of 1641024000
-toDate <- as.numeric(as.POSIXct("2023-01-01")) # returns a UNIX datetime value of 1672560000
-
-# Call all tests between Jan 1 2022 and Jan 1 2023
-tests2022 <- get_tests(from = fromDate, to = toDate)
+# Pull all tests from the start of 2023 to present
+tests <- get_tests(from = "2023-01-01")
 ```
 
-## Finding IDs
+## 2. Advanced Filtering
+
+You can combine multiple filters to narrow down your dataset. When multiple filters are provided, the API returns trials that meet **all** criteria.
+
+### Filter by Test Type
+
+To isolate specific movements (e.g., Countermovement Jumps), use the `typeId`.
+
+```{r testTypes, eval=FALSE}
+# Pull only CMJ tests
+cmj_data <- get_tests(typeId = "7nNduHeM5zETPjHxvm7s")
+
+# Test type argument also excepts type name or abbreviation
+
+# Squat Jump
+sj_data <- get_tests(typeId = "SJ")
+
+# Iso tests
+iso_data <- get_tests(typeId = "Isometric Test")
+
+```
+
+### Filter by Athletes, Teams, or Groups
 
 First, it is important to remember a few specifics of the HD athlete data structure. All unique entities have unique IDs. This includes athletes, tests types, teams, and groups. Each athlete MUST be a part of a team, but MAY optionally be in a group. Also, athletes can be a part of multiple teams and multiple groups. To see which teams and/or groups an athlete is a part of, you can find this in the data frame returned from `get_athletes`. For more information on this, you can go to the [Getting Started](vignettes/Getting_Started.html) page for specifics.
 
@@ -62,119 +79,52 @@ roster <- data.frame(
 kable(roster)
 ```
 
-## Get Tests By Athlete
+You can filter for a specific athlete, or an entire cohort using `teamId` or `groupId`. In v2.0, these fields accept either a single ID string or a vector of IDs.
 
-As for all of the `get_tests_` variations, there is one mandatory parameter (id) and 2 optional parameters (from and to). For the `get_tests_ath` form, we simply input a single athlete's unique ID. Again, this is found in the 'id' column of the data frame returned from `get_athletes`. Remember we can only use this function to request tests for a singular athlete. If you wanted to call multiple athletes, this would be done with `get_tests_group` or `get_tests_team`. As you can create as many groups as you need in the cloud and use their groupId in the request, as shown below.
+```{r specificTestCalls, eval=FALSE}
 
-Here we will request all tests for Athlete One:
+# Tests By Athlete
+athelte <- roster$id[roster$name == "Some Athlete"]
+ath_tests <-  get_tests(athleteId = athlete)
 
-```{r testsAth, eval=FALSE}
-# get athlete ID
-athID <- roster$id[roster$name == "Athlete One"]
-
-# call tests
-testsAth1 <- get_tests_ath(athleteId = athID)
+# Pull Tests by team
+team_ids <- c("team_id_1", "team_id_2")
+cohort_data <- get_tests(teamId = team_ids)
 ```
 
-## Get Tests By Test Type
+> It is important to note that test can only be filtered by a singular parameter and a time frame. This means you CAN NOT combine arguments for teams and groups or athlete. Queries can only be made with from, to, and teams OR groups OR athlete.
 
-Similarly to tests by athlete, we can call for tests of a singular type. This is a great option when organizing tests for specific analysis based on tests type. This allows you to create a separate data frame for each test type with out having to filter the in later steps. And this limits the metrics returned to those specific to that test type. As the other `get_tests` functions will have columns for all possible variables, and makes a very wide data frame.
+## 3. The "Sync" Parameter
 
-In this example we will request only Multi Rebound test trials:
+For developers building local databases, the `sync` parameter allows you to pull data based on when it was **uploaded/modified** rather than when the test occurred. This is essential for Incremental Refresh logic.
 
-```{r testType, eval=FALSE}
-# get test type IDs
-types <- get_testTypes()
-
-# get test ID for Multi Rebound
-typeID <- types$id[types$name == "Multi Rebound"]
-
-# Call for multi rebound tests
-testsMR <- get_tests_type( typeId = typeID)
+```{r syncParams, eval=FALSE}
+# Pull everything synced to the cloud in the last 24 hours
+last_24h <- as.numeric(Sys.time()) - 86400
+new_data <- get_tests(from = last_24h, sync = TRUE)
 ```
 
-## Get Tests By Team/Group
+## 4. Data Structure
 
-As you saw above in the 'roster' data frame, when an athlete is a part of a team or group, the ID of the team/group is included in the string value of that variable. While those IDs are not easy for us to read or memorize, we don't have to. Those IDs are accessible with the team/group given name in the data frames returned from the `get_teams` and `get_groups` functions.
+The returned data frame is automatically processed using internal prep functions (`AthletePrep` and `TestTypePrep`). The columns are organized into four logical sections:
 
-### Get Team Tests
+1.  **Trial Info:** Basic trial metadata (ID, timestamp, etc.)
 
-Now that you have the team IDs , you have everything you need to call in the test data using the `get_tests_team` function. This function has three parameters: teamId, from, and to. In this function, the same as all of the `get_tests` variations, 'from' and 'to' are optional inputs where a UNIX datetime can be provided to limit the tests called to a specific time frame. They are set to NULL by default, and when left alone will call all tests that meet the teamId criteria. As for the 'teamId' parameter, that is a required string of one or more team IDs. If you want to call in data for more than one team, you simply enter all of the IDs in a single comma separated string.
+2.  **Test Type Info:** Details about the movement performed.
 
-#### Teams:
+3.  **Athlete Info:** Details about the athlete who performed the test.
 
-```{r teams, eval=FALSE}
-# store team info in an object called teams.
-teams <- get_teams()
+4.  **Metrics:** All performance metrics (Force, Velocity, Power, etc.) with clean names.
+
+## 5. Handling Inactive Data
+
+By default, `get_tests()` only returns trials marked as "Active." If you need to include deleted or hidden trials for auditing purposes, set `includeInactive = TRUE`.
+
+```{r inactiveData, eval=FALSE}
+# Include inactive/deleted tests in the response
+all_history <- get_tests(from = "2023-01-01", includeInactive = TRUE)
 ```
-
-```{r teamsResp, echo=FALSE}
-teams <- data.frame(
-  "id" = c("09u20ij0dj0", "9308dj209dj"),
-  "name" = c("Team One", "Team Two")
-)
-
-kable(teams)
-```
-
-In this example, we will request for tests of Team One since Jan 1, 2022:
-
-```{r teamTests, eval=FALSE}
-# get Team One teamId
-teamID <- teams$id[teams$name == "Team One"]
-
-# set from date
-fromDate <- as.numeric(as.POSIXct("2022-01-01"))
-# as.numeric() and as.POSIXct are base R functions, and returns a UNIX datetime value of 1641024000
-
-# create request for team tests
-teamTests <- get_tests_team(teamId = teamID, from = fromDate)
-
-```
-
-This will return all tests for Team One since January 1, 2022.
-
-## Get Group Tests
-
-All of the same operations for the `get_tests_team` function apply to the `get_tests_group` function. The only difference is that the first parameter is for 'groupId' instead of 'teamId'. It is important to note that you can't use these queries interchangeably or together. Entering a team's ID into the 'groupId' parameter won't produce any returns as the ID won't match any values for that parameter. This is why there are two separate functions.
-
-#### Groups:
-
-```{r groups, eval=FALSE}
-# store group info in an object called groups.
-groups <- get_groups()
-```
-
-```{r groupsResp, echo=FALSE}
-groups <- data.frame(
-  "id" = c("0j20j09jd9ud0j", "92d2098d02j0"),
-  "name" = c("Position Group", "Grad Year Group")
-)
-
-kable(groups)
-```
-
-For the group example, we will call for all tests of multiple groups (Position Group, Grad Year Group) up until May 1, 2023:
-
-```{r groupTests, eval=FALSE}
-# get group IDs
-group1ID <- groups$id[groups$name == "Position Group"]
-group2ID <- groups$id[groups$name == "Grad Year Group"]
-
-# paste group IDs to make single string value
-groupIDs <- paste(group1ID,group2ID, sep = ",") # set 'sep' to "," for comma seperated string
-# returned value will be "0j20j09jd9ud0j,92d2098d02j0"
-
-# set from date
-toDate <- as.numeric(as.POSIXct("2023-05-01"))
-# as.numeric() and as.POSIXct are base R functions, and returns a UNIX datetime value of 1682924400
-
-# create request for group tests
-groupTests <- get_tests_group(groupId = groupIDs, to = toDate)
-```
-
-This will return all tests from the 'Position Group' and 'Grad Year Group' groups up until May 1, 2023.
 
 ------------------------------------------------------------------------
 
-All of the test trials have there own unique ID. This testId is what is used in the `get_forcetime` function to call in the raw data from that trial. See [Accessing Force-Time Data of A Test](vignettes/Get_ForceTime_Data.html) for more information.
+All of the test trials have there own unique ID. This `testId` is what is used in the `get_forcetime` function to call in the raw data from that trial. See [Accessing Force-Time Data of A Test](vignettes/Get_ForceTime_Data.html) for more information.

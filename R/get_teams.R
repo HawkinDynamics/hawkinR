@@ -4,15 +4,18 @@
 #' Get the team names and ids for all the teams in the org.
 #'
 #' @usage
-#' get_teams()
+#' get_teams(x = NULL)
+#'
+#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
 #'
 #' @return
 #' Response will be a data frame containing the teams that are in the organization.
 #' Each team has the following variables:
 #'
-#' **id**   *chr*   team's unique ID
-#'
-#' **name**   *chr*   team's given name
+#' | **Column Name** | **Type** | **Description** |
+#' |-----------------|----------|-----------------|
+#' | **id**          | *chr*    | team's unique ID |
+#' | **name**        | *chr*    | team's given name |
 #'
 #' @examples
 #' \dontrun{
@@ -22,77 +25,78 @@
 #'
 #' }
 #'
-#' @importFrom rlang .data
+#' @importFrom magrittr %>%
+#' @importFrom httr2 req_error req_perform resp_status resp_body_json
+#' @importFrom logger log_trace log_debug log_success log_error
+#'
 #' @export
 
+
 # Get Teams -----
-get_teams <- function() {
+get_teams <- function(x = NULL) {
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration" ))
+  # 1. ----- Set Logger -----
+  logger::log_trace(base::paste0("hawkinR -> Run: get_teams"))
 
-  #-----#
 
-  # Check for Access Token and Expiration
-  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
-    stop("Access token not available or expired. Call get_access() to obtain it.")
+  # 2. ----- Authentication (new auth manager) -----
+  if (is.null(x)) x <- get_active_conn()
+
+  # Token Lifecycle Management
+  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
+    x <- authenticate(x)
+    set_active_conn(x)
   }
 
-  #-----#
+  # Log Debug
+  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+    httr2::req_url_path_append("teams")
 
-  # API Cloud URL
-  urlCloud <- base::Sys.getenv("urlRegion")
+  reqPath <- httr2::req_dry_run(request, quiet = TRUE)
+  logger::log_debug(base::paste0(
+    "hawkinR/get_teams -> ",
+    reqPath$method, ": ",
+    reqPath$headers$host, reqPath$path
+  ))
 
-  # Create URL for request
-  URL <-base::paste0(urlCloud,"/teams")
+  # Execute Call
+  resp <-  request |>
+    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_error(is_error = function(resp) FALSE) |>
+    httr2::req_perform()
 
-  #-----#
 
-  # Call Variables
-  payload <- ""
-  encode <- "raw"
+  # Response Status
+  status <- httr2::resp_status(resp = resp)
 
-  #-----#
+  # 4. ----- Create Response Outputs -----
 
-  # GET Request
-  response <- httr::VERB("GET",
-                         URL,
-                         body = payload,
-                         httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-                         httr::content_type("application/octet-stream"),
-                         encode = encode
-  )
+  error_message <- NULL
 
-  #-----#
 
-  # Response Table
-  Resp <- if(response$status_code == 401) {
-    # Invalid Token Response
-    base::stop("Error 401: Invalid Access Token.")
-  } else  if(response$status_code == 500){
-    # Contact Support Response
-    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
-  } else  if(response$status_code == 200){
-    # Response GOOD - Run rest of script
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
-      )
+  if (status == 401) {
+    error_message <- "Error 401: Refresh Token is invalid or expired."
+  } else if (status == 500) {
+    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+  }
+
+
+  if (!base::is.null(error_message)) {
+    logger::log_error(base::paste0("hawkinR/get_teams -> ", error_message))
+    stop(error_message, call. = FALSE)
+  }
+
+
+  # 5. Parse (Return as Data Frame)
+  if (status == 200) {
+    x <- httr2::resp_body_json(
+      resp = resp,
+      check_type = TRUE,
+      simplifyVector = TRUE
     )
 
-    # create df
-    df <- x %>%
-      dplyr::transmute(
-        "id" = .data$data.id,
-        "name" = .data$data.name
-      )
 
-    df
+    logger::log_success(base::paste0("hawkinR/get_teams -> ", x[[2]], " teams returned"))
+    return(base::as.data.frame(x[[1]]))
   }
-
-  #-----#
-
-  return(Resp)
-
 }

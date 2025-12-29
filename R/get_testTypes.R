@@ -10,9 +10,11 @@
 #' Response will be a data frame containing the tests that are in the HD system.
 #' Each test type includes the following variables:
 #'
-#' **id**   *chr*   test's unique ID
-#'
-#' **name**   *chr*   test's given name
+#' | **Column Name**  | **Type** | **Description**              |
+#' |------------------|----------|------------------------------|
+#' | **canonicalId**  | *chr*    | test's unique canonical ID   |
+#' | **name**         | *chr*    | test's given name            |
+#' | **abbreviation** | *chr*    | test given name abbreviation |
 #'
 #' @examples
 #' \dontrun{
@@ -22,70 +24,36 @@
 #'
 #' }
 #'
-#' @importFrom rlang .data
+#' @importFrom logger log_info
+#'
 #' @export
 
 
+# Get Test Types -----
 get_testTypes <- function() {
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration" ))
+  # Return Data Frame of Test Types and Abbreviations
 
-  #-----#
-
-  # Check for Access Token and Expiration
-  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
-    stop("Access token not available or expired. Call get_access() to obtain it.")
-  }
-
-  #-----#
-
-  # API Cloud URL
-  urlCloud <- base::Sys.getenv("urlRegion")
-
-  # Create URL for request
-  URL <-base::paste0(urlCloud,"/test_types")
-
-  #-----#
-
-  # Call Variables
-  payload <- ""
-  encode <- "raw"
-
-  #-----#
-
-  # GET Request
-  response <- httr::VERB("GET",
-                         URL,
-                         body = payload,
-                         httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-                         httr::content_type("application/octet-stream"),
-                         encode = encode
+  # Create the data frame
+  type_df <- base::data.frame(
+    canonicalId = c(
+      "7nNduHeM5zETPjHxvm7s", "QEG7m7DhYsD6BrcQ8pic", "2uS5XD5kXmWgIZ5HhQ3A",
+      "gyBETpRXpdr63Ab2E0V8", "5pRSUQVSJVnxijpPMck3", "pqgf2TPUOQOQs6r0HQWb",
+      "r4fhrkPdYlLxYQxEeM78", "ubeWMPN1lJFbuQbAM97s", "rKgI4y3ItTAzUekTUpvR",
+      "4KlQgKmBxbOY6uKTLDFL", "umnEZPgi6zaxuw0KhUpM"
+    ),
+    name = c(
+      "Countermovement Jump", "Squat Jump", "Isometric Test", "Drop Jump",
+      "Free Run", "CMJ Rebound", "Multi Rebound", "Weigh In", "Drop Landing",
+      "TS Free Run", "TS Isometric Test"
+    ),
+    abbreviation = c("CMJ", "SJ", "ISO", "DJ", "FR", "CMJR", "MR", "WI", "DL","TSFR","TSISO")
   )
 
-  #-----#
+  # Print Outcome
+  logger::log_success(base::paste0("hawkinR/get_testTypes -> 11 test types returned"))
 
-  # Response Table
-  Resp <- if(response$status_code == 401) {
-    # Invalid Token Response
-    base::stop("Error 401: Invalid Access Token.")
-  } else  if(response$status_code == 500){
-    # Contact Support Response
-    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
-  } else  if(response$status_code == 200){
-    # Response GOOD - Run rest of script
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
-      )
-    )
-
-    x
-  }
-
-  #-----#
-
-  return(Resp)
+  return(type_df)
 
 }
+

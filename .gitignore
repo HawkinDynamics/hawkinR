@@ -1,6 +1,14 @@
+# ---- hawkinR ----
 .Rproj.user
+hawkinR.Rproj
+.Rhistory
+
+# ---- documentation outputs ----
 inst/doc
-# ignore the tests folder
-/tests/
-https://github.com/HawkinDynamics/hawkinR/tree/dev
 docs
+
+# ---- tests ----
+/tests/
+
+# ---- config & auth ----
+# User config is stored via rappdirs (outside repo) and is never committed

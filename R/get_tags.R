@@ -4,17 +4,19 @@
 #' Get the tag names and ids for all the tags in the system.
 #'
 #' @usage
-#' get_tags()
+#' get_tags(x = NULL)
+#'
+#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
 #'
 #' @return
 #' Response will be a data frame containing the tags that are in the organization.
 #' Each tag has the following variables:
 #'
-#' **id**   *chr*   tag's unique ID
-#'
-#' **name**   *chr*   tag's given name
-#'
-#' **description**   *chr*   description of tag provided by user
+#' | **Column Name** | **Type** | **Description** |
+#' |-----------------|----------|-----------------|
+#' | **id**          | *chr*    | tag's unique ID |
+#' | **name**        | *chr*    | tag's given name |
+#' | **description** | *chr*    | description of tag provided by user |
 #'
 #' @examples
 #' \dontrun{
@@ -24,78 +26,82 @@
 #'
 #' }
 #'
-#' @importFrom rlang .data
+#' @importFrom magrittr %>%
+#' @importFrom httr2 req_error req_perform resp_status resp_body_json
+#' @importFrom logger log_trace log_debug log_success log_error
+#'
 #' @export
 
+
 # Get Tags -----
-get_tags <- function() {
+get_tags <- function(x = NULL) {
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration" ))
+  # 1. ----- Set Logger -----
+  logger::log_trace(base::paste0("hawkinR -> Run: get_tags"))
 
-  #-----#
 
-  # Check for Access Token and Expiration
-  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
-    stop("Access token not available or expired. Call get_access() to obtain it.")
+  # 2. ----- Authentication (new auth manager) -----
+  if (is.null(x)) x <- get_active_conn()
+
+  # Token Lifecycle Management
+  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
+    x <- authenticate(x)
+    set_active_conn(x)
   }
 
-  #-----#
 
-  # API Cloud URL
-  urlCloud <- base::Sys.getenv("urlRegion")
+  # Log Debug
+  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+    httr2::req_url_path_append("tags")
 
-  # Create URL for request
-  URL <-base::paste0(urlCloud,"/tags")
+  reqPath <- httr2::req_dry_run(request, quiet = TRUE)
+  logger::log_debug(base::paste0(
+    "hawkinR/get_tags -> ",
+    reqPath$method, ": ",
+    reqPath$headers$host, reqPath$path
+  ))
 
-  #-----#
+  # Execute Call
+  resp <-  request |>
+    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_error(is_error = function(resp) FALSE) |>
+    httr2::req_perform()
 
-  # Call Variables
-  payload <- ""
-  encode <- "raw"
 
-  #-----#
+  # Response Status
+  status <- httr2::resp_status(resp = resp)
 
-  # GET Request
-  response <- httr::VERB("GET",
-                         URL,
-                         body = payload,
-                         httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-                         httr::content_type("application/octet-stream"),
-                         encode = encode
-  )
+  # 3. ----- Build URL Request -----
 
-  #-----#
+  error_message <- NULL
+
+
+  if (status == 401) {
+    error_message <- "Error 401: Refresh Token is invalid or expired."
+  } else if (status == 500) {
+    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+  }
+
+
+  if (!base::is.null(error_message)) {
+    logger::log_error(base::paste0("hawkinR/get_tags -> ", error_message))
+    stop(error_message, call. = FALSE)
+  }
 
   # Response Table
-  Resp <- if(response$status_code == 401) {
-    # Invalid Token Response
-    base::stop("Error 401: Invalid Access Token.")
-  } else  if(response$status_code == 500){
-    # Contact Support Response
-    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
-  } else  if(response$status_code == 200){
-    # Response GOOD - Run rest of script
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
-      )
+  if (status == 200) {
+    x <- httr2::resp_body_json(
+      resp = resp,
+      check_type = TRUE,
+      simplifyVector = TRUE
     )
 
-    # create df
-    df <- x %>%
-      dplyr::transmute(
-        "id" = .data$data.id,
-        "name" = .data$data.name,
-        "description" = .data$data.name
-      )
 
-    df
+    df <- base::as.data.frame(x[[1]])
+
+
+    logger::log_success(base::paste0("hawkinR/get_tags -> ", base::nrow(df), " tags returned"))
+    return(df)
   }
-
-  #-----#
-
-  return(Resp)
-
 }
+

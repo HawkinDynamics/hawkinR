@@ -2,29 +2,28 @@
 #'
 #' @description
 #' Get the athletes for an account. Inactive players will only be included if
-#' `inactive` parameter is set to TRUE.
+#' `includeInactive` parameter is set to TRUE.
 #'
 #' @usage
-#' get_athletes(inactive = FALSE)
+#' get_athletes(includeInactive = FALSE, x = NULL)
 #'
-#' @param inactive FALSE by default to exclude inactive players in database. Set to TRUE if you want
+#' @param includeInactive FALSE by default to exclude inactive players in database. Set to TRUE if you want
 #' inactive players included in the return.
+#'
+#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
 #'
 #' @return
 #' Response will be a data frame containing the athletes that match this query.
 #' Each athlete includes the following variables:
 #'
-#' **id**   *chr*   athlete's unique ID
-#'
-#' **name**   *chr*   athlete's given name (First Last)
-#'
-#' **active**   *logi*   athlete is active (TRUE)
-#'
-#' **teams**   *chr*   team ids separated by ","
-#'
-#' **groups**   *chr*  group ids separated by ","
-#'
-#' **external**   *chr* external ids as strings of "externalName:externalId" separated by ","
+#' | **Column Name** | **Type** | **Description** |
+#' |-----------------|----------|-----------------|
+#' | **id**          | *chr*    | athlete's unique ID |
+#' | **name**        | *chr*    | athlete's given name (First Last) |
+#' | **active**      | *bool*   | athlete is active (TRUE) |
+#' | **teams**       | *chr*    | team ids separated by "," |
+#' | **groups**      | *chr*    | group ids separated by "," |
+#' | **external**    | *chr*    | external properties will have a column of their name with the appropriate values for the athlete of `NA` if it does not apply |
 #'
 #' @examples
 #' \dontrun{
@@ -34,136 +33,124 @@
 #' df_athletes <- get_athletes()
 #'
 #' # If you want to include all athletes, including inactive athletes, include the optional
-#' # `inactive` parameter.
+#' # `includeInactive` parameter.
 #'
-#' df_wInactive <- get_athletes(inactive = TRUE)
+#' df_wInactive <- get_athletes( includeInactive = TRUE)
 #'
 #' }
 #'
+#' @importFrom magrittr %>%
+#' @importFrom httr2 req_url_query req_auth_bearer_token req_error req_perform resp_status resp_body_json
+#' @importFrom logger log_trace log_debug log_success log_error
 #'
-#' @importFrom rlang .data
 #' @export
 
+
 # Get Athletes -----
-get_athletes <- function(inactive = FALSE) {
+get_athletes <- function(includeInactive = FALSE, x = NULL) {
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration" ))
 
-  #-----#
+  # 1. ----- Set Logger -----
+  logger::log_trace(base::paste0("hawkinR -> Run: get_athletes"))
 
-  # Check for Access Token and Expiration
-  if(base::is.null(aToken) || token_exp <= base::as.numeric(base::Sys.time())) {
-    stop("Access token not available or expired. Call accToken() to obtain it.")
+
+  # 2. ----- Authentication (new auth manager) -----
+  if (is.null(x)) x <- get_active_conn()
+
+  # Token Lifecycle Management
+  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
+    x <- authenticate(x)
+    set_active_conn(x)
   }
 
-  #-----#
+  # 3. ----- Build URL Request -----
 
-  # API Cloud URL
-  urlCloud <- base::Sys.getenv("urlRegion")
+  # Query Parameters
+  params <- list()
 
-  # Create URL for request
-  URL <- if( isTRUE(inactive) ) {
-    base::paste0(urlCloud,"/athletes","?includeInactive=true")
-  } else {
-    base::paste0(urlCloud,"/athletes")
+  # Include inactive athletes
+  if (isTRUE(includeInactive)) {
+    params$includeInactive <- "true"
   }
 
-  #-----#
+  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+    httr2::req_url_path_append("athletes")
 
-  # Call Variables
-  payload <- ""
-  encode <- "raw"
+  # Only add the query if params list is not empty
+  if (length(params) > 0) {
+    request <- request |> httr2::req_url_query(!!!params)
+  }
 
-  #-----#
+  # Log the Debug
+  reqPath <- httr2::req_dry_run(request, quiet = TRUE)
 
-  # GET Request
-  response <- httr::VERB("GET",
-                   URL,
-                   body = payload,
-                   httr::add_headers(Authorization = base::paste0("Bearer ", aToken)),
-                   httr::content_type("application/octet-stream"),
-                   encode = encode
-  )
+  # Safe logging for the query string
+  query_string <- if (length(reqPath$query) > 0) paste0("?", reqPath$query) else ""
 
-  #-----#
+  logger::log_debug(base::paste0(
+    "hawkinR/get_athletes -> ",
+    reqPath$method, ": ",
+    reqPath$headers$host, reqPath$path,
+    query_string
+  ))
+
+  # Execute Call
+  resp <-  request |>
+    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_error(is_error = function(resp) FALSE) |>
+    httr2::req_perform()
+
+  # Response Status
+  status <- httr2::resp_status(resp = resp)
+
+  # 4. ----- Create Response Outputs -----
+
+
+  # Error Handler
+  error_message <- NULL
+
+
+  if (status == 401) {
+    error_message <- "Error 401: Refresh Token is invalid or expired."
+  } else if (status == 500) {
+    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+  }
+
+
+  if (!base::is.null(error_message)) {
+    logger::log_error(base::paste0(
+      "hawkinR/get_athletes -> ", error_message
+    ))
+    stop(error_message)
+  }
 
   # Response Table
-  Resp <- if(response$status_code == 401) {
-    # Invalid Token Response
-    base::stop("Error 401: Invalid Access Token.")
-  } else  if(response$status_code == 500){
-    # Contact Support Response
-    base::stop("Error 500: Something went wrong. Please contact support@hawkindynamics.com")
-  } else  if(response$status_code == 200){
-    # Response GOOD - Run rest of script
-    x <- data.frame(
-      jsonlite::fromJSON(
-        httr::content(response, "text")
-      )
-    )
+  if (status == 200) {
+    # Convert JSON Response
+    x <- httr2::resp_body_json(resp = resp,
+                               check_type = TRUE,
+                               simplifyVector = TRUE)
 
-    # Prepare externalId vector
-    external <- c()
+    # 5. ----- Sort Response Athlete Data -----
 
-    # Loop externalId columns
-    for (i in 1:nrow(x)) {
 
-      extRow <- NA
+    logger::log_success(base::paste0("hawkinR/get_athletes -> ", x[[2]], " athletes returned"))
 
-      # Check if data.external is not empty
-      if (length(x$data.external) > 0) {
 
-        for (n in 1:length(x$data.external)) {
+    # Create data frame from returns data
+    df <- base::as.data.frame(x[[1]])
 
-          # get ext name
-          extN <- base::names(x$data.external)[n]
 
-          # get ext id
-          extId <- x$data.external[[i, n]]
-
-          # create new external id name:id string
-          newExt <- base::paste0(extN, ":", extId)
-
-          # add new externalId string to row list if needed
-          extRow <- if (base::is.na(extId)) {
-            # if extId NA, no change
-            extRow
-          } else {
-            # Add new string to extId Row
-            extRow <- if (base::is.na(extRow)) {
-              base::paste0(newExt)
-            } else {
-              base::paste0(extRow, ",", newExt)
-            }
-          }
-
-        }
-      }
-
-      external <- base::c(external, extRow)
+    # Handle External Properties
+    if (base::ncol(df) > 5) {
+      a <- df[, 1:5]
+      b <- df[, 6:base::ncol(df)]
+      return(base::cbind(a, b))
     }
 
-    # Create df
-    df <- x %>%
-      dplyr::transmute(
-        "id" = .data$data.id,
-        "name" = .data$data.name,
-        "active" = .data$data.active,
-        "teams" = base::sapply(.data$data.teams, function(x) base::paste(x, collapse = ",")),
-        "groups" = base::sapply(.data$data.groups, function(x) base::paste(x, collapse = ","))
-      )
 
-    # add externalId column
-    df <- base::cbind(df, external)
-
-    # return clean data frame
-    df
+    return(df)
   }
-
-  #-----#
-
-  return(Resp)
-
 }
+
+
