@@ -5,8 +5,6 @@ vignette: >
   %\VignetteIndexEntry{Getting Started With hawkinR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-dependencies:
-  - knitr
 ---
 
 ```{r setup, include = FALSE}
@@ -14,28 +12,36 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-
 library(knitr)
 ```
 
 ## Initializing Your Session
 
-Our API uses bearer token authentication. This form of authentication is executed by providing your unique API Integration Key in a token request to your server. Which then the server will provide you with an access token in it's response.
+In **hawkinR v2.0**, we use a modernized connection system. Our API uses bearer token authentication, but the package now manages the exchange of your Integration Key (Refresh Token) for an ephemeral Access Token automatically in the background.
 
-This process is what is executed within the `get_access` function of the package. We use this function to initialize our session and use all of the other functions of the hawkinR package. By using `get_access` and providing the necessary parameters, your access token will be stored in your session and accessible to any subsequent calls.
+### 1. Secure Credential Storage
 
-```{r getAccess, eval=FALSE}
-# use get_access to intialize session
-get_access( refreshToken = "your_integration_key", region = "your_region")
+Instead of pasting your secret key into every script, use `hd_auth_store()`. This saves your key securely in your operating system's keychain (like macOS Keychain or Windows Credential Manager). You only need to do this once per machine.
 
-"[1] Success! Your access token was recieved and stored for use by other hawkinR functions. Your token will expire at 2023-11-09 09:44:25"
+```{r store_credentials, eval=FALSE}
+library(hawkinR)
+
+# Run this once to save your key securely
+hd_auth_store(token = "your_integration_key_here")
 ```
 
-If you need more information how to create an API Integration Key, you can check out our article on [How to create an API token](https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Flearning.hawkindynamics.com%2Fknowledge%2Fhow-to-create-an-api-token&data=05%7C01%7Clauren%40hawkindynamics.com%7C85073978788f4b466cb808dbdfd5ae0c%7C4d7400c0ac5b4aa08f8ac3ebebeaefc7%7C0%7C0%7C638349881078418843%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C3000%7C%7C%7C&sdata=S%2BO%2FLsWLJ6HZDxxI5ydCAXzf21m%2BMTvCB8gx%2BXNRMzg%3D&reserved=0 "How to create an API token"). Which has details on how to do this on your cloud site.
+### 2. Connecting to the Cloud
 
-some user may feel they are in a situation where you can securely store your integration key on your device locally. You will be interested in our other article [How to Store Your API Key](vignettes/Store_API_Key_Locally.html).
+Use `hd_connect()` to initialize your session. This function performs the initial handshake and sets up your organization settings.
 
-> Please note, only the Org Administrator (the account with the highest level of access) is able to create API tokens.  Please contact techsupport\@hawkindynamics.com if you are unsure of your organization's administrator.
+*Note: The `org_id` defaults to "v1" for most users*
+
+```{r initialize, eval=FALSE, message=FALSE, echo=TRUE}
+# Initialize the session using the 'default' profile stored above
+hd_connect(region = "Americas")
+
+#> hawkinR -> Successfully authenticated as 'default'
+```
 
 ## Making Your First Calls
 
@@ -45,13 +51,17 @@ The package was built to allow you the ability to make requests as specific as y
 
 In this example, I will store athlete information in an object called 'roster', team information in an object called 'teams', and group information in an object named 'groups'.
 
-### Get Athletes:
+### Exploring Your Organization
+
+Once connected, you can retrieve the structural data of your organization. These IDs are often used as filters when pulling performance tests.
+
+#### Get Athletes:
 
 Returns a data frame with variables of: id, name, active, teams, groups, and external. If an athlete has external fields assigned to them, the string will contain the external name and external ID separated by a colon. And multiple externals will be separated by a comma.
 
 ```{r roster, eval=FALSE}
-# store player info in object called roster. 'inactive' is default to FALSE. Set to TRUE if you want to include inactive athletes.
-roster <- get_athletes(inactive = FALSE)
+# store player info in object called roster. 'includeInactive' is default to FALSE. Set to TRUE if you want to include inactive athletes.
+roster <- get_athletes(includeInactive = FALSE)
 ```
 
 ```{r rosterResp, echo=FALSE}
@@ -67,7 +77,7 @@ roster <- data.frame(
 kable(roster)
 ```
 
-### Get Teams:
+#### Get Teams:
 
 Returns a data frame with variables: id and name.
 
@@ -85,7 +95,7 @@ teams <- data.frame(
 kable(teams)
 ```
 
-### Get Groups:
+#### Get Groups:
 
 Returns a data frame with variables: id and name.
 
@@ -126,4 +136,16 @@ kable(tests)
 
 ------------------------------------------------------------------------
 
-With these objects, you can access any of the IDs and information you would need for your test queries. See the other vignettes [How to Get Tests](vignettes/Get_Tests.html) and [Accessing Force-Time Data of A Test](vignettes/Get_ForceTime_Data.html) for specific details on ways to execute those queries.
+## Pulling Test Data
+
+The core of the package is the `get_tests()` function. In v2.0, this single function replaces the multiple `get_tests_*` functions from previous versions. You can filter by date, athlete, team, or test type directly in one call.
+
+```{r getTests, eval=FALSE}
+# Example: Pull all CMJ tests from the last 30 days
+cmj_tests <- get_tests(
+  from = "2023-10-01", 
+  typeId = "7nNduHeM5zETPjHxvm7s"
+)
+```
+
+With these objects, you can access any of the IDs and information you would need for your test queries. For a deeper dive into filtering data, see the [Get Tests](vignettes/Get_Tests.html) vignette.

@@ -5,51 +5,65 @@ vignette: >
   %\VignetteIndexEntry{Initialize and Manage Event Logging Features}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-dependencies:
-  - knitr
 ---
 
-Beginning with release of v1.1.0 of hawkinR, users will be able to take advantage of event logging with the addition of `logger v0.3.0`. This will now make it easier for users to understand background processes of hawkinR, as well as debug in a more efficient manner.
+Beginning with **v2.0.0**, logging is now a core component of the `HawkinAuth` object. This ensures that every API request, token refresh, and data transformation is recorded according to your preferred verbosity.
 
 ------------------------------------------------------------------------
 
 ## 1. Event Logging With Logger
 
-If you are not only using R in the interactive console for ad-hoc data analysis, but running eg batch jobs (for ETL, reporting, modeling, forecasting etc) as well, then logging the status(changes) of your script is a must so that later on you can review / debug what have happened. Logger is a lightweight, modern and flexibly logging utility for R -- heavily inspired by the futile.logger R package and logging Python module.
+hawkinR utilizes the `logger` package to provide status changes, background processes, and debugging information. This is particularly useful for batch jobs (ETL) where monitoring the health of the connection is critical.
 
-## 2. Logs With hawkinR
+## 2. Logs With hawkinR v2.0
 
-To simplify logging within hawkinR, the logger package features have been mostly preset with exception to 3 primary attributes that can be initialized and controlled by the `initialize_logger` function: Appender, Threshold, and Log File.
+In the current version, logging is initialized when you establish your connection via `hd_connect()`. You no longer need a separate initialization step.
 
-``` r
-initialize_logger(log_output = "stdout", log_threshold_stdout = "INFO", log_file = "hawkinRlog.log", log_threshold_file = "INFO")
+### Log Levels
+
+You can set the `log_level` parameter in `hd_connect()` to one of the following: \* `"TRACE"`: Detailed execution logs (including request paths). \* `"DEBUG"`: Information useful for debugging. \* `"INFO"`: (Default) Standard process updates. \* `"WARN"`: Warnings about token expiration or non-critical issues. \* `"ERROR"`: Critical failures.
+
+## 3. Examples
+
+### Basic Logging
+
+By default, `hd_connect()` sets the log level to "INFO", which prints successful connection and data retrieval messages to the console.
+
+```{r logs_info, eval=FALSE}
+library(hawkinR)
+
+# Standard connection with INFO logging
+hd_connect(profile = "default")
 ```
 
-### Appender
+### Verbose Debugging
 
-The appender gives direction as to where the output of the event log messages should go. This can be controlled with the `log_output` argument. Default to "stdout", the log messages with print to the standard output of the console. Users can select have the option to change it to "file", directing the messages to a log file of their choice, or "both".
+If you are troubleshooting a specific issue (e.g., an "Unauthorized" error or unexpected data filtering), use the "DEBUG" or "TRACE" levels.
 
-### Threshold
+```{r verbose_debugging, eval=FALSE}
+# Detailed TRACE logging to see exact API request parameters
+hd_connect(profile = "default", log_level = "TRACE")
 
-Depending on the `log_output` argument, you will want to select the message threshold for the selected output (or both). The threshold is the minimum message level of importance that you care to have printed (levels include: "TRACE", "DEBUG", "INFO", "SUCCESS", "WARN", "ERROR", "FATAL", "OFF"). The hawkinR package contains logs from as simple as process execution logs as "TRACE" logs, to process ending "ERROR" logs describing the execution failure. Log thresholds within hawkinR are default to "INFO".
+# Fetch data; logs will show the URL and parameters being sent
+tests <- get_tests(from = "2023-01-01")
+```
 
-Along with passing `log_outout = "both"`, users can set separate and different thresholds for stdout and log files. This can be helpful when working with the package during app development and stdout messages may be of little to no importance, while an event log can be very helpful for debugging.
+### Silent Operation
 
-### Log File
+For production environments where you only want to see critical failures, set the level to "WARN" or "ERROR".
 
-If `log_output` is set to "file" or "both", log messages will be sent to a `.log` file. By default the file is named "hawkinRlog.log" and will be saved to the project directory. But this behavior can be changed by passing a new name and/or location argument to `log_file`. If you want to change the location of the file, simply provide the desired path before the name of the file.
+```{r, eval=FALSE}
+# Only log if something goes wrong
+hd_connect(profile = "default", log_level = "ERROR")
+```
 
-## Examples
+## 4. Advanced: Logging to Files
 
-```{r logs, eval=FALSE}
+The package handles console output (stdout) by default. If you wish to redirect logs to a file for long-term auditing, you can use the logger package functions directly after connecting:
 
-# Log only error messages to the console
-initialize_logger(log_output = "stdout", log_threshold_stdout = "ERROR")
+```{r advanced_logging, eval=FALSE}
+hd_connect()
 
-# Log all messages to the default `hawkinRlog.log` file
-initialize_logger(log_output = "file", log_threshold_file = "TRACE")
-
-# Log all messages to the log file in the log folder subdirectory, and only success and above to the console
-initialize_logger(log_output = "both",log_file = "/logFiles/MyLog.log", log_threshold_file = "TRACE", log_threshold_stdout = "SUCCESS")
-
+# Direct all subsequent hawkinR logs to a file
+logger::log_appender(logger::appender_file("hawkin_audit.log"))
 ```

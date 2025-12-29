@@ -4,10 +4,12 @@
 \alias{get_forcetime}
 \title{Get Force-Time Data}
 \usage{
-get_forcetime(testId)
+get_forcetime(testId, x = NULL)
 }
 \arguments{
 \item{testId}{Give the unique test id of the trial you want to be called.}
+
+\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
 }
 \value{
 Response will be a data frame containing the following:\tabular{lll}{

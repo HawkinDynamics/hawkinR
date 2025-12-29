@@ -1,5 +1,58 @@
 # Change Log
 
+## hawkinR v2.0.0
+
+### Breaking Changes
+
+* **Removed `get_access()`** - Replaced by `hd_connect()` for connection initialization
+* **Removed `get_tests_ath()`, `get_tests_group()`, `get_tests_team()`, `get_tests_type()`** - Consolidated into unified `get_tests()` function with optional filter parameters (`athleteId`, `groupId`, `teamId`, `typeId`)
+* **Environment variable format changed** - Now uses `HAWKIN_KEY_{PROFILE_NAME}` pattern for production deployments
+
+### New Authentication System
+
+* Complete redesign of authentication using S7 object-oriented framework:
+  * `HawkinConfig` class for configuration settings (profile, org_id, environment, log_level)
+  * `HawkinAuth` class for managing API session state and token lifecycle
+
+* Profile-based authentication with secure credential storage:
+  * Credentials stored securely in OS keychain (macOS Keychain, Windows Credential Manager) via `keyring` package
+  * Support for multiple named profiles (e.g., "dev", "prod", "teamA")
+  * Dual environment modes: "development" (keyring) and "production" (environment variables)
+
+* Automatic on-demand token refresh:
+  * Tokens refresh automatically when within 5 minutes of expiration
+  * Removed background token-monitoring loops for improved reliability and performance
+
+* Regional API endpoints:
+  * Users specify `region` ("Americas", "Europe", "APAC") when connecting
+  * Base URL is computed automatically from region
+
+### New User-Facing Functions
+
+* `hd_connect()` - Initialize connection with profile, region, and configuration options
+* `hd_auth_store()` - Securely save refresh token to OS credential store
+* `hd_auth_reset()` - Delete stored credentials from OS keychain
+
+### API Function Updates
+
+* All `get_*()` and `create_*()` functions now accept optional `x` parameter for explicit connection objects
+* `get_tests()` now unified with optional filter parameters: `athleteId`, `typeId`, `teamId`, `groupId`
+* Added `get_metrics()` for retrieving the metric library
+* Added `get_testTypes()` for test type metadata
+
+### Dependencies
+
+* Added `S7` package for modern OOP class definitions
+* Added `keyring` package for secure OS credential storage
+* Removed `later` package (no longer needed without background monitoring)
+
+### Documentation
+
+* New `vignettes/authentication.Rmd` guide covering local development, multiple profiles, and production deployment
+* Updated all function documentation with new authentication patterns
+
+---
+
 ## hawkinR v1.1.5
 
 * fix to R/utils/ParamValidation duplicated date format check.

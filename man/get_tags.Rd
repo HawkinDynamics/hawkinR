@@ -4,7 +4,10 @@
 \alias{get_tags}
 \title{Get Tags}
 \usage{
-get_tags()
+get_tags(x = NULL)
+}
+\arguments{
+\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
 }
 \value{
 Response will be a data frame containing the tags that are in the organization.

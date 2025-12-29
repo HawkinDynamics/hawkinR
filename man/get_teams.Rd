@@ -4,7 +4,10 @@
 \alias{get_teams}
 \title{Get Teams}
 \usage{
-get_teams()
+get_teams(x = NULL)
+}
+\arguments{
+\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
 }
 \value{
 Response will be a data frame containing the teams that are in the organization.

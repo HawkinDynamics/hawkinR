@@ -4,7 +4,10 @@
 \alias{get_groups}
 \title{Get Groups}
 \usage{
-get_groups()
+get_groups(x = NULL)
+}
+\arguments{
+\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
 }
 \value{
 Response will be a data frame containing the groups that are in the organization.

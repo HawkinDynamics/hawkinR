@@ -5,9 +5,11 @@
 #' Calculated velocity, displacement, and power at each time interval will also be included.
 #'
 #' @usage
-#' get_forcetime(testId)
+#' get_forcetime(testId, x = NULL)
 #'
 #' @param testId Give the unique test id of the trial you want to be called.
+#'
+#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
 #'
 #' @return
 #' Response will be a data frame containing the following:
@@ -30,181 +32,133 @@
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom httr2 request req_url_path_append req_auth_bearer_token req_error req_perform resp_status resp_body_json
-#' @importFrom rlang .data
+#' @importFrom httr2 req_url_path_append req_error req_perform resp_status resp_body_json
 #' @importFrom stringr str_replace_all
 #' @importFrom lubridate as_datetime
-#' @importFrom logger log_info log_formatter formatter_pander
+#' @importFrom logger log_trace log_debug log_success log_error
 #'
 #' @export
 
 
 ## Get Force Time Data -----
-get_forcetime <- function(testId) {
+get_forcetime <- function(testId, x = NULL) {
+
 
   # 1. ----- Set Logger -----
-  # Log Trace
   logger::log_trace(base::paste0("hawkinR -> Run: get_forcetime"))
 
+
   # 2. ----- Parameter Validation -----
-
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
-
-  #-----#
-
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
-
-  #-----#
-
-  # Check for Access Token and Expiration
-  if (base::is.null(aToken) ||
-      token_exp <= base::as.numeric(base::Sys.time())) {
-    logger::log_error("hawkinR/get_forcetime -> Access token not available or expired. Call get_access() to obtain it.")
-    stop("Access token not available or expired. Call get_access() to obtain it.")
-  } else {
-    # Log Debug
-    logger::log_debug(base::paste0("hawkinR/get_forcetime -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
-  }
-
-  #-----#
-
-  # Validate Test Id Parameter
   if (!base::is.character(testId)) {
-    logger::log_error(base::paste0("hawkinR/get_forcetime -> Incorrect testId. Must be a character string."))
-    base::stop("Incorrect testId. Must be a character string.")
+    logger::log_error("hawkinR/get_forcetime -> Incorrect testId. Must be a character string.")
+    stop("Incorrect testId. Must be a character string.", call. = FALSE)
   }
 
-  # 2. ----- Build URL Request -----
 
-  # Create URL Path
-  urlPath <- base::paste0("forcetime/", testId)
+
+  # 3. ----- Authentication (new auth manager) -----
+  if (is.null(x)) x <- get_active_conn()
+
+  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
+    x <- authenticate(x); set_active_conn(x)
+  }
 
   # Build Request
-  request <- httr2::request(base::Sys.getenv("urlRegion")) %>%
-    # Add URL Path
-    httr2::req_url_path_append(urlPath) %>%
-    # Supply Bearer Authentication
-    httr2::req_auth_bearer_token(token = aToken)
+  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+    httr2::req_url_path_append("forcetime") |>
+    httr2::req_url_path_append(testId)
 
   # Log Debug
   reqPath <- httr2::req_dry_run(request, quiet = TRUE)
   logger::log_debug(base::paste0(
-    "hawkinR/get_forcetime -> ",reqPath$method, ": ", reqPath$headers$host, reqPath$path))
+    "hawkinR/get_forcetime -> ",
+    reqPath$method, ": ",
+    reqPath$headers$host, reqPath$path
+  ))
+
 
   # Execute Call
-  resp <- request %>%
-    httr2::req_error(is_error = function(resp) FALSE) %>%
+  # Execute Call
+  resp <-  request |>
+    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
+
 
   # Response Status
   status <- httr2::resp_status(resp = resp)
 
   # 4. ----- Create Response Outputs -----
-
-  # Error Handler
   error_message <- NULL
 
+
   if (status == 401) {
-    error_message <- 'Error 401: Refresh Token is invalid or expired.'
+    error_message <- "Error 401: Refresh Token is invalid or expired."
   } else if (status == 404) {
-    base::stop("Error 404: Requested Resource Not Found")
+    stop("Error 404: Requested Resource Not Found", call. = FALSE)
   } else if (status == 500) {
-    error_message <- 'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
+    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
   }
 
+
   if (!base::is.null(error_message)) {
-    logger::log_error(base::paste0("hawkinR/get_forcetime -> ",error_message))
-    stop(error_message)
+    logger::log_error(base::paste0("hawkinR/get_forcetime -> ", error_message))
+    stop(error_message, call. = FALSE)
   }
 
   # Response Table
-  if(status == 200){
-    # Response GOOD - Run rest of script
+  if (status == 200) {
     x <- httr2::resp_body_json(
       resp = resp,
       check_type = TRUE,
       simplifyVector = TRUE
     )
 
-    # Check For Returned Test Results
-    if(length(x) < 1) {
-      logger::log_error(base::paste0("hawkinR/get_forcetime -> No test data returned"))
-      stop("No test data returned")
+
+    if (length(x) < 1) {
+      logger::log_error("hawkinR/get_forcetime -> No test data returned")
+      stop("No test data returned", call. = FALSE)
     }
 
     # 5. ----- Sort Test Type Data -----
 
-    # Test ID
+    # ----- Parse Metadata -----
     testTypeID <- x[[1]][[1]]
-
-    # Test Type Name with Tags
     testName <- stringr::str_replace_all(x[[1]][[2]], "-", " - ")
-
-    # Test Type Canonical ID
     testCanonical <- x[[1]][[3]]
 
-    # 6. ----- Sort Athlete Data -----
 
-    # Athlete ID
     athleteID <- x[[3]][[1]]
-
-    # Athlete Name
     athleteName <- x[[3]][[2]]
+    athleteStatus <- if (x[[3]][[5]]) "active" else "inactive"
 
-    # Athlete Active Status
-    athleteStatus <- if(x[[3]][[5]]) "active" else "inactive"
 
-    # 7. ----- Sort Trial Info -----
-
-    # Time stamp
     timestamp <- x[[4]]
+    dateTime <- lubridate::as_datetime(timestamp, tz = base::Sys.timezone())
 
-    # Date Time
-    dateTime <- lubridate::as_datetime(x[[4]], tz = base::Sys.timezone())
 
-    # 8. ----- Create Test Data Frame -----
-
-    # Time
+    # ----- Force-Time Series -----
     time_s <- x[[5]]
-
-    # Right Force
     right_force_N <- x[[6]]
-
-    # Left Force
     left_force_N <- x[[7]]
-
-    # Combined Force
     combined_force_N <- x[[8]]
-
-    # Velocity
     velocity_m_s <- x[[9]]
-
-    # Displacement
     displacement_m <- x[[10]]
-
-    # Power
     power_W <- x[[11]]
 
     # Data Frame Output
-    ft <- if(testCanonical %in% c(
+    ft <- if (testCanonical %in% c(
       "r4fhrkPdYlLxYQxEeM78", # Multi Rebound
       "2uS5XD5kXmWgIZ5HhQ3A", # Isometric
       "5pRSUQVSJVnxijpPMck3", # Free Run
-      "ubeWMPN1lJFbuQbAM97s"  # Weigh In
+      "ubeWMPN1lJFbuQbAM97s" # Weigh In
     )) {
-      base::data.frame(
-        time_s,
-        right_force_N,
-        left_force_N,
-        combined_force_N
-      )
-    } else if(testCanonical %in% c("4KlQgKmBxbOY6uKTLDFL", # TruStrength
-                                   "umnEZPgi6zaxuw0KhUpM")) {
-      base::data.frame(
-        time_s,
-        combined_force_N
-      )
+      base::data.frame(time_s, right_force_N, left_force_N, combined_force_N)
+    } else if (testCanonical %in% c(
+      "4KlQgKmBxbOY6uKTLDFL", # TruStrength
+      "umnEZPgi6zaxuw0KhUpM"
+    )) {
+      base::data.frame(time_s, combined_force_N)
     } else {
       base::data.frame(
         time_s,
@@ -219,54 +173,25 @@ get_forcetime <- function(testId) {
 
     # 9. ----- Check For TriAxial data -----
 
-    # X Left Force
-    if (length(x[[12]]) > 0) {ft$x_left_force_N <- x[12]}
+    if (length(x[[12]]) > 0) ft$x_left_force_N <- x[[12]]
+    if (length(x[[13]]) > 0) ft$x_right_force_N <- x[[13]]
+    if (length(x[[14]]) > 0) ft$y_left_force_N <- x[[14]]
+    if (length(x[[15]]) > 0) ft$y_right_force_N <- x[[15]]
+    if (length(x[[16]]) > 0) ft$x_left_moments <- x[[16]]
+    if (length(x[[17]]) > 0) ft$x_right_moments <- x[[17]]
+    if (length(x[[18]]) > 0) ft$y_left_moments <- x[[18]]
+    if (length(x[[19]]) > 0) ft$y_right_moments <- x[[19]]
 
-    # X Right Force
-    if (length(x[[13]]) > 0) {ft$x_right_force_N <- x[13]}
-
-    # Y Left Force
-    if (length(x[[14]]) > 0) {ft$y_left_force_N <- x[14]}
-
-    #  Y Right Force
-    if (length(x[[15]]) > 0) {ft$y_right_force_N <- x[15]}
-
-    # X Left Moments
-    if (length(x[[16]]) > 0) {ft$x_left_moments <- x[16]}
-
-    # X Right Moments
-    if (length(x[[17]]) > 0) {ft$x_right_moments <- x[17]}
-
-    # Y Left Moments
-    if (length(x[[18]]) > 0) {ft$y_left_moments <- x[18]}
-
-    # Y Right Moments
-    if (length(x[[19]]) > 0) {ft$y_right_moments <- x[19]}
-
-    # 10. ----- Returns -----
-
-    # Output Message
-    mssg <- base::paste0( "Test [",
-                          testId,
-                          "] is a `",
-                          testName,
-                          "` by athlete ",
-                          athleteID,
-                          " [",athleteName,
-                          " (", athleteStatus,
-                          ")] at ",
-                          timestamp,
-                          " [",
-                          dateTime,
-                          " ",
-                          base::Sys.timezone(),
-                          "]."
+    # 10. ----- Success Log + Return -----
+    msg <- base::paste0(
+      "Test [", testId, "] is a `", testName,
+      "` by athlete ", athleteID, " [", athleteName,
+      " (", athleteStatus, ")] at ", timestamp, " [",
+      dateTime, " ", base::Sys.timezone(), "]."
     )
 
-    # Print to Log
-    logger::log_success(base::paste0("hawkinR/get_forcetime -> ", mssg))
 
-    base::return(ft)
+    logger::log_success(base::paste0("hawkinR/get_forcetime -> ", msg))
+    return(ft)
   }
 }
-

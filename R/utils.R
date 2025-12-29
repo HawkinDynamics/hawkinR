@@ -1,108 +1,38 @@
+# Internal Utility Functions
 #--------------------#
 
+#' @title Utility Functions
+#' @description Internal helper functions for parameter validation and data cleaning.
 
-#' Check Authentication Validity
-#'
-#' Takes the current token expiration and validates it
-#' @keywords internal
-check_token_validity <- function() {
-  token_expiration <- as.numeric(Sys.getenv("accessToken_expiration"))
-  if (Sys.time() > as.POSIXct(token_expiration, origin = "1970-01-01")) {
-    Sys.setenv(accessToken_valid = FALSE)
-  } else {
-    Sys.setenv(accessToken_valid = TRUE)
+
+#--------------------#
+
+#' Check for interactive mode for sensitive prompts
+#' @noRd
+check_interactive <- function() {
+  if (!interactive()) {
+    stop("This function requires an interactive session to securely enter credentials.", call. = FALSE)
   }
-  invisible(NULL)  # To avoid printing
 }
 
 
 #--------------------#
 
 
-#' Monitor Authentication Validity
-#'
-#' Looped checks of access taken validation
-#'
-#' @keywords internal
-monitor_token <- function() {
-  tryCatch(
-    {
-      check_token_validity()  # Perform the validity check
-      later::later(monitor_token, 5)  # Schedule the next check
-    },
-    error = function(e) {
-      message("An error occurred in monitor_token: ", e$message)
-      # Optionally retry scheduling in case of recoverable errors
-      later::later(monitor_token, 5)
-    }
-  )
-}
-
-
-#--------------------#
-
-
-#' Validate time stamp arguments and allow for date character
-#'
-#' This function checks `from` and `to` arguments for valid inputs of epoch or
-#' a date as a character string.
-#'
-#' @param x A data frame containing flattened athlete test data.
-#' @return An epoch time stamp
-#' @keywords internal
+#' Validate Timestamp
+#' @param x Date string or numeric timestamp
+#' @return Numeric Unix timestamp
+#' @noRd
 validate_timestamp <- function(x) {
-
-  # Helper function to check if a string is in "yyyy-mm-dd" format
-  is_valid_date <- function(date_str) {
-    tryCatch({
-      base::as.Date(date_str, format = "%Y-%m-%d")
-      TRUE
-    }, error = function(e) {
-      FALSE
-    })
+  if (is.null(x)) return(NULL)
+  if (is.numeric(x)) return(x)
+  if (is.character(x)) {
+    # Attempt conversion from YYYY-MM-DD
+    ts <- tryCatch(as.POSIXct(x), error = function(e) NA)
+    if (is.na(ts)) stop("Invalid date format. Use 'YYYY-MM-DD' or Unix timestamp.", call. = FALSE)
+    return(as.numeric(ts))
   }
-
-  # If argument is numeric, assume it's an epoch timestamp
-  if (base::is.numeric(x)) {
-    return(x)
-  }
-
-  # If argument is a character, check if it's a valid date string
-  if (base::is.character(x)) {
-    if (is_valid_date(x)) {
-      # Convert date string to epoch timestamp
-      d <- base::as.numeric(
-        base::as.POSIXct(x, format = "%Y-%m-%d", tz = "UTC")
-      )
-
-      # Check for incorrect format
-      if (base::is.na(d)) {
-        stop(
-          logger::log_error(
-            paste("Error: The argument is not a valid date in 'yyyy-mm-dd' format.")
-          )
-        )
-      } else {
-        return(d)
-      }
-
-    } else {
-      stop(
-        logger::log_error(
-          paste("Error: The argument is not a valid date in 'yyyy-mm-dd' format.")
-        )
-      )
-    }
-  }
-
-  # If neither, return an error
-  stop(
-    logger::log_error(
-      paste(
-        "Error: The argument is neither a valid epoch timestamp nor a valid date string."
-      )
-    )
-  )
+  stop("Timestamp must be numeric or character string.", call. = FALSE)
 }
 
 
@@ -116,6 +46,7 @@ validate_timestamp <- function(x) {
 #' @return no object returned.
 #' @importFrom stats na.omit
 #' @keywords internal
+#' @noRd
 ParamValidation <- function(arg_athleteId = NULL, arg_testTypeId = NULL, arg_teamId = NULL, arg_groupId = NULL) {
 
   # 1. Validate Parameter Classes
@@ -124,8 +55,17 @@ ParamValidation <- function(arg_athleteId = NULL, arg_testTypeId = NULL, arg_tea
     stop("Error: athleteId should be a character string of an athlete ID. Example: 'athleteId'")
   }
   # Test Type Id
-  if (!is.null(arg_testTypeId) && !is.character(arg_testTypeId)) {
-    stop("Error: typeId incorrect. Check your entry")
+  if (!is.null(arg_testTypeId)) {
+    if (!is.character(arg_testTypeId)) {
+      stop("Error: typeId incorrect. Check your entry")
+    }
+
+    # NEW: Validate that the ID actually maps to a known test type
+    validated_id <- TestIdCheck(arg_testTypeId)
+    if (validated_id == "") {
+      stop(paste0("Error: Unknown test type '", arg_testTypeId,
+                  "'. Please check the name or abbreviation."), call. = FALSE)
+    }
   }
   # Team Id
   if (!is.null(arg_teamId) && !(is.character(arg_teamId) || is.list(arg_teamId))) {
@@ -169,6 +109,7 @@ ParamValidation <- function(arg_athleteId = NULL, arg_testTypeId = NULL, arg_tea
 #' @param arg_df Data frame to be evaluated.
 #' @return data frame of test type information
 #' @keywords internal
+#' @noRd
 TestTypePrep <- function(arg_df) {
 
   # 1. Separate Test Type Columns from Tags
@@ -234,6 +175,7 @@ TestTypePrep <- function(arg_df) {
 #' @param arg_df Data frame to be evaluated.
 #' @return data frame of test type information
 #' @keywords internal
+#' @noRd
 AthletePrep <- function(arg_df) {
 
   # 1. Isolate Expected Athlete Columns from Athlete Section
@@ -269,6 +211,7 @@ AthletePrep <- function(arg_df) {
 #' @return testId or error
 #' @importFrom dplyr filter
 #' @keywords internal
+#' @noRd
 TestIdCheck <- function(arg_id) {
 
   # Create the data frame
@@ -310,6 +253,7 @@ TestIdCheck <- function(arg_id) {
 #' @return JSON string
 #' @importFrom jsonlite toJSON
 #' @keywords internal
+#' @noRd
 AddAthleteJSON <- function(arg_df) {
   # Create blank list for athletes
   x <- list()
@@ -381,6 +325,7 @@ AddAthleteJSON <- function(arg_df) {
 #' @return JSON string
 #' @importFrom jsonlite toJSON
 #' @keywords internal
+#' @noRd
 UpdateAthleteJSON <- function(arg_df) {
   # Create blank list for athletes
   x <- list()
@@ -466,6 +411,7 @@ UpdateAthleteJSON <- function(arg_df) {
 #' @importFrom dplyr mutate
 #' @importFrom dplyr across
 #' @keywords internal
+#' @noRd
 dfTests_flat <- function(arg_df) {
 
   # Supplied data frame
@@ -513,6 +459,7 @@ dfTests_flat <- function(arg_df) {
 #' @return A data frame where the specified columns have been converted to nested lists.
 #' @importFrom dplyr mutate across
 #' @keywords internal
+#' @noRd
 dfTests_expand <- function(arg_df) {
 
   # Supplied data frame
@@ -548,6 +495,7 @@ dfTests_expand <- function(arg_df) {
 #' @importFrom dplyr mutate across
 #' @importFrom tidyselect where
 #' @keywords internal
+#' @noRd
 dfDatetoChar <- function(arg_df) {
 
   # Supplied data frame

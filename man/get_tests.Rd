@@ -5,6 +5,7 @@
 \title{Get All Tests or Sync Tests}
 \usage{
 get_tests(
+ x = NULL,
  from = NULL,
  to = NULL,
  sync = FALSE,
@@ -16,6 +17,8 @@ get_tests(
  )
 }
 \arguments{
+\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
+
 \item{from}{Optionally supply a time frame \strong{start} value. Accepts either:
 \itemize{
 \item A Unix timestamp as an \code{integer} (e.g., \code{1689958617}), or
@@ -63,7 +66,7 @@ are returned in these configuration. Be default, \code{includeInactive} is set t
 To return all tests, including disabled trials, set \code{includeInactive} to \code{TRUE}.}
 }
 \value{
-Response will be a data frame containing the trials within the time range
+A data frame containing test trials and their metrics. Each row represents a single test trial.
 (if specified).\tabular{lll}{
    \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
    \strong{id} \tab \emph{str} \tab Test trial unique ID \cr
@@ -93,9 +96,8 @@ unless \code{typeId} is provided, then only the metrics of that test type will b
 If a trial does not have data for a variable it is returned NA.
 }
 \description{
-Get the tests for an account. You can specify a time frame from, or to, which the tests
-should
-come (or be synced).
+Retrieves test data from the Hawkin Dynamics API. This function replaces all previous
+\verb{get_tests_*} functions. It can filter by athlete, team, group, date range, or sync timestamp.
 }
 \examples{
 \dontrun{

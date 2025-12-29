@@ -15,9 +15,11 @@
 #' | **external property** | *chr* | *optional* | External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. Use "lowercase" or "snake_case" styles for column names. |
 #'
 #' @usage
-#' create_athletes(athleteData)
+#' create_athletes(athleteData, x = NULL)
 #'
 #' @param athleteData A data frame of the athletes to be created. The data frame must follow the schema:
+#'
+#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
 #'
 #' @return
 #' If successful, a confirmation message will be printed with the number of successful athletes created.
@@ -54,31 +56,18 @@
 
 
 # Create Athletes -----
-create_athletes <- function(athleteData) {
+create_athletes <- function(athleteData, x = NULL) {
+
 
   # 1. ----- Set Logger -----
-  # Log Trace
   logger::log_trace(base::paste0("hawkinR -> Run: create_athletes"))
 
-  # 2. ----- Parameter Validation -----
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
+  # 2. ----- Authentication (new auth manager + legacy fallback) -----
+  if (is.null(x)) x <- get_active_conn()
 
-  #-----#
-
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
-
-  #-----#
-
-  # Check for Access Token and Expiration
-  if (base::is.null(aToken) ||
-      token_exp <= base::as.numeric(base::Sys.time())) {
-    logger::log_error("hawkinR/create_athletes -> Access token not available or expired. Call get_access() to obtain it.")
-    stop("Access token not available or expired. Call get_access() to obtain it.")
-  } else {
-    # Log Debug
-    logger::log_debug(base::paste0("hawkinR/create_athletes -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
+  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
+    x <- authenticate(x); set_active_conn(x)
   }
 
   # 3. ----- Build URL Request -----
@@ -86,110 +75,98 @@ create_athletes <- function(athleteData) {
   # Athletes Data to Send
   payload <- AddAthleteJSON(arg_df = athleteData)
 
-  # Build Request
-  request <- httr2::request(base::Sys.getenv("urlRegion")) %>%
-    # Add URL Path
-    httr2::req_url_path_append("/athletes/bulk") %>%
-    # Change HTTP Method
-    httr2::req_method("POST") %>%
-    # Add JSON body
-    httr2::req_body_raw(body = payload, type = "application/json") %>%
-    # Supply Bearer Authentication
-    httr2::req_auth_bearer_token(token = aToken)
+  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+    httr2::req_url_path_append("athletes/bulk") |>
+    httr2::req_method("POST") |>
+    httr2::req_body_raw(body = payload, type = "application/json")
 
   # Log Debug
   reqPath <- httr2::req_dry_run(request, quiet = TRUE)
   logger::log_debug(base::paste0(
-    "hawkinR/create_athletes -> ",reqPath$method, ": ", reqPath$headers$host, reqPath$path))
+    "hawkinR/create_athletes -> ",
+    reqPath$method, ": ",
+    reqPath$headers$host, reqPath$path
+  ))
+
 
   # Execute Call
-  resp <- request %>%
-    httr2::req_error(
-      is_error = function(resp)
-        FALSE
-    ) %>%
+  resp <-  request |>
+    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
+
 
   # Response Status
   status <- httr2::resp_status(resp = resp)
 
   # 4. ----- Create Response Outputs -----
 
-  # Error Handler
+
   error_message <- NULL
 
+
   if (status == 401) {
-    error_message <- 'Error 401: Refresh Token is invalid or expired.'
+    error_message <- "Error 401: Refresh Token is invalid or expired."
   } else if (status == 500) {
-    error_message <-
-      'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
+    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
   }
 
+
   if (!base::is.null(error_message)) {
-    logger::log_error(
-      base::paste0("hawkinR/create_athletes -> ", error_message)
-    )
+    logger::log_error(base::paste0("hawkinR/create_athletes -> ", error_message))
     stop(error_message)
   }
 
-  # Response Table
+
   if (status == 200) {
-    # Response GOOD - Run rest of script
     # Convert JSON Response
     x <- httr2::resp_body_json(resp = resp,
                                check_type = TRUE,
                                simplifyVector = TRUE)
 
+
     # 5. ----- Sort Athlete Response Data -----
 
-    # Number of Athletes Entered
-    n <- base::nrow(athleteData)
 
-    # Successful Data
     d <- x$data
     successCount <- base::nrow(d)
+
+
     if (!base::is.null(successCount)) {
-      if(successCount > 1) {
-        allSuccess <- base::paste0(d$name, collapse = ", ")
+      allSuccess <- if (successCount > 1) {
+        base::paste0(d$name, collapse = ", ")
       } else {
-        allSuccess <- base::paste0(d$name)
+        base::paste0(d$name)
       }
     }
 
-    # Has Failures Boolean
+
     hasFailures <- x$hasFailures
 
-    # Failures Data
+
     if (base::isTRUE(hasFailures)) {
-      # Count of Failures
       failures <- base::nrow(x$failures)
-      # Failures Reasons
       reasons <- x$failures$reason
-      # Names of Failed Athletes
-      failedNames <- x$failures$data[,1]
-      # String of Fails
+      failedNames <- x$failures$data[, 1]
+
+
       allFails <- base::data.frame(reasons, failedNames) %>%
-        # Group by reasons
         dplyr::group_by(.data$reasons) %>%
-        # Create value strings
         dplyr::summarise(values = base::paste0(failedNames, collapse = ", ")) %>%
-        # Create Outputs
         dplyr::mutate(output = base::paste0(.data$reasons, " [", .data$values, "]"))
 
-      # Create Finished Failures
+
       allFails <- base::paste0(allFails$output, collapse = " | ")
     }
 
+
     # Report Response
     if (base::isTRUE(hasFailures) && isTRUE(is.null(successCount))) {
-      # All Failures
-      logger::log_warn(("hawkinR/create_athletes -> {failures} athletes failed || {allFails}"))
+      logger::log_warn("hawkinR/create_athletes -> {failures} athletes failed || {allFails}")
     } else if (base::isTRUE(hasFailures) && successCount > 0) {
-      # Fails and Success
-      logger::log_success(("hawkinR/create_athletes -> {successCount} athletes were added successfully: {allSuccess}"))
-      logger::log_warn(("hawkinR/create_athletes -> {failures} athletes failed || {allFails}"))
+      logger::log_success("hawkinR/create_athletes -> {successCount} athletes were added successfully: {allSuccess}")
+      logger::log_warn("hawkinR/create_athletes -> {failures} athletes failed || {allFails}")
     } else if (base::isFALSE(hasFailures)) {
-      # All Success
       logger::log_success("hawkinR/create_athletes -> {successCount} athletes added successfully: {allSuccess}")
     } else {
       stop(logger::log_error("hawkinR/create_athletes -> Unexpected status code: {status}"))

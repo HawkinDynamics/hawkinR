@@ -1,0 +1,142 @@
+---
+title: "Managing Authentication and Configuration in hawkinR v2.0"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Managing Authentication and Configuration in hawkinR v2.0}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 80
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+The 2.0 release of `hawkinR` introduces a secure, profile-based authentication
+system built on the S7 object-oriented framework. By leveraging your computer's
+native password manager and formal S7 classes, you can now manage multiple team
+tokens securely without ever hardcoding sensitive secrets into your R scripts.
+
+# 1. Local Setup (Development)
+
+On your local machine, `hawkinR` uses your computer's built-in password manager
+(Keychain on Mac, Credential Manager on Windows) to encrypt your keys. You
+should never have to handle the `keyring` package directly; `hawkinR` provides
+helper functions to manage this for you.
+
+## Storing your Credentials
+
+You only need to do this once per machine or whenever you receive a new token
+from your Org Admin.
+
+```{r store_credentials, eval=FALSE, message=FALSE, warning=FALSE}
+library(hawkinR)
+
+# This will open a secure popup window asking for your Refresh Token.
+# We recommend naming your primary key "default".
+hd_auth_store(profile = "default")
+```
+
+## Connecting
+
+Once stored, connecting is a single line of code. `hawkinR` retrieves your key,
+exchanges it for a temporary access token, and sets up your "Active Connection"
+in the background.
+
+```{r getTests, eval=FALSE, echo=TRUE}
+# Connects using the 'default' profile 
+hd_connect()
+
+# Fetch data immediately - the connection is handled implicitly
+trials <- get_tests() 
+```
+
+# 2. Managing Multiple Profiles (Teams)
+
+If you have "Team Scoped Tokens" for different groups, or if you are a
+consultant managing multiple organizations, you can save them under unique
+profile names.
+
+### Setup Multiple Keys
+
+Code snippet
+
+```{r multipleProfiles, eval=FALSE, echo=TRUE}
+hd_auth_store(profile = "mens_soccer") 
+hd_auth_store(profile = "womens_soccer") 
+```
+
+### Switching Contexts
+
+To switch which data you are pulling, simply reconnect with the desired profile:
+
+```{r switchProfiles, eval=FALSE, echo=TRUE}
+# Switch to the Men's team context 
+hd_connect(profile = "mens_soccer") 
+men_data <- get_tests()
+
+# Switch to the Women's team context
+hd_connect(profile = "womens_soccer") 
+women_data <- get_tests() 
+```
+
+# 3. Production & Cloud Deployment
+
+When deploying to a server (like ShinyApps.io, Posit Connect, or a Docker
+container), the `keyring` is typically unavailable. In these "headless"
+environments, `hawkinR` looks for Environment Variables.
+
+## Step A: Configure the Server
+
+Add a variable to your server's environment or your `.Renviron` file formatted
+as `HAWKIN_KEY_{PROFILE_NAME}`.
+
+```{bash eval=FALSE}
+# Example .Renviron entries 
+HAWKIN_KEY_DEFAULT="your_secret_refresh_token_here" 
+HAWKIN_KEY_MENS_SOCCER="another_secret_token_here" 
+```
+
+## Step B: Connect in Production Mode
+
+Tell `hd_connect` to bypass the keychain and look for environment variables.
+
+```{r connect, eval=FALSE, echo=TRUE}
+# This tells the package to use System Environment Variables 
+hd_connect(environment = "production")
+
+# The rest of your code remains identical
+df <- get_tests()
+```
+
+# 4. Advanced: Explicit Connection Objects
+
+While `get_tests()` usually finds the "Active Connection" automatically, power
+users can manage connection objects manually using S7 syntax.
+
+```{r advanced, echo=TRUE, eval=FALSE}
+# Create specific session objects 
+conn_a <- hd_connect(profile = "org_a") 
+conn_b <- hd_connect(profile = "org_b")
+
+# Pass the connection as the first argument to any 'get' function
+
+data_a <- get_tests(conn_a, from = "2024-01-01") 
+data_b <- get_tests(conn_b, from = "2024-01-01") 
+```
+
+Summary of Commands
+
+| Function                     | Purpose                                           |
+|------------------------------|---------------------------------------------------|
+| hd_auth_store("name")        | Saves a key to your computer's secure vault.      |
+| hd_auth_reset("name")        | Deletes a key from your computer's vault.         |
+| hd_connect(profile = "name") | Initializes the session and sets it as "Active".  |
+| get_tests(...)               | Fetches data using the current Active connection. |

@@ -4,11 +4,13 @@
 \alias{get_athletes}
 \title{Get Athletes}
 \usage{
-get_athletes(includeInactive = FALSE)
+get_athletes(includeInactive = FALSE, x = NULL)
 }
 \arguments{
 \item{includeInactive}{FALSE by default to exclude inactive players in database. Set to TRUE if you want
 inactive players included in the return.}
+
+\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
 }
 \value{
 Response will be a data frame containing the athletes that match this query.

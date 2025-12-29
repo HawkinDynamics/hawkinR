@@ -5,10 +5,12 @@
 #' `includeInactive` parameter is set to TRUE.
 #'
 #' @usage
-#' get_athletes(includeInactive = FALSE)
+#' get_athletes(includeInactive = FALSE, x = NULL)
 #'
 #' @param includeInactive FALSE by default to exclude inactive players in database. Set to TRUE if you want
 #' inactive players included in the return.
+#'
+#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
 #'
 #' @return
 #' Response will be a data frame containing the athletes that match this query.
@@ -38,75 +40,64 @@
 #' }
 #'
 #' @importFrom magrittr %>%
-#' @importFrom httr2 request req_url_path_append req_url_query req_auth_bearer_token req_error req_perform resp_status resp_body_json
-#' @importFrom rlang .data
-#' @importFrom logger log_info
+#' @importFrom httr2 req_url_query req_auth_bearer_token req_error req_perform resp_status resp_body_json
+#' @importFrom logger log_trace log_debug log_success log_error
 #'
 #' @export
 
 
 # Get Athletes -----
-get_athletes <- function(includeInactive = FALSE) {
+get_athletes <- function(includeInactive = FALSE, x = NULL) {
+
 
   # 1. ----- Set Logger -----
-  # Log Trace
-  logger::log_trace(base::paste0("hawkinR -> Run: get_athltes"))
+  logger::log_trace(base::paste0("hawkinR -> Run: get_athletes"))
 
-  # 2. ----- Parameter Validation -----
 
-  # Retrieve access token and expiration from environment variables
-  aToken <- base::Sys.getenv("accessToken")
+  # 2. ----- Authentication (new auth manager) -----
+  if (is.null(x)) x <- get_active_conn()
 
-  #-----#
-
-  token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
-
-  #-----#
-
-  # Check for Access Token and Expiration
-  if (base::is.null(aToken) ||
-      token_exp <= base::as.numeric(base::Sys.time())) {
-    logger::log_error("hawkinR/get_athletes -> Access token not available or expired. Call get_access() to obtain it.")
-    stop("Access token not available or expired. Call get_access() to obtain it.")
-  } else {
-    # Log Debug
-    logger::log_debug(base::paste0("hawkinR/get_athletes -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
+  # Token Lifecycle Management
+  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
+    x <- authenticate(x)
+    set_active_conn(x)
   }
 
   # 3. ----- Build URL Request -----
 
+  # Query Parameters
+  params <- list()
+
   # Include inactive athletes
-  inactives <- if (includeInactive) {
-    "true"
-  } else {
-    "false"
+  if (isTRUE(includeInactive)) {
+    params$includeInactive <- "true"
   }
 
-  # Build Request
-  request <- httr2::request(base::Sys.getenv("urlRegion")) %>%
-    # Add URL Path
-    httr2::req_url_path_append("/athletes") %>%
-    # Add Inactive Query
-    httr2::req_url_query(includeInactive = inactives) %>%
-    # Supply Bearer Authentication
-    httr2::req_auth_bearer_token(token = aToken)
+  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+    httr2::req_url_path_append("athletes")
 
-  # Log Debug
+  # Only add the query if params list is not empty
+  if (length(params) > 0) {
+    request <- request |> httr2::req_url_query(!!!params)
+  }
+
+  # Log the Debug
   reqPath <- httr2::req_dry_run(request, quiet = TRUE)
+
+  # Safe logging for the query string
+  query_string <- if (length(reqPath$query) > 0) paste0("?", reqPath$query) else ""
+
   logger::log_debug(base::paste0(
-    "hawkinR/create_athletes -> ",
-    reqPath$method,
-    ": ",
-    reqPath$headers$host,
-    reqPath$path
+    "hawkinR/get_athletes -> ",
+    reqPath$method, ": ",
+    reqPath$headers$host, reqPath$path,
+    query_string
   ))
 
   # Execute Call
-  resp <- request %>%
-    httr2::req_error(
-      is_error = function(resp)
-        FALSE
-    ) %>%
+  resp <-  request |>
+    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
   # Response Status
@@ -114,15 +105,17 @@ get_athletes <- function(includeInactive = FALSE) {
 
   # 4. ----- Create Response Outputs -----
 
+
   # Error Handler
   error_message <- NULL
 
+
   if (status == 401) {
-    error_message <- 'Error 401: Refresh Token is invalid or expired.'
+    error_message <- "Error 401: Refresh Token is invalid or expired."
   } else if (status == 500) {
-    error_message <-
-      'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
+    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
   }
+
 
   if (!base::is.null(error_message)) {
     logger::log_error(base::paste0(
@@ -133,7 +126,6 @@ get_athletes <- function(includeInactive = FALSE) {
 
   # Response Table
   if (status == 200) {
-    # Response GOOD - Run rest of script
     # Convert JSON Response
     x <- httr2::resp_body_json(resp = resp,
                                check_type = TRUE,
@@ -141,25 +133,23 @@ get_athletes <- function(includeInactive = FALSE) {
 
     # 5. ----- Sort Response Athlete Data -----
 
-    # Print confirmation response
+
     logger::log_success(base::paste0("hawkinR/get_athletes -> ", x[[2]], " athletes returned"))
+
 
     # Create data frame from returns data
     df <- base::as.data.frame(x[[1]])
 
+
     # Handle External Properties
     if (base::ncol(df) > 5) {
-      # Select base athlete attributes
       a <- df[, 1:5]
-      # Select any external value pairs
       b <- df[, 6:base::ncol(df)]
-
-      # Return new data frame with externals expanded
       return(base::cbind(a, b))
-    } else {
-      # Return data frame
-      return(df)
     }
+
+
+    return(df)
   }
 }
 
