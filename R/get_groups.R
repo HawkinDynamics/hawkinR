@@ -36,44 +36,43 @@
 get_groups <- function(x = NULL) {
 
   # 1. ----- Set Logger -----
-  logger::log_trace(base::paste0("hawkinR -> Run: get_groups"))
+  logger::log_trace("hawkinR -> Run: get_groups")
 
 
   # 2. ----- Authentication (new auth manager) -----
+  logger::log_trace("hawkinR/get_groups -> Resolving connection")
   if (is.null(x)) x <- get_active_conn()
 
   # Token Lifecycle Management
-  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
+  token_remaining <- round(as.numeric(difftime(x@expires_at, Sys.time(), units = "secs")))
+  logger::log_debug("hawkinR/get_groups -> Token expires in {token_remaining} seconds")
+  if (token_remaining < 300) {
+    logger::log_info("hawkinR/get_groups -> Token expiring soon. Refreshing...")
     x <- authenticate(x)
     set_active_conn(x)
   }
 
-  # Log Debug
+  # 3. ----- Build URL Request -----
+  logger::log_trace("hawkinR/get_groups -> Building request")
   request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
     httr2::req_url_path_append("groups")
 
   reqPath <- httr2::req_dry_run(request, quiet = TRUE)
-  logger::log_debug(base::paste0(
-    "hawkinR/get_groups -> ",
-    reqPath$method, ": ",
-    reqPath$headers$host, reqPath$path
-  ))
+  logger::log_debug("hawkinR/get_groups -> {reqPath$method}: {reqPath$headers$host}{reqPath$path}")
 
-  # Execute Call
+  # 4. ----- Execute Call -----
+  logger::log_trace("hawkinR/get_groups -> Executing API request")
   resp <-  request |>
     httr2::req_auth_bearer_token(x@access_token) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
-
   # Response Status
   status <- httr2::resp_status(resp = resp)
+  logger::log_debug("hawkinR/get_groups -> Response status: {status}")
 
-  # 3. ----- Create Response Outputs -----
-
-
+  # 5. ----- Error Handling -----
   error_message <- NULL
-
 
   if (status == 401) {
     error_message <- "Error 401: Refresh Token is invalid or expired."
@@ -81,24 +80,22 @@ get_groups <- function(x = NULL) {
     error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
   }
 
-
   if (!base::is.null(error_message)) {
-    logger::log_error(base::paste0(
-      "hawkinR/get_groups -> ", error_message
-    ))
+    logger::log_error("hawkinR/get_groups -> {error_message}")
     stop(error_message, call. = FALSE)
   }
 
-
+  # 6. ----- Parse Response -----
   if (status == 200) {
+    logger::log_trace("hawkinR/get_groups -> Parsing JSON response")
     x <- httr2::resp_body_json(
       resp = resp,
       check_type = TRUE,
       simplifyVector = TRUE
     )
 
-
-    logger::log_success(base::paste0("hawkinR/get_groups -> ", x[[2]], " groups returned"))
+    logger::log_trace("hawkinR/get_groups -> Converting to data frame")
+    logger::log_success("hawkinR/get_groups -> {x[[2]]} groups returned")
     return(base::as.data.frame(x[[1]]))
   }
 }

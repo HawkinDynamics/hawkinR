@@ -47,10 +47,16 @@
 # Get Test Metrics -----
 get_metrics <- function(testType = "all") {
 
-  # Load Data frame from data folder
-  df <- get("MetricDictionary", envir = asNamespace("hawkinR"))
+  # 1. ----- Set Logger -----
+  logger::log_trace("hawkinR -> Run: get_metrics")
 
-  # Create a named vector to match abbreviations with testTypeNames
+  # 2. ----- Load Data -----
+  logger::log_trace("hawkinR/get_metrics -> Loading MetricDictionary from package data")
+  df <- get("MetricDictionary", envir = asNamespace("hawkinR"))
+  logger::log_debug("hawkinR/get_metrics -> Loaded {nrow(df)} total metrics")
+
+  # 3. ----- Build Test Type Map -----
+  logger::log_trace("hawkinR/get_metrics -> Building test type lookup map")
   testTypeMap <- c(
     "Countermovement Jump" = "Countermovement Jump",
     "CMJ" = "Countermovement Jump",
@@ -87,17 +93,25 @@ get_metrics <- function(testType = "all") {
     "4KlQgKmBxbOY6uKTLDFL" = "TS Free Run"
   )
 
-  # If testType is not "all", filter the data frame
+  # 4. ----- Filter by Test Type -----
   if (testType != "all") {
+    logger::log_trace("hawkinR/get_metrics -> Filtering for testType: '{testType}'")
     if (testType %in% names(testTypeMap)) {
       selectedTestType <- testTypeMap[[testType]]
+      logger::log_debug("hawkinR/get_metrics -> Resolved '{testType}' -> '{selectedTestType}'")
+      pre_filter_count <- nrow(df)
       df <- df %>% filter(.data$testTypeName == selectedTestType)
+      logger::log_trace("hawkinR/get_metrics -> Filtered: {pre_filter_count} -> {nrow(df)} metrics")
     } else {
+      logger::log_error("hawkinR/get_metrics -> Invalid testType: '{testType}'")
       stop("Invalid testType. Please provide a valid testType name or abbreviation.")
     }
+  } else {
+    logger::log_trace("hawkinR/get_metrics -> Returning all metrics (no filter)")
   }
 
-  # Return filtered data frame
+  # 5. ----- Return Data -----
+  logger::log_success("hawkinR/get_metrics -> {nrow(df)} metrics returned")
   return(df)
 }
 

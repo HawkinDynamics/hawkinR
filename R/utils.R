@@ -24,6 +24,7 @@ check_interactive <- function() {
 #' @return Numeric Unix timestamp
 #' @noRd
 validate_timestamp <- function(x) {
+  logger::log_trace("hawkinR/utils -> validate_timestamp: input type={class(x)[1]}")
   if (is.null(x)) return(NULL)
   if (is.numeric(x)) return(x)
   if (is.character(x)) {
@@ -48,6 +49,7 @@ validate_timestamp <- function(x) {
 #' @keywords internal
 #' @noRd
 ParamValidation <- function(arg_athleteId = NULL, arg_testTypeId = NULL, arg_teamId = NULL, arg_groupId = NULL) {
+  logger::log_trace("hawkinR/utils -> ParamValidation: validating query parameters")
 
   # 1. Validate Parameter Classes
   # Athlete Id
@@ -96,6 +98,8 @@ ParamValidation <- function(arg_athleteId = NULL, arg_testTypeId = NULL, arg_tea
   if (sum(provided_ids) > 1) {
     stop("You can only specify one or none of 'athleteId', 'testTypeId', 'teamId', or 'groupId'.")
   }
+
+  logger::log_debug("hawkinR/utils -> ParamValidation: {sum(provided_ids)} filter(s) active")
 }
 
 
@@ -111,6 +115,7 @@ ParamValidation <- function(arg_athleteId = NULL, arg_testTypeId = NULL, arg_tea
 #' @keywords internal
 #' @noRd
 TestTypePrep <- function(arg_df) {
+  logger::log_trace("hawkinR/utils -> TestTypePrep: processing {nrow(arg_df)} test type rows")
 
   # 1. Separate Test Type Columns from Tags
   testTypeData <- arg_df[1:3]
@@ -161,6 +166,8 @@ TestTypePrep <- function(arg_df) {
   tagsData$testType_tags_desc <- unwrap(tagsData$testType_tags_desc)
 
   # 5. Combine Tag data back to Test Type data
+  tags_found <- sum(!is.na(tagsData$testType_tags_id))
+  logger::log_trace("hawkinR/utils -> TestTypePrep: {tags_found} rows with tags extracted")
   return(base::cbind(testTypeData, tagsData))
 }
 
@@ -177,6 +184,7 @@ TestTypePrep <- function(arg_df) {
 #' @keywords internal
 #' @noRd
 AthletePrep <- function(arg_df) {
+  logger::log_trace("hawkinR/utils -> AthletePrep: processing {nrow(arg_df)} athlete rows")
 
   # 1. Isolate Expected Athlete Columns from Athlete Section
   athleteData <- arg_df[1:5]
@@ -187,6 +195,7 @@ AthletePrep <- function(arg_df) {
 
   # 3. Reformat and Add External Data if Present
   if (ncol(externalData) > 0) {
+    logger::log_trace("hawkinR/utils -> AthletePrep: {ncol(externalData)} external properties found")
     # A. Reformat External Data names
     externalData <- janitor::clean_names(externalData)
     base::colnames(externalData) <- base::paste0("athlete_", base::colnames(externalData))
@@ -213,6 +222,7 @@ AthletePrep <- function(arg_df) {
 #' @keywords internal
 #' @noRd
 TestIdCheck <- function(arg_id) {
+  logger::log_trace("hawkinR/utils -> TestIdCheck: resolving '{arg_id}'")
 
   # Create the data frame
   type_df <- base::data.frame(
@@ -235,6 +245,7 @@ TestIdCheck <- function(arg_id) {
 
   if (nrow(filtered_df) > 0) {
     tId <- filtered_df$id[1]
+    logger::log_trace("hawkinR/utils -> TestIdCheck: resolved to '{tId}'")
     return(tId)
   } else {
     stop("Error: typeId incorrect. Check your entry")
@@ -255,6 +266,7 @@ TestIdCheck <- function(arg_id) {
 #' @keywords internal
 #' @noRd
 AddAthleteJSON <- function(arg_df) {
+  logger::log_trace("hawkinR/utils -> AddAthleteJSON: converting {nrow(arg_df)} athletes")
   # Create blank list for athletes
   x <- list()
 
@@ -310,6 +322,7 @@ AddAthleteJSON <- function(arg_df) {
   # Convert lists to JSON format
   y <- jsonlite::toJSON(x, pretty = TRUE, auto_unbox = TRUE)
 
+  logger::log_debug("hawkinR/utils -> AddAthleteJSON: payload {nchar(y)} bytes")
   return(y)
 }
 
@@ -327,6 +340,7 @@ AddAthleteJSON <- function(arg_df) {
 #' @keywords internal
 #' @noRd
 UpdateAthleteJSON <- function(arg_df) {
+  logger::log_trace("hawkinR/utils -> UpdateAthleteJSON: converting {nrow(arg_df)} athletes")
   # Create blank list for athletes
   x <- list()
 
@@ -390,6 +404,7 @@ UpdateAthleteJSON <- function(arg_df) {
     # Convert lists to JSON format
     y <- jsonlite::toJSON(x, pretty = TRUE, auto_unbox = TRUE)
 
+    logger::log_debug("hawkinR/utils -> UpdateAthleteJSON: payload {nchar(y)} bytes")
     return(y)
   } else {
     stop(logger::log_error("athleteData must contain ID column"))
@@ -413,6 +428,7 @@ UpdateAthleteJSON <- function(arg_df) {
 #' @keywords internal
 #' @noRd
 dfTests_flat <- function(arg_df) {
+  logger::log_trace("hawkinR/utils -> dfTests_flat: flattening {nrow(arg_df)} rows")
 
   # Supplied data frame
   df <- arg_df
@@ -442,6 +458,7 @@ dfTests_flat <- function(arg_df) {
       )
     )
 
+  logger::log_trace("hawkinR/utils -> dfTests_flat: complete")
   return(df)
 }
 
@@ -461,6 +478,7 @@ dfTests_flat <- function(arg_df) {
 #' @keywords internal
 #' @noRd
 dfTests_expand <- function(arg_df) {
+  logger::log_trace("hawkinR/utils -> dfTests_expand: expanding {nrow(arg_df)} rows")
 
   # Supplied data frame
   df <- arg_df
@@ -478,6 +496,7 @@ dfTests_expand <- function(arg_df) {
       )
     )
 
+  logger::log_trace("hawkinR/utils -> dfTests_expand: complete")
   return(df)
 }
 
@@ -497,6 +516,7 @@ dfTests_expand <- function(arg_df) {
 #' @keywords internal
 #' @noRd
 dfDatetoChar <- function(arg_df) {
+  logger::log_trace("hawkinR/utils -> dfDatetoChar: converting date columns")
 
   # Supplied data frame
   df <- arg_df
@@ -519,6 +539,7 @@ dfDatetoChar <- function(arg_df) {
       )
     )
 
+  logger::log_trace("hawkinR/utils -> dfDatetoChar: complete")
   return(df)
 }
 

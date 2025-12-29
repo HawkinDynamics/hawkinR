@@ -135,32 +135,39 @@ get_tests <- function(x = NULL,
                       groupId = NULL,
                       includeInactive = FALSE) {
 
-  # 1. Resolve Connection ---------------------------------------------------
-  # If x is NULL or missing, get the active one
+  # 1. ----- Set Logger -----
+  logger::log_trace("hawkinR -> Run: get_tests")
+
+  # 2. ----- Resolve Connection -----
+  logger::log_trace("hawkinR/get_tests -> Resolving connection")
   if (missing(x) || is.null(x)) {
     x <- get_active_conn()
   }
 
-  # Instead of inherits(x, "HawkinAuth"), check for a required internal field.
-  # This is much more robust during 'devtools' development.
+  # Validate connection object
   if (!is.object(x) || is.null(x@access_token)) {
     stop("A valid HawkinAuth connection is required. Run hd_connect() first.", call. = FALSE)
   }
 
-  # 2. Token Lifecycle Management -------------------------------------------
-  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
-    logger::log_info("hawkinR -> Token expiring soon. Refreshing...")
+  # 3. ----- Token Lifecycle Management -----
+  token_remaining <- round(as.numeric(difftime(x@expires_at, Sys.time(), units = "secs")))
+  logger::log_debug("hawkinR/get_tests -> Token expires in {token_remaining} seconds")
+  if (token_remaining < 300) {
+    logger::log_info("hawkinR/get_tests -> Token expiring soon. Refreshing...")
     x <- authenticate(x)
     set_active_conn(x)
   }
 
-  # 3. Build Query Parameters -----------------------------------------------
+  # 4. ----- Validate Parameters -----
+  logger::log_trace("hawkinR/get_tests -> Validating query parameters")
   params <- list()
 
   ParamValidation(arg_athleteId = athleteId,
                   arg_testTypeId = typeId,
                   arg_teamId = teamId,
                   arg_groupId = groupId)
+
+  logger::log_trace("hawkinR/get_tests -> Params validated: sync={sync}, inactive={includeInactive}")
 
   # Process Dates (Using internal helper or simple checks)
   process_date <- function(d) {
@@ -209,11 +216,10 @@ get_tests <- function(x = NULL,
     params$groupId   <- groupId
   }
 
-  logger::log_trace("hawkinR -> Fetching tests with params: {jsonlite::toJSON(params, auto_unbox=T)}")
+  logger::log_debug("hawkinR/get_tests -> Query params: {jsonlite::toJSON(params, auto_unbox=T)}")
 
-  # 4. Execute API Request --------------------------------------------------
-
-  # Define the base request
+  # 5. ----- Build Request -----
+  logger::log_trace("hawkinR/get_tests -> Building request")
   request <- httr2::request(paste0(x@base_url, "/", x@config@org_id))
 
   # Add query parameters if they exist
@@ -234,46 +240,65 @@ get_tests <- function(x = NULL,
     full_url  <- paste0(req_preview$headers$host, req_preview$path)
   }
 
-  logger::log_debug(base::paste0("hawkinR/get_tests -> ", req_preview$method, ": ", full_url))
+  logger::log_debug("hawkinR/get_tests -> {req_preview$method}: {full_url}")
 
-  # Finalize the request for performance (REMOVED redundant httr2::request call)
+  # 6. ----- Execute Call -----
+  logger::log_trace("hawkinR/get_tests -> Executing API request")
   resp <- request |>
     httr2::req_auth_bearer_token(x@access_token) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
   status <- httr2::resp_status(resp)
+  logger::log_debug("hawkinR/get_tests -> Response status: {status}")
 
-  # 5. Error Handling -------------------------------------------------------
-  if (status == 401) stop("Unauthorized (401). Token invalid.", call. = FALSE)
-  if (status == 500) stop("Server Error (500). Contact Support.", call. = FALSE)
-  if (status == 404) stop(sprintf("Not Found (404). Check your Org ID: '%s'", x@config@org_id), call. = FALSE)
-  if (status >= 400) stop(paste("API Error:", status), call. = FALSE)
+  # 7. ----- Error Handling -----
+  if (status == 401) {
+    logger::log_error("hawkinR/get_tests -> Error 401: Token invalid")
+    stop("Unauthorized (401). Token invalid.", call. = FALSE)
+  }
+  if (status == 500) {
+    logger::log_error("hawkinR/get_tests -> Error 500: Server error")
+    stop("Server Error (500). Contact Support.", call. = FALSE)
+  }
+  if (status == 404) {
+    logger::log_error("hawkinR/get_tests -> Error 404: Org ID '{x@config@org_id}' not found")
+    stop(sprintf("Not Found (404). Check your Org ID: '%s'", x@config@org_id), call. = FALSE)
+  }
+  if (status >= 400) {
+    logger::log_error("hawkinR/get_tests -> API Error: {status}")
+    stop(paste("API Error:", status), call. = FALSE)
+  }
 
-  # 6. Response Parsing (v1.1.5 Logic) --------------------------------------
-
-  # IMPORTANT: We must use simplifyVector=TRUE to match v1.1.5's data structure expectations
+  # 8. ----- Parse Response -----
+  logger::log_trace("hawkinR/get_tests -> Parsing JSON response")
   body <- httr2::resp_body_json(resp, simplifyVector = TRUE, check_type = TRUE)
 
   count <- body$count
+  logger::log_debug("hawkinR/get_tests -> API returned {count} raw tests")
 
   if (count > 0) {
     # Get dataframe from .data
     df <- body$data
 
-    # -- 6a. Slice Data (Matches v1.1.5 lines 546-547) --
+    # 9. ----- Process Trial Data -----
+    logger::log_trace("hawkinR/get_tests -> Slicing trial info and metrics")
     trialInfo    <- df[1:3]
     trialMetrics <- df[6:ncol(df)]
 
     # Clean Metrics Names
+    logger::log_trace("hawkinR/get_tests -> Cleaning metric column names")
     trialMetrics <- janitor::clean_names(trialMetrics)
 
-    # -- 6b. Apply Custom Prep Functions (Matches v1.1.5 line 548) --
-    # These functions (TestTypePrep, AthletePrep) must exist in R/utils.R
+    # 10. ----- Process Test Type & Athlete Data -----
+    logger::log_trace("hawkinR/get_tests -> Processing test type data")
     TestTypeData <- TestTypePrep(df[[4]])
+
+    logger::log_trace("hawkinR/get_tests -> Processing athlete data")
     AthleteData  <- AthletePrep(df[[5]])
 
-    # -- 6c. Handle Metadata & Timestamps (Matches v1.1.5 line 549) --
+    # 11. ----- Handle Timestamps -----
+    logger::log_trace("hawkinR/get_tests -> Extracting timestamp metadata")
     lastSync   <- body$lastSyncTime
     lastSyncDt <- lubridate::with_tz(
       lubridate::as_datetime(lastSync, tz = "UTC"),
@@ -285,21 +310,26 @@ get_tests <- function(x = NULL,
       lubridate::as_datetime(lastTest, tz = "UTC"),
       tzone = Sys.timezone()
     )
+    logger::log_debug("hawkinR/get_tests -> Last sync: {lastSyncDt}, Last test: {lastTestDt}")
 
-    # -- 6d. Build Final Output (Matches v1.1.5 line 550) --
+    # 12. ----- Build Final Output -----
+    logger::log_trace("hawkinR/get_tests -> Combining data frames")
     outputDF <- cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
     outputDF <- dplyr::mutate(outputDF, last_test_time = lastTest, last_sync_time = lastSync)
 
-    # Validate Active Tests
+    # Filter Active Tests
     if (isFALSE(includeInactive)) {
+      pre_filter_count <- nrow(outputDF)
       outputDF <- dplyr::filter(outputDF, .data$active == TRUE)
+      logger::log_trace("hawkinR/get_tests -> Filtered inactive: {pre_filter_count} -> {nrow(outputDF)} tests")
     }
 
-    logger::log_success("hawkinR -> {nrow(outputDF)} tests returned. Last tested: {lastTestDt}")
+    logger::log_trace("hawkinR/get_tests -> Final data frame: {nrow(outputDF)} rows, {ncol(outputDF)} columns")
+    logger::log_success("hawkinR/get_tests -> {nrow(outputDF)} tests returned. Last tested: {lastTestDt}")
     return(outputDF)
 
   } else {
-    logger::log_warn("hawkinR -> No tests returned meeting those query parameters")
-    return(data.frame()) # Return empty DF consistent with no results
+    logger::log_warn("hawkinR/get_tests -> No tests returned meeting query parameters")
+    return(data.frame())
   }
 }

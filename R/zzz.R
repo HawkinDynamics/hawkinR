@@ -19,6 +19,8 @@
   # Update the package-level variable defined in auth_system.R
   # Note: .hawkin_env must be defined at the top level of one of your R files
   .hawkin_env <<- env
+
+  logger::log_trace("hawkinR -> Package initialized")
 }
 
 .onAttach <- function(libname, pkgname) {
