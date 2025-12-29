@@ -32,9 +32,11 @@
 # Get Test Types -----
 get_testTypes <- function() {
 
-  # Return Data Frame of Test Types and Abbreviations
+  # 1. ----- Set Logger -----
+  logger::log_trace("hawkinR -> Run: get_testTypes")
 
-  # Create the data frame
+  # 2. ----- Build Test Types Data Frame -----
+  logger::log_trace("hawkinR/get_testTypes -> Building test types data frame")
   type_df <- base::data.frame(
     canonicalId = c(
       "7nNduHeM5zETPjHxvm7s", "QEG7m7DhYsD6BrcQ8pic", "2uS5XD5kXmWgIZ5HhQ3A",
@@ -50,10 +52,10 @@ get_testTypes <- function() {
     abbreviation = c("CMJ", "SJ", "ISO", "DJ", "FR", "CMJR", "MR", "WI", "DL","TSFR","TSISO")
   )
 
-  # Print Outcome
-  logger::log_success(base::paste0("hawkinR/get_testTypes -> 11 test types returned"))
+  # 3. ----- Return Data -----
+  logger::log_debug("hawkinR/get_testTypes -> Data frame: {nrow(type_df)} rows, {ncol(type_df)} columns")
+  logger::log_success("hawkinR/get_testTypes -> {nrow(type_df)} test types returned")
 
   return(type_df)
-
 }
 

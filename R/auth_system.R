@@ -27,6 +27,7 @@ set_active_conn <- function(auth_object) {
     stop("Object must be a HawkinAuth connection", call. = FALSE)
   }
   .hawkin_env$active_conn <- auth_object
+  logger::log_trace("hawkinR/auth -> Active connection updated")
 }
 
 #' Get the Active Hawkin Connection
@@ -119,6 +120,7 @@ authenticate <- S7::new_generic("authenticate", "x")
 
 S7::method(authenticate, HawkinAuth) <- function(x) {
   logger::log_trace("hawkinR -> Authenticating profile: {x@config@profile}")
+  logger::log_debug("hawkinR/auth -> Environment: {x@config@environment}, Region: {x@region}")
 
   refresh_secret <- NULL
   profile_name   <- x@config@profile
@@ -170,6 +172,7 @@ S7::method(authenticate, HawkinAuth) <- function(x) {
   x@access_token <- body$access_token
   x@expires_at   <- as.POSIXct(body$expires_at, origin = "1970-01-01")
 
+  logger::log_debug("hawkinR/auth -> Token valid until: {x@expires_at}")
   logger::log_info("hawkinR -> Successfully authenticated as '{profile_name}'")
   return(x)
 }
@@ -244,6 +247,8 @@ hd_connect <- function(profile = "default",
   # Initialize Logger
   logger::log_threshold(log_level)
 
+  logger::log_info("hawkinR -> Connecting to {region} region with profile '{profile}'")
+
   # Create Classes
   cfg  <- HawkinConfig(profile = profile,
                        org_id = org_id,
@@ -257,6 +262,8 @@ hd_connect <- function(profile = "default",
 
   # Set Global State
   set_active_conn(auth)
+
+  logger::log_info("hawkinR -> Connection established. Token expires: {auth@expires_at}")
 
   invisible(auth)
 }
