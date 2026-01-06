@@ -22,7 +22,7 @@ org <- "v1"
 ## | B. Store API Secret -----
 ### 1. Store the token for different profiles
 hd_auth_store(profile = "ghouse_dev", token = Sys.getenv("gspToken"))
-hd_auth_store(profile = "hawkinR_tester", token = Sys.getenv("hawkin_tester"))
+#hd_auth_store(profile = "hawkinR_tester", token = Sys.getenv("hawkin_tester"))
 hd_auth_store(profile = "Greenhouse")
 
 ### 2. Check Connection
@@ -116,7 +116,29 @@ sj_tests <- get_tests(typeId = "Isometric Test")
 ### 3. Rebound Tests
 types <- get_testTypes()
 rebType <- types$canonicalId[types$name %in% "Drop Jump"]
-reb_tests <- get_tests(typeId = "CMJJJ")
+reb_tests <- get_tests(typeId = "CMJ")
 
-## | G. Get Forcetime Data -----
+## | G. Get Force time Data -----
 ft_test <- get_forcetime(testId = lg_tests$id[1])
+
+## | H. Get Mass Force time Data -----
+all_my_ft <- function(testIdList) {
+  ft_list <- list()
+  for (i in 1:nrow(testIdList)) {
+    message("Fetching Force-Time data for test ", i, " of ", nrow(testIdList), ": ", testIdList$id[i])
+
+    tryCatch({
+      ft_data <- get_forcetime(testId = testIdList$id[i])
+      ft_list[[testIdList$id[i]]] <- ft_data
+      message("Completed fetching Force-Time data for test ", i, " of ", nrow(testIdList), ": ", testIdList$id[i])
+    }, error = function(e) {
+      logger::log_error(paste0("hawkinR/all_my_ft ->",
+                              "Error fetching data for test ID ",
+                              testIdList$id[i], ": ", e$message))
+      stop("Error fetching data for test ID ", call. = FALSE)
+    })
+  }
+  return(ft_list)
+}
+
+all_ft_data <- all_my_ft(lg_tests)
