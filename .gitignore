@@ -9,6 +9,6 @@ docs
 
 # ---- tests ----
 /tests/
-
+hawkinRlog.log
 # ---- config & auth ----
 # User config is stored via rappdirs (outside repo) and is never committed

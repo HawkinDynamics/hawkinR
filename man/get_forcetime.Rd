@@ -12,27 +12,27 @@ get_forcetime(testId, x = NULL)
 \item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
 }
 \value{
-Response will be a data frame containing the following:\tabular{lll}{
-   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
-   \strong{time_s} \tab \emph{int} \tab Elapsed time in seconds, starting from end of identified quiet phase \cr
-   \strong{force_right} \tab \emph{int} \tab Force recorded from the RIGHT platform coinciding with time point from  \code{time_s}, measured in Newtons (N) \cr
-   \strong{force_Left} \tab \emph{int} \tab Force recorded from the LEFT platform coinciding with time point from  \code{time_s}, measured in Newtons (N) \cr
-   \strong{force_combined} \tab \emph{int} \tab Sum of forces from LEFT and RIGHT, coinciding with time point from  \code{time_s}, measured in Newtons (N) \cr
-   \strong{velocity_m.s} \tab \emph{int} \tab Calculated velocity of center of mass at time interval, measured in meters per second (m/s) \cr
-   \strong{displacement_m} \tab \emph{int} \tab Calculated displacement of center of mass at time interval, measured in meters (m) \cr
-   \strong{power_w} \tab \emph{int} \tab Calculated power of mass at time interval, measured in watts (W) \cr
+A \code{HawkinForceTime} object.
+\itemize{
+\item Use \code{obj@data} to access the raw data frame (Time, Force, Velocity, etc.).
+\item Use \code{obj@athlete_name} or \code{obj@test_type_name} to access metadata.
 }
 }
 \description{
-Get the force-time data for a specific test by id. This includes both left, right and combined force data at 1000hz (per millisecond).
-Calculated velocity, displacement, and power at each time interval will also be included.
+Retrieves the raw high-frequency sensor data (1000Hz) for a specific test ID.
+Returns a \code{HawkinForceTime} object containing both the raw data frame and
+relevant metadata.
 }
 \examples{
 \dontrun{
-# This is an example of how the function would be called.
+# Fetch data for a single test
+ft_data <- get_forcetime(testId = "test_id_string")
 
-df_ft <- get_forcetime(testId = `stringId`)
+# Access the raw numbers
+df <- ft_data@data
 
+# Access metadata
+print(ft_data@athlete_name)
 }
 
 }

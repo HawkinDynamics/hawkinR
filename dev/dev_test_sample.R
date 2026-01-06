@@ -129,7 +129,7 @@ all_my_ft <- function(testIdList) {
 
     tryCatch({
       ft_data <- get_forcetime(testId = testIdList$id[i])
-      ft_list[[testIdList$id[i]]] <- ft_data
+      ft_list[[paste0(testIdList$id[i], "_", testIdList$athlete_name[i], "_", testIdList$testType_name[i])]] <- ft_data
       message("Completed fetching Force-Time data for test ", i, " of ", nrow(testIdList), ": ", testIdList$id[i])
     }, error = function(e) {
       logger::log_error(paste0("hawkinR/all_my_ft ->",
@@ -142,3 +142,5 @@ all_my_ft <- function(testIdList) {
 }
 
 all_ft_data <- all_my_ft(lg_tests)
+
+
