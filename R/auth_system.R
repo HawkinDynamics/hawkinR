@@ -173,7 +173,7 @@ S7::method(authenticate, HawkinAuth) <- function(x) {
   x@expires_at   <- as.POSIXct(body$expires_at, origin = "1970-01-01")
 
   logger::log_debug("hawkinR/auth -> Token valid until: {x@expires_at}")
-  logger::log_info("hawkinR -> Successfully authenticated as '{profile_name}'")
+  logger::log_success("hawkinR -> Successfully authenticated as '{profile_name}'")
   return(x)
 }
 
