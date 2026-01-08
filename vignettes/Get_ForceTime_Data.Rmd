@@ -1,104 +1,166 @@
 ---
-title: "Accessing Force-Time Data of A Test"
+title: "Accessing Force-Time Data (Raw)"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Accessing Force-Time Data of A Test}
+  %\VignetteIndexEntry{Accessing Force-Time Data (Raw)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-editor_options: 
-  markdown: 
-    wrap: 80
 ---
 
-```{r setup, include = FALSE}
+```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-library(knitr)
 ```
 
-There are many cases in which a researcher or coach would want to access the
-high-frequency raw data from a test trial. Just like the calculated metrics, you
-can access the time-series data used to create the force plots in your app and
-cloud. In v2.0, this process is more secure and integrates directly with the
-`HawkinAuth` connection object.
+There are many cases in which a researcher or coach would want to access the high-frequency raw data (1000Hz) from a test trial. Just like the calculated metrics, you can access the time-series data used to create the force plots in your app and cloud.
 
---------------------------------------------------------------------------------
+In v2.0, **hawkinR** introduces two robust functions for this workflow:
+
+1.  get_forcetime() : Fetches a single test as a structured S7 object containing both metadata and data.
+
+2.  get_forcetime_bulk(): A powerful wrapper for fetching multiple tests, creating lists of objects, or exporting data directly to file (CSV, JSON, Parquet, RDS).
+
+------------------------------------------------------------------------
 
 ## 1. Establishing a Connection
 
-The first step is always to initialize your session. If you have already stored
-your credentials using `hd_auth_store()`, you simply need to connect.
+The first step is always to initialize your session.
 
 ```{r access, eval=FALSE }
 library(hawkinR)
 
-# Connect using your default secure profile
-hd_connect(region = "Americas")
+# Connect using your secure profile
+hd_connect(profile = "default")
 ```
 
-## 2. Locating Test IDs
+------------------------------------------------------------------------
 
-To pull force-time data, you first need the unique ID of the specific trial. You
-can find these IDs by running a query with `get_tests()`.
+## 2. Fetching a Single Test
+
+To pull force-time data, you first need the unique `id` of the specific trial. You can find these IDs by running a standard query with `get_tests()`.
 
 ```{r getMyTests, eval=FALSE}
-# Pull recent tests to find a specific trial ID
-my_tests <- get_tests(from = "2023-11-01")
-
-# View the first few rows to identify the 'id' column
-head(my_tests[, c("id", "athlete_name", "type_name")])
+# Find a specific Countermovement Jump from yesterday
+recent_tests <- get_tests(typeId = "CMJ", from = Sys.Date() - 1)
+target_id <- recent_tests$id[1]
 ```
 
-## 3. Retrieving Force-Time Series
+Once you have the ID, use `get_forcetime()`:
 
-Once you have the `trialId`, use the `get_forcetime()` function. In v2.0, this
-function returns a cleaned data frame where column names are standardized for
-easier analysis (e.g., using `time_s`, `force_left`, `force_right`).
-
-```{r testTable, eval=FALSE, echo=TRUE, message=FALSE}
-# Select the ID of the specific trial
-target_id <- my_tests$id[1]
-
-# Get the raw force-time data
-raw_data <- get_forcetime(testId = target_id)
-
-# The result is a data frame ready for plotting or custom analysis
-head(raw_data)
+```{r getRawData, eval=FALSE}
+# Fetch the raw data
+ft_obj <- get_forcetime(testId = target_id)
 ```
 
-```{r dataShort, echo=FALSE}
+### The `HawkinForceTime` Object
 
-raw_data <- data.frame(
-  'time_s' = c(0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01, 0.011, 0.012, 0.013, 0.014, 0.015,0.016,0.017,0.018, 0.019,0.02),
-  'force_right' = c(622,622,622,623,622,622,623,622,621,620,620,619,619,619,618,618,619,620,620,620),
-  'force_left' = c(564,564,564,564,564,565,566,566,566,566,567,567,568,568,568,568,568,568,569,568),
-  'force_combined' = c(1186,1186,1186,1187,1186,1187,1189,1188,1187,1186,1187,1186,1187,1187,1186,1186,1187,1188,1189,1188),
-  'velocity_m_s' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
-  'displacement_m' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
-  'power_w' = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+Unlike previous versions, this function now returns a structured **S7 Class**. This ensures that metadata (who, what, when) is always attached to the raw numbers without bloating the data frame.
+
+```{r S7Object, eval=FALSE}
+# 1. Access Metadata properties
+print(ft_obj@athlete_name)
+#> [1] "John Doe"
+
+print(ft_obj@testType_name)
+#> [1] "Countermovement Jump"
+
+# 2. Access the Raw Data Frame (Time, Force, Velocity, etc.)
+head(ft_obj@data)
+#>   time_s force_left_N force_right_N force_combined_N velocity_m_s
+#> 1  0.000          450           460              910         0.00
+#> 2  0.001          451           459              910         0.00
+```
+
+### Simple Plotting Example
+
+```{r ftPlot, eval=FALSE}
+# Plot the force trace using base R
+plot(
+  x = ft_obj@data$time_s, 
+  y = ft_obj@data$force_combined_N, 
+  type = "l", 
+  col = "blue",
+  main = paste("Jump Trace:", ft_obj@athlete_name),
+  xlab = "Time (s)", 
+  ylab = "Force (N)"
+)
+```
+
+------------------------------------------------------------------------
+
+## 3. Bulk Fetching & Exporting
+
+If you need to extract data for an entire team, a specific date range, or a research study, `get_forcetime_bulk()` is the most efficient tool. It handles looping, progress bars, and error handling automatically.
+
+### Workflow A: Fetch to List (In-Memory Analysis)
+
+Use this if you want to analyze multiple trials immediately within R.
+
+```{r workflowA, eval=FALSE,message=FALSE}
+# Fetch all Drop Jumps from the last 7 days
+# Note: We pass standard get_tests() arguments (from, typeId) directly here!
+dj_list <- get_forcetime_bulk(
+  typeId = "Drop Jump", 
+  from = Sys.Date() - 7
 )
 
-kable(raw_data)
+# Result is a list of HawkinForceTime objects
+length(dj_list)
+#> [1] 12
+
+# Access the first jump in the list
+first_jump <- dj_list[[1]]
 ```
 
-## 4. Visualization Example
+### Workflow B: Export to File (Data Lake / Research)
 
-The data returned by `get_forcetime()` is structured perfectly for ggplot2 or
-base R plotting.
+Use this if you are building a database or need to pass files to Python, Excel, or PowerBI.
 
-```{r fakeCall, eval=FALSE}
-library(ggplot2)
+**Key Features:**
 
-ggplot(raw_data, aes(x = time_s)) +
-  geom_line(aes(y = force_left, color = "Left")) +
-  geom_line(aes(y = force_right, color = "Right")) +
-  labs(title = paste("Force-Time Series:", target_id),
-       y = "Force (N)",
-       x = "Time (s)") +
-  theme_minimal()
+-   **Manifest File:** Automatically creates `metadata_manifest.csv` in the folder to summarize all exported files.
+
+-   **File Naming:** Fully customizable using object properties (e.g., `athlete_name`, `date`).
+
+-   **Formats:** Supports `csv`, `tsv`, `json`, `rds`, and `parquet` (requires `arrow` package).
+
+```{r workfowB, eval=FALSE}
+# Export all tests for a specific athlete to CSV
+get_forcetime_bulk(
+  athleteId = "athlete_uuid_here",
+  export = TRUE,
+  export_dir = "C:/My_Research_Data/Raw_Exports",
+  format = "csv",
+  
+  # Custom Naming: "Last, First_TestType_YYYYMMDD_HHMMSS.csv"
+  file_naming = c("athlete_name", "testType_name", "date")
+)
 ```
 
-And just like that we have our force-time data. You can do this to with any of
-your test types.
+#### Naming with Custom Tags
+
+You can even use nested properties from the athlete's external tags in your filenames using `$` syntax:
+
+```{r customTags, eval=FALSE}
+get_forcetime_bulk(
+  ...,
+  file_naming = c("athlete_external$student_id", "testType_name")
+)
+```
+
+## 4. De-identification for Research
+
+If you are publishing data or sharing it with third parties, you can strip PII (Personally Identifiable Information) automatically.
+
+```{r deidentified, eval=FALSE}
+get_forcetime_bulk(
+  teamId = "team_uuid_here",
+  export = TRUE,
+  export_dir = "./study_data",
+  deidentify = TRUE  # Replaces athlete_name with "De-identified"
+)
+```
+
+> **Note:** The `athlete_id` (UUID) is preserved so you can still distinguish between subjects, but the human-readable names are removed from both the object and the exported filenames.

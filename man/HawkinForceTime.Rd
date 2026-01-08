@@ -6,6 +6,10 @@
 \arguments{
 \item{test_id}{character. The unique ID of the test trial.}
 
+\item{test_sampling_rate}{integer. The sampling rate of the test data (e.g., 1000 Hz).}
+
+\item{test_date}{POSIXct. The date and time the test occurred.}
+
 \item{testType_id}{character. The unique ID of the test type.}
 
 \item{testType_name}{character. The human-readable name of the test type.}
@@ -27,8 +31,6 @@
 \item{athlete_external}{list. A list of external properties associated with the athlete.}
 
 \item{timestamp}{integer. The Unix timestamp of the test trial.}
-
-\item{date}{POSIXct. The date and time the test occurred.}
 
 \item{data}{data.frame. A data frame containing the raw sensor time-series data.}
 
