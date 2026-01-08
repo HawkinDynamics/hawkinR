@@ -10,6 +10,7 @@ NULL
 #' alongside its metadata.
 #'
 #' @param test_id character. The unique ID of the test trial.
+#' @param test_sampling_rate integer. The sampling rate of the test data (e.g., 1000 Hz).
 #' @param testType_id character. The unique ID of the test type.
 #' @param testType_name character. The human-readable name of the test type.
 #' @param testType_canoncical character. The canonical ID associated with the test type.
@@ -21,7 +22,7 @@ NULL
 #' @param athlete_active logical. Indicates if the athlete is currently active.
 #' @param athlete_external list. A list of external properties associated with the athlete.
 #' @param timestamp integer. The Unix timestamp of the test trial.
-#' @param date POSIXct. The date and time the test occurred.
+#' @param test_date POSIXct. The date and time the test occurred.
 #' @param data data.frame. A data frame containing the raw sensor time-series data.
 #' @param data_rsi any. Calculated RSI values or relevant raw metrics.
 #'
@@ -32,6 +33,8 @@ HawkinForceTime <- S7::new_class(
   "HawkinForceTime",
   properties = list(
     test_id               = S7::new_property(S7::class_character),
+    test_sampling_rate    = S7::new_property(S7::class_integer),
+    test_date             = S7::new_property(S7::class_POSIXct),
     testType_id           = S7::new_property(S7::class_character),
     testType_name         = S7::new_property(S7::class_character),
     testType_canoncical   = S7::new_property(S7::class_character),
@@ -43,7 +46,6 @@ HawkinForceTime <- S7::new_class(
     athlete_active        = S7::new_property(S7::class_logical),
     athlete_external      = S7::new_property(S7::class_list),
     timestamp             = S7::new_property(S7::class_integer),
-    date                  = S7::new_property(S7::class_POSIXct),
     data                  = S7::new_property(S7::class_data.frame),
     data_rsi              = S7::new_property(S7::class_any)
   )
@@ -265,10 +267,18 @@ get_forcetime <- function(testId, x = NULL) {
       NULL
     }
 
+    # Store sampling rate
+    sampling_rate <- if (testCanonical %in% c("4KlQgKmBxbOY6uKTLDFL", "umnEZPgi6zaxuw0KhUpM")) {
+      1200L
+    } else {
+      1000L
+    }
+
     out_object <- HawkinForceTime(
       test_id               = testId,
+      test_sampling_rate    = as.integer(sampling_rate),
       timestamp             = as.integer(timestamp),
-      date                  = date_obj,
+      test_date             = date_obj,
       testType_id           = as.character(meta_test[[3]]),
       testType_name         = as.character(testName),
       testType_canoncical   = as.character(testCanonical),

@@ -1,5 +1,5 @@
 ################################
-# hawkinR v1.2.0.1000 Dev Test #
+# hawkinR v1.2.0.1001 Dev Test #
 ################################
 
 #---------------------------------#
@@ -122,25 +122,38 @@ reb_tests <- get_tests(typeId = "CMJ")
 ft_test <- get_forcetime(testId = lg_tests$id[1])
 
 ## | H. Get Mass Force time Data -----
-all_my_ft <- function(testIdList) {
-  ft_list <- list()
-  for (i in 1:nrow(testIdList)) {
-    message("Fetching Force-Time data for test ", i, " of ", nrow(testIdList), ": ", testIdList$id[i])
 
-    tryCatch({
-      ft_data <- get_forcetime(testId = testIdList$id[i])
-      ft_list[[paste0(testIdList$id[i], "_", testIdList$athlete_name[i], "_", testIdList$testType_name[i])]] <- ft_data
-      message("Completed fetching Force-Time data for test ", i, " of ", nrow(testIdList), ": ", testIdList$id[i])
-    }, error = function(e) {
-      logger::log_error(paste0("hawkinR/all_my_ft ->",
-                              "Error fetching data for test ID ",
-                              testIdList$id[i], ": ", e$message))
-      stop("Error fetching data for test ID ", call. = FALSE)
-    })
-  }
-  return(ft_list)
-}
+# store raw data locally
+all_my_data <- get_forcetime_bulk(test_ids = lg_tests$id)
 
-all_ft_data <- all_my_ft(lg_tests)
+# save raw data as rds file -----
+get_forcetime_bulk(
+  test_ids = lg_tests$id[1:10],
+  export = TRUE,
+  export_dir = paste0(getwd(),"/dev/sampleData/"),
+  format = "rds",
+  file_naming = c("athlete_name","test_id")
+)
 
+# save raw data as csv file -----
+get_forcetime_bulk(
+  test_ids = NULL,
+  export = TRUE,
+  export_dir = paste0(getwd(),"/dev/sampleDataCSV/"),
+  format = "csv",
+  file_naming = c("athlete_name","test_date","test_id"),
+  athleteId = rosterActive$id[rosterActive$name %in% "Lauren Green"],
+  from = "2024-06-01",
+  to = "2024-12-31"
+)
 
+# save raw data as tsv file -----
+get_forcetime_bulk(
+  export = TRUE,
+  export_dir = paste0(getwd(),"/dev/sampleDataTSV/"),
+  format = "tsv",
+  file_naming = c("testType_name","date","test_id"),
+  typeId = rebType,
+  from = "2024-01-01",
+  to = "2024-12-31"
+)
