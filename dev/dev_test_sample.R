@@ -22,11 +22,9 @@ org <- "v1"
 ## | B. Store API Secret -----
 ### 1. Store the token for different profiles
 hd_auth_store(profile = "ghouse_dev", token = Sys.getenv("gspToken"))
-#hd_auth_store(profile = "hawkinR_tester", token = Sys.getenv("hawkin_tester"))
-hd_auth_store(profile = "Greenhouse")
 
 ### 2. Check Connection
-hd_connect(profile = "hawkinR_tester")
+hd_connect(profile = "ghouse_dev")
 ### 3. Manually fetch the connection to ensure it exists
 my_conn <- get_active_conn()
 ### 4. Access the profile from the connection
@@ -111,12 +109,12 @@ cmj_tests <- get_tests(
   )
 
 ### 2. CMJ Tests
-sj_tests <- get_tests(typeId = "Isometric Test")
+iso_tests <- get_tests(typeId = "Isometric Test")
 
 ### 3. Rebound Tests
 types <- get_testTypes()
-rebType <- types$canonicalId[types$name %in% "Drop Jump"]
-reb_tests <- get_tests(typeId = "CMJ")
+djType <- types$canonicalId[types$name %in% "Drop Jump"]
+dj_tests <- get_tests(typeId = djType)
 
 ## | G. Get Force time Data -----
 ft_test <- get_forcetime(testId = lg_tests$id[1])
@@ -130,7 +128,7 @@ all_my_data <- get_forcetime_bulk(test_ids = lg_tests$id)
 get_forcetime_bulk(
   test_ids = lg_tests$id[1:10],
   export = TRUE,
-  export_dir = paste0(getwd(),"/dev/sampleData/"),
+  export_dir = paste0(getwd(),"/dev/sampleDataRDS/"),
   format = "rds",
   file_naming = c("athlete_name","test_id")
 )
@@ -144,7 +142,7 @@ get_forcetime_bulk(
   file_naming = c("athlete_name","test_date","test_id"),
   athleteId = rosterActive$id[rosterActive$name %in% "Lauren Green"],
   from = "2024-06-01",
-  to = "2024-12-31"
+  to = "2024-08-31"
 )
 
 # save raw data as tsv file -----
@@ -154,6 +152,6 @@ get_forcetime_bulk(
   format = "tsv",
   file_naming = c("testType_name","date","test_id"),
   typeId = rebType,
-  from = "2024-01-01",
+  from = "2024-09-01",
   to = "2024-12-31"
 )
