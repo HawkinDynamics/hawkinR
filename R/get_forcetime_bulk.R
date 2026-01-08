@@ -189,6 +189,9 @@ get_forcetime_bulk <- function(test_ids = NULL,
         } else if (format == "tsv") {
           utils::write.table(obj@data, full_path, sep = "\t", row.names = FALSE)
         } else if (format == "parquet") {
+          if (!requireNamespace("arrow", quietly = TRUE)) {
+            stop("The 'arrow' package is required for Parquet export. Please install it: install.packages('arrow')", call. = FALSE)
+          }
           arrow::write_parquet(obj@data, full_path)
         } else if (format == "rds") {
           saveRDS(obj, full_path)
