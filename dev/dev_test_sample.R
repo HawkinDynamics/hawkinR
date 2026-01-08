@@ -151,7 +151,7 @@ get_forcetime_bulk(
   export_dir = paste0(getwd(),"/dev/sampleDataTSV/"),
   format = "tsv",
   file_naming = c("testType_name","date","test_id"),
-  typeId = rebType,
+  typeId = djType,
   from = "2024-09-01",
   to = "2024-12-31"
 )
