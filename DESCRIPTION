@@ -32,7 +32,8 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0),
     crayon,
-    httpuv
+    httpuv,
+    arrow
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 LazyData: true

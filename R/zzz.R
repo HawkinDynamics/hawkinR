@@ -26,21 +26,24 @@
 .onAttach <- function(libname, pkgname) {
   version <- utils::packageVersion(pkgname)
 
-  # ASCII Art Logo and Message
+  # ASCII Art Logo
   msg <- paste0(
     "\n",
-    "  _                 _   _       ____  \n",
-    " | |__   __ _ _ __ | |_(_)_ __ |  _ \\ \n",
-    " | '_ \\ / _` | '_ \\| __| | '_ \\| |_) |\n",
-    " | | | | (_| | | | | |_| | | | |  _ < \n",
-    " |_| |_|\\__,_|_| |_|\\__|_|_| |_|_| \\_\\\n",
-    "                                      \n",
+    "############################################################\n",
+    "#                                                          #\n",
+    "#   _                          _      _           _____    #\n",
+    "#  | |                        | |    (_)         |  __ \\   #\n",
+    "#  | |__     __ _  __      __ | | __  _   _ __   | |__) |  #\n",
+    "#  | '_ \\   / _` | \\ \\ /\\ / / | |/ / | | | '_ \\  |  _  /   #\n",
+    "#  | | | | | (_| |  \\ V  V /  |   <  | | | | | | | | \\ \\   #\n",
+    "#  |_| |_|  \\__,_|   \\_/\\_/   |_|\\_\\ |_| |_| |_| |_|  \\_\\  #\n",
+    "#                                                          #\n",
+    "############################################################\n",
+    "\n",
     " v", version, " | Modern Hawkin Dynamics API Client\n",
-    " ----------------------------------------------\n",
-    " \U0001f512 Credentials:  hd_auth_store()\n",
-    " \U0001f310 Connection:   hd_connect()\n",
-    " \U0001f4d6 Guides:       browseVignettes('hawkinR')\n",
-    " ----------------------------------------------\n"
+    "\n",
+    " > Documentation: https://hawkindynamics.github.io/hawkinR/\n",
+    " > Issues: https://github.com/HawkinDynamics/hawkinR/issues\n"
   )
 
   packageStartupMessage(msg)
