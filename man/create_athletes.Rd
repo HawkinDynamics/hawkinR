@@ -4,12 +4,15 @@
 \alias{create_athletes}
 \title{Create Athletes}
 \usage{
-create_athletes(athleteData, x = NULL)
+create_athletes(athleteData, ...)
 }
 \arguments{
 \item{athleteData}{A data frame of the athletes to be created. The data frame must follow the schema:}
 
-\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
+\item{...}{Optional arguments.
+\itemize{
+\item \code{profile}: A \code{HawkinAuth} object. If not provided, the active connection is used.
+}}
 }
 \value{
 If successful, a confirmation message will be printed with the number of successful athletes created.

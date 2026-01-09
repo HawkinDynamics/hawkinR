@@ -4,35 +4,19 @@
 \alias{get_forcetime}
 \title{Get Force-Time Data}
 \usage{
-get_forcetime(testId, x = NULL)
+get_forcetime(testId, ...)
 }
 \arguments{
-\item{testId}{Give the unique test id of the trial you want to be called.}
+\item{testId}{character. The unique identifier for the test trial.}
 
-\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
+\item{...}{Optional arguments.
+\itemize{
+\item \code{profile}: A \code{HawkinAuth} object. If not provided, the active connection is used.
+}}
 }
 \value{
 A \code{HawkinForceTime} object.
-\itemize{
-\item Use \code{obj@data} to access the raw data frame (Time, Force, Velocity, etc.).
-\item Use \code{obj@athlete_name} or \code{obj@test_type_name} to access metadata.
-}
 }
 \description{
-Retrieves the raw high-frequency sensor data (1000Hz) for a specific test ID.
-Returns a \code{HawkinForceTime} object containing both the raw data frame and
-relevant metadata.
-}
-\examples{
-\dontrun{
-# Fetch data for a single test
-ft_data <- get_forcetime(testId = "test_id_string")
-
-# Access the raw numbers
-df <- ft_data@data
-
-# Access metadata
-print(ft_data@athlete_name)
-}
-
+Retrieves the raw force-time data for a specific test trial ID.
 }

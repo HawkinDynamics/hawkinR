@@ -11,7 +11,6 @@ get_forcetime_bulk(
   format = c("csv", "json", "rds", "tsv", "parquet"),
   file_naming = c("test_id"),
   deidentify = FALSE,
-  x = NULL,
   ...
 )
 }
@@ -24,35 +23,14 @@ get_forcetime_bulk(
 
 \item{format}{character. Options: "csv", "tsv", "json", "rds", "parquet".}
 
-\item{file_naming}{character vector. Properties to construct the filename.
-Default: \code{c("test_id")}. Supports nested access like \code{"athlete_external$id"}.}
+\item{file_naming}{character vector. Properties to construct the filename.}
 
 \item{deidentify}{logical. If TRUE, replaces \code{athlete_name} with "De-identified".}
 
-\item{x}{Optional \code{HawkinAuth} object.}
-
-\item{...}{Additional arguments passed to \code{get_tests} (e.g., \code{from}, \code{typeId}).}
+\item{...}{Additional arguments passed to \code{get_tests} (e.g., \code{from}, \code{typeId}).
+Also accepts \code{profile} (HawkinAuth object).}
 }
 \description{
 Retrieves raw force-time data for multiple tests. This function acts as a wrapper
 for both \code{get_tests} and \code{get_forcetime}.
-}
-\details{
-\strong{Exporting Data:}
-If \code{export = TRUE}, the function creates a manifest file (e.g., \code{metadata_manifest.csv})
-in the \code{export_dir}. This file matches the selected \code{format} and acts as a summary index,
-containing the metadata for every test exported.
-
-\strong{File Naming:}
-The \code{file_naming} argument supports standard properties (e.g., \code{"athlete_name"})
-and nested list properties using \code{$} syntax (e.g., \code{"athlete_external$custom_id"}).
-Dates are automatically formatted as \code{YYYYMMDDTHHMMSS} (e.g., \verb{20231025T143000}).
-
-\strong{Supported Formats:}
-\itemize{
-\item \strong{"csv", "tsv"}: Saves raw data frame. Manifest is .csv or .tsv.
-\item \strong{"parquet"}: Saves raw data frame (requires \code{arrow} package). Manifest is .parquet.
-\item \strong{"json"}: Saves nested list with metadata and data. Manifest is .json.
-\item \strong{"rds"}: Saves the full \code{HawkinForceTime} S7 object. Manifest is .rds.
-}
 }

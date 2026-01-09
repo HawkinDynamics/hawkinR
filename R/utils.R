@@ -545,3 +545,44 @@ dfDatetoChar <- function(arg_df) {
 
 
 #--------------------#
+
+#' Sanitize Chunks for Binding
+#'
+#' Ensures consistent column types across a list of data frames before binding.
+#' Specifically handles the conflict between logical NAs and List columns.
+#'
+#' @param chunks A list of data frames
+#' @return A list of data frames with consistent list columns
+#' @keywords internal
+#' @noRd
+sanitize_chunks <- function(chunks) {
+  # If list is empty or has 1 item, no conflict possible
+  if (length(chunks) < 2) return(chunks)
+
+  # 1. Identify all column names across all chunks
+  all_cols <- unique(unlist(lapply(chunks, names)))
+
+  # 2. Find which columns are lists in AT LEAST one chunk
+  list_cols <- all_cols[vapply(all_cols, function(col) {
+    any(vapply(chunks, function(df) {
+      col %in% names(df) && inherits(df[[col]], "list")
+    }, logical(1)))
+  }, logical(1))]
+
+  if (length(list_cols) == 0) return(chunks)
+
+  logger::log_trace("hawkinR/utils -> sanitize_chunks: enforcing list type for {paste(list_cols, collapse=', ')}")
+
+  # 3. Force those columns to be lists in ALL chunks
+  chunks <- lapply(chunks, function(df) {
+    for (col in list_cols) {
+      # If chunk has the column AND it's not a list (likely logical NA), coerce it
+      if (col %in% names(df) && !inherits(df[[col]], "list")) {
+        df[[col]] <- as.list(df[[col]])
+      }
+    }
+    return(df)
+  })
+
+  return(chunks)
+}
