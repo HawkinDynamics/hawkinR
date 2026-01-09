@@ -5,12 +5,15 @@
 #' `includeInactive` parameter is set to TRUE.
 #'
 #' @usage
-#' get_athletes(includeInactive = FALSE, x = NULL)
+#' get_athletes(includeInactive = FALSE, ...)
 #'
 #' @param includeInactive FALSE by default to exclude inactive players in database. Set to TRUE if you want
 #' inactive players included in the return.
 #'
-#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
+#' @param ... Optional arguments.
+#' \itemize{
+#'   \item `profile`: A `HawkinAuth` object. If not provided, the active connection is used.
+#' }
 #'
 #' @return
 #' Response will be a data frame containing the athletes that match this query.
@@ -18,12 +21,12 @@
 #'
 #' | **Column Name** | **Type** | **Description** |
 #' |-----------------|----------|-----------------|
-#' | **id**          | *chr*    | athlete's unique ID |
-#' | **name**        | *chr*    | athlete's given name (First Last) |
-#' | **active**      | *bool*   | athlete is active (TRUE) |
-#' | **teams**       | *chr*    | team ids separated by "," |
-#' | **groups**      | *chr*    | group ids separated by "," |
-#' | **external**    | *chr*    | external properties will have a column of their name with the appropriate values for the athlete of `NA` if it does not apply |
+#' | **id** | *chr* | athlete's unique ID |
+#' | **name** | *chr* | athlete's given name (First Last) |
+#' | **active** | *bool* | athlete is active (TRUE) |
+#' | **teams** | *chr* | team ids separated by "," |
+#' | **groups** | *chr* | group ids separated by "," |
+#' | **external** | *chr* | external properties will have a column of their name with the appropriate values for the athlete of `NA` if it does not apply |
 #'
 #' @examples
 #' \dontrun{
@@ -47,23 +50,39 @@
 
 
 # Get Athletes -----
-get_athletes <- function(includeInactive = FALSE, x = NULL) {
+get_athletes <- function(includeInactive = FALSE, ...) {
 
   # 1. ----- Set Logger -----
   logger::log_trace("hawkinR -> Run: get_athletes")
 
-
-  # 2. ----- Authentication (new auth manager) -----
+  # 2. ----- Authentication -----
   logger::log_trace("hawkinR/get_athletes -> Resolving connection")
-  if (is.null(x)) x <- get_active_conn()
+  extra_args <- list(...)
+
+  if (!is.null(extra_args$profile)) {
+    if (is.character(extra_args$profile)) {
+      # User passed a name string, so we connect
+      conn <- hd_connect(profile = extra_args$profile)
+    } else {
+      # User passed the object directly
+      conn <- extra_args$profile
+    }
+  } else {
+    conn <- get_active_conn()
+  }
+
+  # Validate
+  if (!is.object(conn) || is.null(conn@access_token)) {
+    stop("A valid HawkinAuth connection is required. Run hd_connect() first.", call. = FALSE)
+  }
 
   # Token Lifecycle Management
-  token_remaining <- round(as.numeric(difftime(x@expires_at, Sys.time(), units = "secs")))
+  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
   logger::log_debug("hawkinR/get_athletes -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/get_athletes -> Token expiring soon. Refreshing...")
-    x <- authenticate(x)
-    set_active_conn(x)
+    conn <- authenticate(conn)
+    set_active_conn(conn)
   }
 
   # 3. ----- Build URL Request -----
@@ -77,7 +96,7 @@ get_athletes <- function(includeInactive = FALSE, x = NULL) {
     params$includeInactive <- "true"
   }
 
-  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("athletes")
 
   # Only add the query if params list is not empty
@@ -96,7 +115,7 @@ get_athletes <- function(includeInactive = FALSE, x = NULL) {
   # 4. ----- Execute Call -----
   logger::log_trace("hawkinR/get_athletes -> Executing API request")
   resp <-  request |>
-    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_auth_bearer_token(conn@access_token) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
@@ -121,13 +140,13 @@ get_athletes <- function(includeInactive = FALSE, x = NULL) {
   # 6. ----- Parse Response -----
   if (status == 200) {
     logger::log_trace("hawkinR/get_athletes -> Parsing JSON response")
-    x <- httr2::resp_body_json(resp = resp,
-                               check_type = TRUE,
-                               simplifyVector = TRUE)
+    body <- httr2::resp_body_json(resp = resp,
+                                  check_type = TRUE,
+                                  simplifyVector = TRUE)
 
     # Create data frame from returns data
     logger::log_trace("hawkinR/get_athletes -> Converting to data frame")
-    df <- base::as.data.frame(x[[1]])
+    df <- base::as.data.frame(body[[1]])
 
     # Handle External Properties
     if (base::ncol(df) > 5) {
@@ -137,9 +156,7 @@ get_athletes <- function(includeInactive = FALSE, x = NULL) {
       df <- base::cbind(a, b)
     }
 
-    logger::log_success("hawkinR/get_athletes -> {x[[2]]} athletes returned")
+    logger::log_success("hawkinR/get_athletes -> {body[[2]]} athletes returned")
     return(df)
   }
 }
-
-

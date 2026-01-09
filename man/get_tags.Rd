@@ -4,10 +4,14 @@
 \alias{get_tags}
 \title{Get Tags}
 \usage{
-get_tags(x = NULL)
+get_tags(...)
 }
 \arguments{
-\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
+\item{...}{Optional arguments.
+\itemize{
+\item \code{profile}: A \code{HawkinAuth} object or a character string of the profile name.
+If not provided, the active connection is used.
+}}
 }
 \value{
 Response will be a data frame containing the tags that are in the organization.
@@ -23,10 +27,11 @@ Get the tag names and ids for all the tags in the system.
 }
 \examples{
 \dontrun{
-# This is an example of how the function would be called.
-
+# Use active connection
 df_tags <- get_tags()
 
+# Use a specific profile by name
+df_tags_dev <- get_tags(profile = "my_dev_profile")
 }
 
 }

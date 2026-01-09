@@ -4,9 +4,13 @@
 #' Get the tag names and ids for all the tags in the system.
 #'
 #' @usage
-#' get_tags(x = NULL)
+#' get_tags(...)
 #'
-#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
+#' @param ... Optional arguments.
+#' \itemize{
+#'   \item `profile`: A `HawkinAuth` object or a character string of the profile name.
+#'   If not provided, the active connection is used.
+#' }
 #'
 #' @return
 #' Response will be a data frame containing the tags that are in the organization.
@@ -14,16 +18,17 @@
 #'
 #' | **Column Name** | **Type** | **Description** |
 #' |-----------------|----------|-----------------|
-#' | **id**          | *chr*    | tag's unique ID |
-#' | **name**        | *chr*    | tag's given name |
-#' | **description** | *chr*    | description of tag provided by user |
+#' | **id** | *chr* | tag's unique ID |
+#' | **name** | *chr* | tag's given name |
+#' | **description** | *chr* | description of tag provided by user |
 #'
 #' @examples
 #' \dontrun{
-#' # This is an example of how the function would be called.
-#'
+#' # Use active connection
 #' df_tags <- get_tags()
 #'
+#' # Use a specific profile by name
+#' df_tags_dev <- get_tags(profile = "my_dev_profile")
 #' }
 #'
 #' @importFrom magrittr %>%
@@ -32,30 +37,45 @@
 #'
 #' @export
 
-
 # Get Tags -----
-get_tags <- function(x = NULL) {
+get_tags <- function(...) {
 
- # 1. ----- Set Logger -----
+  # 1. ----- Set Logger -----
   logger::log_trace("hawkinR -> Run: get_tags")
 
-
-  # 2. ----- Authentication (new auth manager) -----
+  # 2. ----- Resolve Connection -----
   logger::log_trace("hawkinR/get_tags -> Resolving connection")
-  if (is.null(x)) x <- get_active_conn()
+  extra_args <- list(...)
+
+  if (!is.null(extra_args$profile)) {
+    if (is.character(extra_args$profile)) {
+      # User passed a name string, so we connect
+      conn <- hd_connect(profile = extra_args$profile)
+    } else {
+      # User passed the object directly
+      conn <- extra_args$profile
+    }
+  } else {
+    conn <- get_active_conn()
+  }
+
+  # Validate
+  if (!is.object(conn) || is.null(conn@access_token)) {
+    stop("A valid HawkinAuth connection is required. Run hd_connect() first.", call. = FALSE)
+  }
 
   # Token Lifecycle Management
-  token_remaining <- round(as.numeric(difftime(x@expires_at, Sys.time(), units = "secs")))
+  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
   logger::log_debug("hawkinR/get_tags -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/get_tags -> Token expiring soon. Refreshing...")
-    x <- authenticate(x)
-    set_active_conn(x)
+    conn <- authenticate(conn)
+    set_active_conn(conn)
   }
 
   # 3. ----- Build URL Request -----
   logger::log_trace("hawkinR/get_tags -> Building request")
-  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("tags")
 
   reqPath <- httr2::req_dry_run(request, quiet = TRUE)
@@ -64,7 +84,7 @@ get_tags <- function(x = NULL) {
   # 4. ----- Execute Call -----
   logger::log_trace("hawkinR/get_tags -> Executing API request")
   resp <-  request |>
-    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_auth_bearer_token(conn@access_token) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
@@ -89,17 +109,16 @@ get_tags <- function(x = NULL) {
   # 6. ----- Parse Response -----
   if (status == 200) {
     logger::log_trace("hawkinR/get_tags -> Parsing JSON response")
-    x <- httr2::resp_body_json(
+    body <- httr2::resp_body_json(
       resp = resp,
       check_type = TRUE,
       simplifyVector = TRUE
     )
 
     logger::log_trace("hawkinR/get_tags -> Converting to data frame")
-    df <- base::as.data.frame(x[[1]])
+    df <- base::as.data.frame(body[[1]])
 
     logger::log_success("hawkinR/get_tags -> {base::nrow(df)} tags returned")
     return(df)
   }
 }
-

@@ -2,130 +2,88 @@
 NULL
 
 # 1. Class Definition -----------------------------------------------------
-
-#' Hawkin Force-Time Data Class
-#'
-#' @description
-#' An S7 class structured to store the raw time-series data of a test
-#' alongside its metadata.
-#'
-#' @param test_id character. The unique ID of the test trial.
-#' @param test_sampling_rate integer. The sampling rate of the test data (e.g., 1000 Hz).
-#' @param testType_id character. The unique ID of the test type.
-#' @param testType_name character. The human-readable name of the test type.
-#' @param testType_canoncical character. The canonical ID associated with the test type.
-#' @param testType_tags list. A list of tags associated with the test.
-#' @param athlete_id character. The unique ID of the athlete.
-#' @param athlete_name character. The name of the athlete (First Last).
-#' @param athlete_teams character. A comma-separated string of team IDs.
-#' @param athlete_groups character. A comma-separated string of group IDs.
-#' @param athlete_active logical. Indicates if the athlete is currently active.
-#' @param athlete_external list. A list of external properties associated with the athlete.
-#' @param timestamp integer. The Unix timestamp of the test trial.
-#' @param test_date POSIXct. The date and time the test occurred.
-#' @param data data.frame. A data frame containing the raw sensor time-series data.
-#' @param data_rsi any. Calculated RSI values or relevant raw metrics.
-#'
-#' @usage NULL
-#'
-#' @export
-HawkinForceTime <- S7::new_class(
-  "HawkinForceTime",
-  properties = list(
-    test_id               = S7::new_property(S7::class_character),
-    test_sampling_rate    = S7::new_property(S7::class_integer),
-    test_date             = S7::new_property(S7::class_POSIXct),
-    testType_id           = S7::new_property(S7::class_character),
-    testType_name         = S7::new_property(S7::class_character),
-    testType_canoncical   = S7::new_property(S7::class_character),
-    testType_tags         = S7::new_property(S7::class_list),
-    athlete_id            = S7::new_property(S7::class_character),
-    athlete_name          = S7::new_property(S7::class_character),
-    athlete_teams         = S7::new_property(S7::class_character),
-    athlete_groups        = S7::new_property(S7::class_character),
-    athlete_active        = S7::new_property(S7::class_logical),
-    athlete_external      = S7::new_property(S7::class_list),
-    timestamp             = S7::new_property(S7::class_integer),
-    data                  = S7::new_property(S7::class_data.frame),
-    data_rsi              = S7::new_property(S7::class_any)
-  )
+# (HawkinForceTime class definition remains identical)
+HawkinForceTime <- S7::new_class("HawkinForceTime",
+                                 properties = list(
+                                   test_id               = S7::class_character,
+                                   test_sampling_rate    = S7::class_integer,
+                                   testType_id           = S7::class_character,
+                                   testType_name         = S7::class_character,
+                                   testType_canoncical   = S7::class_character,
+                                   testType_tags         = S7::class_list,
+                                   athlete_id            = S7::class_character,
+                                   athlete_name          = S7::class_character,
+                                   athlete_teams         = S7::class_character,
+                                   athlete_groups        = S7::class_character,
+                                   athlete_active        = S7::class_logical,
+                                   athlete_external      = S7::class_list,
+                                   timestamp             = S7::class_integer,
+                                   test_date             = S7::class_POSIXct,
+                                   data                  = S7::class_data.frame,
+                                   data_rsi              = S7::class_any
+                                 )
 )
 
 # 2. Function Definition --------------------------------------------------
 
 #' Get Force-Time Data
 #'
-#' @description
-#' Retrieves the raw high-frequency sensor data (1000Hz) for a specific test ID.
-#' Returns a `HawkinForceTime` object containing both the raw data frame and
-#' relevant metadata.
+#' Retrieves the raw force-time data for a specific test trial ID.
 #'
-#' @usage
-#' get_forcetime(testId, x = NULL)
-#'
-#' @param testId Give the unique test id of the trial you want to be called.
-#'
-#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
-#'
-#' @return
-#' A `HawkinForceTime` object.
+#' @param testId character. The unique identifier for the test trial.
+#' @param ... Optional arguments.
 #' \itemize{
-#'   \item Use `obj@data` to access the raw data frame (Time, Force, Velocity, etc.).
-#'   \item Use `obj@athlete_name` or `obj@test_type_name` to access metadata.
+#'   \item `profile`: A `HawkinAuth` object. If not provided, the active connection is used.
 #' }
 #'
-#' @examples
-#' \dontrun{
-#' # Fetch data for a single test
-#' ft_data <- get_forcetime(testId = "test_id_string")
-#'
-#' # Access the raw numbers
-#' df <- ft_data@data
-#'
-#' # Access metadata
-#' print(ft_data@athlete_name)
-#' }
-#'
-#' @importFrom magrittr %>%
-#' @importFrom httr2 request req_url_path_append req_auth_bearer_token req_error req_perform resp_status resp_body_json req_dry_run
-#' @importFrom stringr str_replace_all
-#' @importFrom lubridate as_datetime
-#' @importFrom logger log_trace log_debug log_success log_error
-#' @importFrom S7 new_class new_property class_character class_data.frame class_list class_POSIXct class_logical class_integer
+#' @return A `HawkinForceTime` object.
+#' @importFrom httr2 request req_auth_bearer_token req_perform resp_status resp_body_json
+#' @importFrom logger log_info log_error log_trace log_warn
+#' @importFrom lubridate as_datetime with_tz
 #' @export
+get_forcetime <- function(testId, ...) {
 
-
-## Get Force Time Data -----
-get_forcetime <- function(testId, x = NULL) {
-
-  # 1. ----- Set Logger -----
-  logger::log_trace("hawkinR -> Run: get_forcetime")
-
-
-  # 2. ----- Parameter Validation -----
-  logger::log_trace("hawkinR/get_forcetime -> Validating testId parameter")
-  if (!base::is.character(testId)) {
-    logger::log_error("hawkinR/get_forcetime -> Incorrect testId. Must be a character string.")
-    stop("Incorrect testId. Must be a character string.", call. = FALSE)
-  }
-  logger::log_debug("hawkinR/get_forcetime -> testId: {testId}")
-
-
-  # 3. ----- Authentication (new auth manager) -----
+  # 1. ----- Resolve Connection -----
   logger::log_trace("hawkinR/get_forcetime -> Resolving connection")
-  if (is.null(x)) x <- get_active_conn()
+  extra_args <- list(...)
 
-  token_remaining <- round(as.numeric(difftime(x@expires_at, Sys.time(), units = "secs")))
+  if (!is.null(extra_args$profile)) {
+    if (is.character(extra_args$profile)) {
+      # User passed a name string, so we connect
+      conn <- hd_connect(profile = extra_args$profile)
+    } else {
+      # User passed the object directly
+      conn <- extra_args$profile
+    }
+  } else {
+    conn <- get_active_conn()
+  }
+
+  # Validate
+  if (!is.object(conn) || is.null(conn@access_token)) {
+    stop("A valid HawkinAuth connection is required. Run hd_connect() first.", call. = FALSE)
+  }
+
+  # Token Lifecycle Management
+  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
   logger::log_debug("hawkinR/get_forcetime -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/get_forcetime -> Token expiring soon. Refreshing...")
-    x <- authenticate(x)
-    set_active_conn(x)
+    conn <- authenticate(conn)
+    set_active_conn(conn)
+  }
+
+  # 2. ----- Token Management -----
+  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+  if (token_remaining < 300) {
+    logger::log_info("hawkinR/get_forcetime -> Token expiring soon. Refreshing...")
+    conn <- authenticate(conn)
+    set_active_conn(conn)
   }
 
   # 4. ----- Build Request -----
   logger::log_trace("hawkinR/get_forcetime -> Building request")
-  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("forcetime") |>
     httr2::req_url_path_append(testId)
 
@@ -136,7 +94,7 @@ get_forcetime <- function(testId, x = NULL) {
   # 5. ----- Execute Call -----
   logger::log_trace("hawkinR/get_forcetime -> Executing API request")
   resp <-  request |>
-    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_auth_bearer_token(conn@access_token) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
@@ -255,10 +213,10 @@ get_forcetime <- function(testId, x = NULL) {
 
     # Parse tags safely
     tags_obj <- if (length(meta_test$tags) > 0) {
-        as.list(meta_test$tags[[2]])
-      } else {
-        list()
-      }
+      as.list(meta_test$tags[[2]])
+    } else {
+      list()
+    }
 
     # Parse RSI safely
     rsi_obj <- if (!inherits(x$rsi, "numeric")) {
