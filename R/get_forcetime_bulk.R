@@ -151,13 +151,6 @@ get_forcetime_bulk <- function(test_ids = NULL,
                            row.names = FALSE, col.names = !manifest_init, append = manifest_init)
         manifest_init <- TRUE
 
-<<<<<<< HEAD
-        # Save File
-        if (format == "csv") utils::write.csv(obj@data, full_path, row.names = FALSE)
-        else if (format == "tsv") utils::write.table(obj@data, full_path, sep = "\t", row.names = FALSE)
-        else if (format == "parquet") {
-          if (!requireNamespace("arrow", quietly = TRUE)) stop("Install 'arrow' for parquet.", call. = FALSE)
-=======
         # --- 3. Write Data File ---
         if (format == "csv") {
           utils::write.csv(obj@data, full_path, row.names = FALSE)
@@ -167,7 +160,6 @@ get_forcetime_bulk <- function(test_ids = NULL,
           if (!requireNamespace("arrow", quietly = TRUE)) {
             stop("The 'arrow' package is required for Parquet export. Please install it: install.packages('arrow')", call. = FALSE)
           }
->>>>>>> d6a868dc825eac8606233c4d833b1991f695033d
           arrow::write_parquet(obj@data, full_path)
         }
         else if (format == "rds") saveRDS(obj, full_path)
