@@ -52,13 +52,15 @@ get_active_conn <- function() {
 #' @param org_id character. The organization ID for API paths (default: "v1").
 #' @param environment character. "development" (keyring) or "production" (env vars).
 #' @param log_level character. Logging verbosity ("INFO", "DEBUG", "WARN").
+#' @param start_date character. Optional default start date (YYYY-MM-DD) for bulk queries.
 #' @export
 HawkinConfig <- S7::new_class("HawkinConfig",
                               properties = list(
                                 profile     = S7::new_property(S7::class_character, default = "default"),
                                 org_id      = S7::new_property(S7::class_character, default = "v1"),
                                 environment = S7::new_property(S7::class_character, default = "development"),
-                                log_level   = S7::new_property(S7::class_character, default = "INFO")
+                                log_level   = S7::new_property(S7::class_character, default = "INFO"),
+                                start_date  = S7::new_property(S7::class_any, default = NULL)
                               ),
                               validator = function(self) {
                                 if (!self@environment %in% c("development", "production")) {
@@ -235,6 +237,7 @@ hd_auth_reset <- function(profile = "default") {
 #' @param environment character. "development" to use local keychain, or "production" to use Environment Variables.
 #' @param region character. The API region: "Americas" (default), "Europe", or "APAC".
 #' @param log_level character. Logging verbosity: "INFO", "DEBUG", or "WARN".
+#' @param start_date character. Optional default start date (YYYY-MM-DD) for bulk queries.
 #'
 #' @return Invisibly returns the authenticated `HawkinAuth` object.
 #' @export
@@ -242,7 +245,8 @@ hd_connect <- function(profile = "default",
                        org_id = "v1",
                        environment = "development",
                        region = "Americas",
-                       log_level = "INFO") {
+                       log_level = "INFO",
+                       start_date = NULL) {
 
   # Initialize Logger
   logger::log_threshold(log_level)
@@ -253,7 +257,8 @@ hd_connect <- function(profile = "default",
   cfg  <- HawkinConfig(profile = profile,
                        org_id = org_id,
                        environment = environment,
-                       log_level = log_level)
+                       log_level = log_level,
+                       start_date = start_date)
 
   auth <- HawkinAuth(config = cfg, region = region)
 

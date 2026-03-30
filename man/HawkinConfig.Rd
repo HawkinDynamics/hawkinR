@@ -8,7 +8,8 @@ HawkinConfig(
   profile = "default",
   org_id = "v1",
   environment = "development",
-  log_level = "INFO"
+  log_level = "INFO",
+  start_date = NULL
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ HawkinConfig(
 \item{environment}{character. "development" (keyring) or "production" (env vars).}
 
 \item{log_level}{character. Logging verbosity ("INFO", "DEBUG", "WARN").}
+
+\item{start_date}{character. Optional default start date (YYYY-MM-DD) for bulk queries.}
 }
 \description{
 Stores environment and profile configuration settings.

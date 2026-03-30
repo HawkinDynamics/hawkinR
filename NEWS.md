@@ -1,6 +1,25 @@
 # Change Log
 
-## hawkinR v2.0.0
+# hawkinR 2.0.0.1001
+
+## Major Improvements
+* **Faster Data Sync:** `get_tests()` now uses a default chunk size of **60 days** (previously 7 days). This significantly improves performance for large data retrievals.
+* **Dynamic Chunking:** Users can now customize the chunk size in `get_tests()` using the `chunk_size` argument (e.g., `get_tests(..., chunk_size = 7)` to handle slower connections).
+
+## Bug Fixes
+* **List Column Conflicts:** Fixed a critical bug in `get_tests()` where `dplyr::bind_rows()` failed when combining chunks containing empty tag columns (logical `NA`) with populated tag columns (list). A new internal helper `sanitize_chunks()` now enforces consistent types.
+* **API Error Handling:** `get_forcetime()` now checks for a successful HTTP status (200 OK) before attempting to parse the response. This prevents cryptic "text/html" errors when the API returns a 404 or 500 error page.
+
+## Dependency Changes
+* **Arrow Package:** The `arrow` package has been moved from `Imports` to `Suggests`. This resolves build failures on some operating systems (specifically macOS/GitHub Actions).
+    * *Note:* Users exporting data to Parquet format via `get_forcetime_bulk()` will now be prompted to install `arrow` if it is not already present.
+
+## Internal
+* Fixed `DESCRIPTION` file formatting issues (URL indentation and sentence fragments) to resolve R CMD Check notes.
+
+---
+
+## hawkinR v2.0.0.1000
 
 ### Breaking Changes
 

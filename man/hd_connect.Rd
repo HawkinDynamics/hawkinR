@@ -9,7 +9,8 @@ hd_connect(
   org_id = "v1",
   environment = "development",
   region = "Americas",
-  log_level = "INFO"
+  log_level = "INFO",
+  start_date = NULL
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ hd_connect(
 \item{region}{character. The API region: "Americas" (default), "Europe", or "APAC".}
 
 \item{log_level}{character. Logging verbosity: "INFO", "DEBUG", or "WARN".}
+
+\item{start_date}{character. Optional default start date (YYYY-MM-DD) for bulk queries.}
 }
 \value{
 Invisibly returns the authenticated \code{HawkinAuth} object.

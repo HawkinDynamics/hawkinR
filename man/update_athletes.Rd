@@ -4,12 +4,15 @@
 \alias{update_athletes}
 \title{Update Athletes}
 \usage{
-update_athletes(athleteData, x = NULL)
+update_athletes(athleteData, ...)
 }
 \arguments{
 \item{athleteData}{Provide a data frame of the athlete or athletes to be updated.}
 
-\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
+\item{...}{Optional arguments.
+\itemize{
+\item \code{profile}: A \code{HawkinAuth} object. If not provided, the active connection is used.
+}}
 }
 \value{
 If successful, a confirmation message will be printed with the number of successful athletes created.

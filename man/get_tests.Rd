@@ -5,7 +5,6 @@
 \title{Get All Tests or Sync Tests}
 \usage{
 get_tests(
- x = NULL,
  from = NULL,
  to = NULL,
  sync = FALSE,
@@ -13,20 +12,18 @@ get_tests(
  typeId = NULL,
  teamId = NULL,
  groupId = NULL,
- includeInactive = FALSE
+ includeInactive = FALSE,
+ ...
  )
 }
 \arguments{
-\item{x}{Optional. A \code{HawkinAuth} object. If NULL, the active connection is used.}
-
 \item{from}{Optionally supply a time frame \strong{start} value. Accepts either:
 \itemize{
 \item A Unix timestamp as an \code{integer} (e.g., \code{1689958617}), or
 \item A date as a \code{character} string in \code{"YYYY-MM-DD"} format (e.g., \code{"2023-08-01"}).
 }
 
-If not supplied, all available tests from the earliest record will be returned.
-Use this parameter for bulk exports or to define a starting point for data retrieval.}
+If not supplied, you will be prompted to enter a start date (or use the profile default).}
 
 \item{to}{Optionally supply a time frame \strong{end} value. Accepts either:
 \itemize{
@@ -34,9 +31,7 @@ Use this parameter for bulk exports or to define a starting point for data retri
 \item A date as a \code{character} string in \code{"YYYY-MM-DD"} format (e.g., \code{"2023-08-10"}).
 }
 
-If not supplied, all available tests up to the latest record will be returned,
-or up to the \code{from} parameter if specified. Use this parameter to limit the
-range of historical data retrieved.}
+If not supplied, defaults to the current date.}
 
 \item{sync}{The result set will include updated and newly created tests. This parameter
 is best suited to keep your database in sync with the Hawkin database. If you do not
@@ -64,60 +59,49 @@ can be fetched at once.}
 the majority of users API configuration. Inactive tests or tests where \code{active = false}
 are returned in these configuration. Be default, \code{includeInactive} is set to \code{FALSE}.
 To return all tests, including disabled trials, set \code{includeInactive} to \code{TRUE}.}
+
+\item{...}{Optional arguments.
+\itemize{
+\item \code{profile}: A \code{HawkinAuth} object or a character string of the profile name.
+If not provided, the active connection is used.
+\item \code{chunk_size}: Integer. The number of days to fetch per API request. Defaults to 60.
+Reduce this number (e.g., to 7 or 14) if you experience timeouts.
+}}
 }
 \value{
 A data frame containing test trials and their metrics. Each row represents a single test trial.
-(if specified).\tabular{lll}{
-   \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
-   \strong{id} \tab \emph{str} \tab Test trial unique ID \cr
-   \strong{active} \tab \emph{logi} \tab The trial is active and not disabled \cr
-   \strong{timestamp} \tab \emph{int} \tab UNIX time stamp of trial \cr
-   \strong{segment} \tab \emph{chr} \tab Description of the test type and trial \cr
-   number of the session (testType:trialNo) \tab  \tab  \cr
-   \strong{test_type_id} \tab \emph{chr} \tab Id of the test type of the trial \cr
-   \strong{test_type_name} \tab \emph{chr} \tab Name of the test type of the trial \cr
-   \strong{test_type_canonicalId} \tab \emph{chr} \tab Canonical Id of the test type of the trial \cr
-   \strong{test_type_tag_ids} \tab \emph{chr} \tab String of Ids associated with tags used during \cr
-   the test trial \tab  \tab  \cr
-   \strong{test_type_tag_names} \tab \emph{chr} \tab String of names of tags used during the \cr
-   test trial \tab  \tab  \cr
-   \strong{test_type_tag_desc} \tab \emph{chr} \tab String of descriptions of tags used during \cr
-   the test trial \tab  \tab  \cr
-   \strong{athlete_id} \tab \emph{chr} \tab Unique Id of the athlete \cr
-   \strong{athlete_name} \tab \emph{chr} \tab Athlete given name \cr
-   \strong{athlete_active} \tab \emph{logi} \tab The athlete is active \cr
-   \strong{athlete_teams} \tab \emph{list} \tab List containing Ids of each team the athlete is on \cr
-   \strong{athlete_groups} \tab \emph{list} \tab List containing Ids of each group the athlete is in \cr
-}
-
-
-All metrics from each test type are included as the remaining variables
-unless \code{typeId} is provided, then only the metrics of that test type will be returned.
-If a trial does not have data for a variable it is returned NA.
+(if specified).
 }
 \description{
 Retrieves test data from the Hawkin Dynamics API. This function replaces all previous
 \verb{get_tests_*} functions. It can filter by athlete, team, group, date range, or sync timestamp.
 }
+\details{
+\strong{Smart Chunking:}
+This function splits requests into chunks (default 60 days) to prevent API timeouts
+and manage load. You can adjust the \code{chunk_size} argument if you encounter timeouts.
+\itemize{
+\item If \code{from} is provided, it serves as the start of the first chunk.
+\item If \code{from} is NOT provided, the function looks for a default \code{start_date} in the connection
+profile. If none exists, it will pause and ask you to enter one.
+\item If \code{to} is not provided, it defaults to the current date.
+}
+
+\strong{Schema Handling:}
+Because metrics may be added to the system over time, older test results might have fewer
+columns than newer ones. This function uses \code{dplyr::bind_rows} to combine chunks, filling
+missing columns with \code{NA} where necessary.
+}
 \examples{
 \dontrun{
-# This is an example of how the function would be called.
-
-# Call for all tests
-
+# Call for all tests (active connection)
 dfAllTests <- get_tests()
 
+# Adjust chunk size for slower connections
+dfSmallerChunks <- get_tests(chunk_size = 7)
 
 # Call for all tests within a specific time frame
-
-dfFromTo <- get_tests(from = 1689958617, to = 1691207356)
-
-
-# Call for all new tests since a specific date, or any tests that have been
-updated/changed since that date
-
-dfSync <- get_tests(from = 1689958617, sync=TRUE)
-
+dfFromTo <- get_tests(from = "2023-08-01", to = "2023-08-10")
 }
 
 }

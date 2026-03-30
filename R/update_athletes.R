@@ -8,22 +8,25 @@
 #'
 #' | **Column Name** | **Type** | **Inclusion** | **Description** |
 #' |-----------------|----------|---------------|-----------------|
-#' | **id**          | *chr*    | **REQUIRED**  | athlete's Hawkin Dynamics unique ID |
-#' | **name**        | *chr*    | *optional*    | athlete's given name (First Last) |
-#' | **image**       | *chr*    | *optional*    | URL path to image. `default = null` |
-#' | **active**      | *logi*   | *optional*    | athlete is active (TRUE). `default = null` |
-#' | **teams**       | *list*   | *optional*    | a single team id as a string or list of team ids. `default = [defaultTeamId]` |
-#' | **groups**      | *list*   | *optional*    | a single group id as a string or list of group ids. `default = []` |
+#' | **id** | *chr* | **REQUIRED** | athlete's Hawkin Dynamics unique ID |
+#' | **name** | *chr* | *optional* | athlete's given name (First Last) |
+#' | **image** | *chr* | *optional* | URL path to image. `default = null` |
+#' | **active** | *logi* | *optional* | athlete is active (TRUE). `default = null` |
+#' | **teams** | *list* | *optional* | a single team id as a string or list of team ids. `default = [defaultTeamId]` |
+#' | **groups** | *list* | *optional* | a single group id as a string or list of group ids. `default = []` |
 #' | **external property** | *chr* | *optional* | External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. Use "lowercase" or "snake_case" styles for column names. |
 #'
 #' *If optional fields are not present in an update request, those properties will be left unchanged. However, when updating external properties, custom properties that are not present will be removed.*
 #'
 #' @usage
-#' update_athletes(athleteData, x = NULL)
+#' update_athletes(athleteData, ...)
 #'
 #' @param athleteData Provide a data frame of the athlete or athletes to be updated.
 #'
-#' @param x Optional. A `HawkinAuth` object. If NULL, the active connection is used.
+#' @param ... Optional arguments.
+#' \itemize{
+#'   \item `profile`: A `HawkinAuth` object. If not provided, the active connection is used.
+#' }
 #'
 #' @return
 #' If successful, a confirmation message will be printed with the number of successful athletes created.
@@ -31,8 +34,8 @@
 #'
 #' | **Column Name** | **Type** | **Description** |
 #' |-----------------|----------|-----------------|
-#' | **reason**      | *chr*    | Reason for failed creation |
-#' | **name**        | *chr*    | Athlete's given name (First Last) |
+#' | **reason** | *chr* | Reason for failed creation |
+#' | **name** | *chr* | Athlete's given name (First Last) |
 #'
 #' @examples
 #' \dontrun{
@@ -61,17 +64,40 @@
 
 
 # Update Athletes -----
-update_athletes <- function(athleteData, x = NULL) {
+update_athletes <- function(athleteData, ...) {
 
   # 1. ----- Set Logger -----
   logger::log_trace(base::paste0("hawkinR -> Run: update_athletes"))
 
 
-  # 2. ----- Authentication (new auth manager + legacy fallback) -----
-  if (is.null(x)) x <- get_active_conn()
+  # 2. ----- Authentication -----
+  logger::log_trace("hawkinR/update_athletes -> Resolving connection")
+  extra_args <- list(...)
 
-  if (difftime(x@expires_at, Sys.time(), units = "secs") < 300) {
-    x <- authenticate(x); set_active_conn(x)
+  if (!is.null(extra_args$profile)) {
+    if (is.character(extra_args$profile)) {
+      # User passed a name string, so we connect
+      conn <- hd_connect(profile = extra_args$profile)
+    } else {
+      # User passed the object directly
+      conn <- extra_args$profile
+    }
+  } else {
+    conn <- get_active_conn()
+  }
+
+  # Validate
+  if (!is.object(conn) || is.null(conn@access_token)) {
+    stop("A valid HawkinAuth connection is required. Run hd_connect() first.", call. = FALSE)
+  }
+
+  # Token Lifecycle Management
+  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+  logger::log_debug("hawkinR/update_athletes -> Token expires in {token_remaining} seconds")
+  if (token_remaining < 300) {
+    logger::log_info("hawkinR/update_athletes -> Token expiring soon. Refreshing...")
+    conn <- authenticate(conn)
+    set_active_conn(conn)
   }
 
   # 3. ----- Build URL Request -----
@@ -79,7 +105,7 @@ update_athletes <- function(athleteData, x = NULL) {
   # Athletes Data to Send
   payload <- AddAthleteJSON(arg_df = athleteData)
 
-  request <- httr2::request(paste0(x@base_url, "/", x@config@org_id)) |>
+  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("athletes/bulk") |>
     httr2::req_method("PUT") |>
     httr2::req_body_raw(body = payload, type = "application/json")
@@ -95,7 +121,7 @@ update_athletes <- function(athleteData, x = NULL) {
 
   # Execute Call
   resp <-  request |>
-    httr2::req_auth_bearer_token(x@access_token) |>
+    httr2::req_auth_bearer_token(conn@access_token) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
@@ -125,7 +151,7 @@ update_athletes <- function(athleteData, x = NULL) {
 
 
   if (status == 200) {
-    x <- httr2::resp_body_json(
+    body <- httr2::resp_body_json(
       resp = resp,
       check_type = TRUE,
       simplifyVector = TRUE
@@ -134,7 +160,7 @@ update_athletes <- function(athleteData, x = NULL) {
     # 5. ----- Sort Athlete Response Data -----
 
 
-    d <- x$data
+    d <- body$data
     successCount <- base::nrow(d)
 
 
@@ -147,13 +173,13 @@ update_athletes <- function(athleteData, x = NULL) {
     }
 
 
-    hasFailures <- x$hasFailures
+    hasFailures <- body$hasFailures
 
 
     if (base::isTRUE(hasFailures)) {
-      failures <- base::nrow(x$failures)
-      reasons <- x$failures$reason
-      failedNames <- x$failures$data[, 1]
+      failures <- base::nrow(body$failures)
+      reasons <- body$failures$reason
+      failedNames <- body$failures$data[, 1]
 
 
       allFails <- base::data.frame(reasons, failedNames) %>%
@@ -178,4 +204,3 @@ update_athletes <- function(athleteData, x = NULL) {
     }
   }
 }
-
