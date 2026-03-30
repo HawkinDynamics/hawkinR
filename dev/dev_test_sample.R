@@ -22,19 +22,13 @@ org <- "v1"
 
 ## | B. Store API Secret -----
 ### 1. Store the token for different profiles
-<<<<<<< HEAD
+
 hd_auth_store(profile = profile1, token = Sys.getenv("gspToken"))
 hd_auth_store(profile = profile2, token = Sys.getenv("hawkinR_tester"))
 
 ### 2. Test Initial Connection -----
 hd_connect(profile = profile2)
 
-=======
-hd_auth_store(profile = "ghouse_dev", token = Sys.getenv("gspToken"))
-
-### 2. Check Connection
-hd_connect(profile = "ghouse_dev")
->>>>>>> d6a868dc825eac8606233c4d833b1991f695033d
 ### 3. Manually fetch the connection to ensure it exists
 my_conn <- get_active_conn()
 

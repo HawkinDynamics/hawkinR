@@ -1,6 +1,6 @@
 Package: hawkinR
 Title: hawkinR - Hawkin Dynamics API
-Version: 2.0.0.1001
+Version: 2.0.0
 Authors@R: 
     person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
 Description: Provides a secure and configurable R interface to the Hawkin Dynamics API for accessing athlete performance data, tests, and metadata.
