@@ -41,11 +41,9 @@
     "############################################################\n",
     "\n",
     " v", version, " | Modern Hawkin Dynamics API Client\n",
-    " ----------------------------------------------\n",
-    " \U0001f512 Credentials:  hd_auth_store()\n",
-    " \U0001f310 Connection:   hd_connect()\n",
-    " \U0001f4d6 Guides:       browseVignettes('hawkinR')\n",
-    " ----------------------------------------------\n"
+    "\n",
+    " > Documentation: https://hawkindynamics.github.io/hawkinR/\n",
+    " > Issues: https://github.com/HawkinDynamics/hawkinR/issues\n"
   )
 
   packageStartupMessage(msg)
