@@ -15,10 +15,10 @@ update_athletes(athleteData, ...)
 }}
 }
 \value{
-If successful, a confirmation message will be printed with the number of successful athletes created.
-If there are failures, a data frame containing the athletes that failed to be created will be returned with columns:\tabular{lll}{
+If successful, a confirmation message will be printed with the number of successful athletes updated.
+If there are failures, a data frame containing the athletes that failed to be updated will be returned with columns:\tabular{lll}{
    \strong{Column Name} \tab \strong{Type} \tab \strong{Description} \cr
-   \strong{reason} \tab \emph{chr} \tab Reason for failed creation \cr
+   \strong{reason} \tab \emph{chr} \tab Reason for failed update \cr
    \strong{name} \tab \emph{chr} \tab Athlete's given name (First Last) \cr
 }
 }
@@ -46,10 +46,10 @@ The data frame passed as the argument must use the following schema:\tabular{lll
 df <- data.frame(
   id = c("uniqueAthleteIdOne", "uniqueAthleteIdTwo"),
   name = c("John Doe", "Jane Smith"),
-  image = c("http://example.com/johndoe.jpg", "http://example.com/janesmith.jpg"),
+  image = c("https://example.com/johndoe.jpg", "https://example.com/janesmith.jpg"),
   active = c(TRUE, FALSE),
-  teams = c("team1", c("team2", "team3"))),
-  groups = c(NULL, "group1")),
+  teams = I(list("team1", c("team2", "team3"))),
+  groups = I(list(NULL, "group1")),
   external_property = c("value1", "value2")
 )
 

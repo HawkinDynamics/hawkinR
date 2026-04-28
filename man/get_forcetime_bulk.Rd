@@ -8,14 +8,16 @@ get_forcetime_bulk(
   test_ids = NULL,
   export = FALSE,
   export_dir = NULL,
-  format = c("csv", "json", "rds", "tsv", "parquet"),
+  format = c("csv", "json", "rds", "rda", "tsv", "parquet"),
   file_naming = c("test_id"),
   deidentify = FALSE,
   ...
 )
 }
 \arguments{
-\item{test_ids}{Optional. A character vector of specific Test IDs to retrieve.}
+\item{test_ids}{Optional. A character vector of specific Test IDs, or a data frame
+containing an \code{id} column (e.g., the output of \code{get_tests()}). If NULL,
+\code{get_tests(...)} is called to retrieve targets.}
 
 \item{export}{logical. If TRUE, data is written to files in \code{export_dir}.}
 

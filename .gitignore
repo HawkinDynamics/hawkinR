@@ -7,8 +7,10 @@ hawkinR.Rproj
 inst/doc
 docs
 
-# ---- tests ----
-/tests/
+# ---- logs ----
 hawkinRlog.log
+
+# ---- build artifacts ----
+hawkinR_*.tar.gz
 # ---- config & auth ----
 # User config is stored via rappdirs (outside repo) and is never committed

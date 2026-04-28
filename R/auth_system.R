@@ -52,15 +52,13 @@ get_active_conn <- function() {
 #' @param org_id character. The organization ID for API paths (default: "v1").
 #' @param environment character. "development" (keyring) or "production" (env vars).
 #' @param log_level character. Logging verbosity ("INFO", "DEBUG", "WARN").
-#' @param start_date character. Optional default start date (YYYY-MM-DD) for bulk queries.
 #' @export
 HawkinConfig <- S7::new_class("HawkinConfig",
                               properties = list(
                                 profile     = S7::new_property(S7::class_character, default = "default"),
                                 org_id      = S7::new_property(S7::class_character, default = "v1"),
                                 environment = S7::new_property(S7::class_character, default = "development"),
-                                log_level   = S7::new_property(S7::class_character, default = "INFO"),
-                                start_date  = S7::new_property(S7::class_any, default = NULL)
+                                log_level   = S7::new_property(S7::class_character, default = "INFO")
                               ),
                               validator = function(self) {
                                 if (!self@environment %in% c("development", "production")) {
@@ -92,6 +90,10 @@ HawkinAuth <- S7::new_class("HawkinAuth",
                               region       = S7::new_property(S7::class_character, default = "Americas"),
                               base_url     = S7::new_property(
                                 getter = function(self) {
+                                  # Internal override for staging/dev testing. Intentionally undocumented.
+                                  override <- Sys.getenv("HAWKINR_API_BASE_URL_OVERRIDE", unset = "")
+                                  if (nzchar(override)) return(override)
+
                                   switch(self@region,
                                          "Americas"     = "https://cloud.hawkindynamics.com/api",
                                          "Europe"       = "https://eu.cloud.hawkindynamics.com/api",
@@ -190,6 +192,9 @@ S7::method(authenticate, HawkinAuth) <- function(x) {
 #' @param profile character. A name for this set of credentials (default: "default").
 #' @param token character. Optional. If NULL (default), a secure prompt will appear.
 #' @return NULL
+#' @note When using the `token` parameter directly (e.g., `hd_auth_store(token = "...")`),
+#'   be aware that the token string may be recorded in your `.Rhistory` file.
+#'   For maximum security, omit the `token` parameter to use the secure OS prompt instead.
 #' @export
 hd_auth_store <- function(profile = "default", token = NULL) {
   check_interactive()
@@ -237,7 +242,6 @@ hd_auth_reset <- function(profile = "default") {
 #' @param environment character. "development" to use local keychain, or "production" to use Environment Variables.
 #' @param region character. The API region: "Americas" (default), "Europe", or "APAC".
 #' @param log_level character. Logging verbosity: "INFO", "DEBUG", or "WARN".
-#' @param start_date character. Optional default start date (YYYY-MM-DD) for bulk queries.
 #'
 #' @return Invisibly returns the authenticated `HawkinAuth` object.
 #' @export
@@ -245,8 +249,7 @@ hd_connect <- function(profile = "default",
                        org_id = "v1",
                        environment = "development",
                        region = "Americas",
-                       log_level = "INFO",
-                       start_date = NULL) {
+                       log_level = "INFO") {
 
   # Initialize Logger
   logger::log_threshold(log_level)
@@ -257,8 +260,7 @@ hd_connect <- function(profile = "default",
   cfg  <- HawkinConfig(profile = profile,
                        org_id = org_id,
                        environment = environment,
-                       log_level = log_level,
-                       start_date = start_date)
+                       log_level = log_level)
 
   auth <- HawkinAuth(config = cfg, region = region)
 

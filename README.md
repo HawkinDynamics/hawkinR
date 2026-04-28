@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hawkinR <img src="man/figures/hdlogo.png" align="right" width="120"/>
+# hawkinR <a href="https://hawkindynamics.github.io/hawkinR/"><img src="man/figures/logo.png" align="right" height="120" alt="hawkinR website" /></a>
 
 **Get your data from the Hawkin Dynamics API**
 
@@ -15,7 +15,7 @@ version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
+[![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 [![packageversion](https://img.shields.io/badge/Package%20version-2.0.0-orange.svg?style=flat-square)](commits/main)
 [![thanks-md](https://img.shields.io/badge/THANKS-md-ff69b4.svg)](THANKS.md)
 
@@ -202,28 +202,10 @@ hd_auth_reset(remove_secret = TRUE)
   synced). Response will be a data frame containing the trials within
   the time range (if specified).
 
-*Previous variations of `get_tests_` (found in versions \< hawkinR
-v1.1.0) have been deprecated and are to be phased out in future updates.
-See* `get_tests()` *for the preferred function.*
-
-- `get_tests_type()` - ***Deprecated*** Get only tests of the specified
-  type for an account. Response will be a data frame containing the
-  trials of the specified type and within the time range (if specified).
-
-- `get_tests_ath()` - ***Deprecated*** Get only tests of the specified
-  athlete for an account. Response will be a data frame containing the
-  trials from the specified team and within the time range (if
-  specified).
-
-- `get_tests_team()` - ***Deprecated*** Get only tests of the specified
-  team for an account. Response will be a data frame containing the
-  trials from the specified team and within the time range (if
-  specified).
-
-- `get_tests_group()` - ***Deprecated*** Get only tests of the specified
-  group for an account. Response will be a data frame containing the
-  trials from the specified team and within the time range (if
-  specified).
+*Note: the legacy `get_tests_type`, `get_tests_ath`, `get_tests_team`,
+and `get_tests_group` helpers were deprecated in hawkinR v1.x and
+removed in v2.0.0. Use `get_tests()` with the corresponding `typeId`,
+`athleteId`, `teamId`, or `groupId` argument instead.*
 
 ## Example
 

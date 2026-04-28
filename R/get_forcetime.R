@@ -9,7 +9,7 @@ HawkinForceTime <- S7::new_class("HawkinForceTime",
                                    test_sampling_rate    = S7::class_integer,
                                    testType_id           = S7::class_character,
                                    testType_name         = S7::class_character,
-                                   testType_canoncical   = S7::class_character,
+                                   testType_canonical   = S7::class_character,
                                    testType_tags         = S7::class_list,
                                    athlete_id            = S7::class_character,
                                    athlete_name          = S7::class_character,
@@ -73,15 +73,7 @@ get_forcetime <- function(testId, ...) {
     set_active_conn(conn)
   }
 
-  # 2. ----- Token Management -----
-  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
-  if (token_remaining < 300) {
-    logger::log_info("hawkinR/get_forcetime -> Token expiring soon. Refreshing...")
-    conn <- authenticate(conn)
-    set_active_conn(conn)
-  }
-
-  # 4. ----- Build Request -----
+  # 2. ----- Build Request -----
   logger::log_trace("hawkinR/get_forcetime -> Building request")
   request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("forcetime") |>
@@ -111,7 +103,7 @@ get_forcetime <- function(testId, ...) {
     logger::log_error("hawkinR/get_forcetime -> Error 404: Test not found for testId: {testId}")
     stop("Error 404: Requested Resource Not Found", call. = FALSE)
   } else if (status == 500) {
-    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+    error_message <- "Error 500: Something went wrong. Please contact dev-team@hawkindynamics.com"
   }
 
   if (!base::is.null(error_message)) {
@@ -218,12 +210,13 @@ get_forcetime <- function(testId, ...) {
       list()
     }
 
-    # Parse RSI safely
-    rsi_obj <- if (!inherits(x$rsi, "numeric")) {
-      as.numeric(x$rsi)
-    } else {
-      NULL
-    }
+    # Parse RSI safely — value may be numeric, string "NA", or NULL
+    rsi_obj <- tryCatch({
+      val <- x$rsi
+      if (is.null(val) || length(val) == 0) return(NULL)
+      num <- suppressWarnings(as.numeric(val))
+      if (is.na(num)) NULL else num
+    }, error = function(e) NULL)
 
     # Store sampling rate
     sampling_rate <- if (testCanonical %in% c("4KlQgKmBxbOY6uKTLDFL", "umnEZPgi6zaxuw0KhUpM")) {
@@ -239,7 +232,7 @@ get_forcetime <- function(testId, ...) {
       test_date             = date_obj,
       testType_id           = as.character(meta_test[[3]]),
       testType_name         = as.character(testName),
-      testType_canoncical   = as.character(testCanonical),
+      testType_canonical   = as.character(testCanonical),
       testType_tags         = tags_obj,
       athlete_id            = as.character(athleteID),
       athlete_name          = as.character(athleteName),
@@ -257,5 +250,8 @@ get_forcetime <- function(testId, ...) {
     logger::log_success("hawkinR/get_forcetime -> Fetched test '{testId}': {out_object@testType_name} by {out_object@athlete_name} at {date_obj}")
 
     return(out_object)
+  } else {
+    logger::log_error("hawkinR/get_forcetime -> Unexpected HTTP status: {status}")
+    stop(paste0("Unexpected HTTP status: ", status), call. = FALSE)
   }
 }

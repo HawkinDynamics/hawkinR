@@ -15,3 +15,8 @@ hd_auth_store(profile = "default", token = NULL)
 Securely saves your Hawkin Dynamics Refresh Token to your operating system's
 credential store (Keychain on macOS, Credential Manager on Windows).
 }
+\note{
+When using the \code{token} parameter directly (e.g., \code{hd_auth_store(token = "...")}),
+be aware that the token string may be recorded in your \code{.Rhistory} file.
+For maximum security, omit the \code{token} parameter to use the secure OS prompt instead.
+}

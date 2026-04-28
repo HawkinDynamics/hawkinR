@@ -96,7 +96,7 @@ get_groups <- function(...) {
   if (status == 401) {
     error_message <- "Error 401: Refresh Token is invalid or expired."
   } else if (status == 500) {
-    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+    error_message <- "Error 500: Something went wrong. Please contact dev-team@hawkindynamics.com"
   }
 
   if (!base::is.null(error_message)) {
@@ -116,5 +116,8 @@ get_groups <- function(...) {
     logger::log_trace("hawkinR/get_groups -> Converting to data frame")
     logger::log_success("hawkinR/get_groups -> {body[[2]]} groups returned")
     return(base::as.data.frame(body[[1]]))
+  } else {
+    logger::log_error("hawkinR/get_groups -> Unexpected HTTP status: {status}")
+    stop(paste0("Unexpected HTTP status: ", status), call. = FALSE)
   }
 }

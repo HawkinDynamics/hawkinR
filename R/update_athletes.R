@@ -29,12 +29,12 @@
 #' }
 #'
 #' @return
-#' If successful, a confirmation message will be printed with the number of successful athletes created.
-#' If there are failures, a data frame containing the athletes that failed to be created will be returned with columns:
+#' If successful, a confirmation message will be printed with the number of successful athletes updated.
+#' If there are failures, a data frame containing the athletes that failed to be updated will be returned with columns:
 #'
 #' | **Column Name** | **Type** | **Description** |
 #' |-----------------|----------|-----------------|
-#' | **reason** | *chr* | Reason for failed creation |
+#' | **reason** | *chr* | Reason for failed update |
 #' | **name** | *chr* | Athlete's given name (First Last) |
 #'
 #' @examples
@@ -43,10 +43,10 @@
 #' df <- data.frame(
 #'   id = c("uniqueAthleteIdOne", "uniqueAthleteIdTwo"),
 #'   name = c("John Doe", "Jane Smith"),
-#'   image = c("http://example.com/johndoe.jpg", "http://example.com/janesmith.jpg"),
+#'   image = c("https://example.com/johndoe.jpg", "https://example.com/janesmith.jpg"),
 #'   active = c(TRUE, FALSE),
-#'   teams = c("team1", c("team2", "team3"))),
-#'   groups = c(NULL, "group1")),
+#'   teams = I(list("team1", c("team2", "team3"))),
+#'   groups = I(list(NULL, "group1")),
 #'   external_property = c("value1", "value2")
 #' )
 #'
@@ -103,7 +103,7 @@ update_athletes <- function(athleteData, ...) {
   # 3. ----- Build URL Request -----
 
   # Athletes Data to Send
-  payload <- AddAthleteJSON(arg_df = athleteData)
+  payload <- UpdateAthleteJSON(arg_df = athleteData)
 
   request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("athletes/bulk") |>
@@ -138,7 +138,7 @@ update_athletes <- function(athleteData, ...) {
   if (status == 401) {
     error_message <- "Error 401: Refresh Token is invalid or expired."
   } else if (status == 500) {
-    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+    error_message <- "Error 500: Something went wrong. Please contact dev-team@hawkindynamics.com"
   }
 
 
@@ -162,14 +162,10 @@ update_athletes <- function(athleteData, ...) {
 
     d <- body$data
     successCount <- base::nrow(d)
+    allSuccess <- ""
 
-
-    if (!base::is.null(successCount)) {
-      allSuccess <- if (successCount > 1) {
-        base::paste0(d$name, collapse = ", ")
-      } else {
-        base::paste0(d$name)
-      }
+    if (!base::is.null(successCount) && successCount > 0) {
+      allSuccess <- base::paste0(d$name, collapse = ", ")
     }
 
 
@@ -194,13 +190,27 @@ update_athletes <- function(athleteData, ...) {
     # Report Response
     if (base::isTRUE(hasFailures) && isTRUE(is.null(successCount))) {
       logger::log_warn("hawkinR/update_athletes -> {failures} athletes failed || {allFails}")
+      fail_df <- base::data.frame(
+        reason = body$failures$reason,
+        name = body$failures$data[, 1],
+        stringsAsFactors = FALSE
+      )
+      return(invisible(fail_df))
     } else if (base::isTRUE(hasFailures) && successCount > 0) {
       logger::log_success("hawkinR/update_athletes -> {successCount} athletes were updated successfully: {allSuccess}")
       logger::log_warn("hawkinR/update_athletes -> {failures} athletes failed || {allFails}")
+      fail_df <- base::data.frame(
+        reason = body$failures$reason,
+        name = body$failures$data[, 1],
+        stringsAsFactors = FALSE
+      )
+      return(invisible(fail_df))
     } else if (base::isFALSE(hasFailures)) {
       logger::log_success("hawkinR/update_athletes -> {successCount} athletes updated successfully: {allSuccess}")
+      return(invisible(TRUE))
     } else {
-      stop(logger::log_error("hawkinR/update_athletes -> Unexpected status code: {status}"))
+      logger::log_error("hawkinR/update_athletes -> Unexpected status code: {status}")
+      stop("Unexpected status code.", call. = FALSE)
     }
   }
 }

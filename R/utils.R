@@ -119,7 +119,6 @@ TestTypePrep <- function(arg_df) {
 
   # 1. Separate Test Type Columns from Tags
   testTypeData <- arg_df[1:3]
-  TestTypeData <-
 
   base::colnames(testTypeData) <- c("testType_uuid", "testType_name", "testType_canonicalId")
 
@@ -407,7 +406,8 @@ UpdateAthleteJSON <- function(arg_df) {
     logger::log_debug("hawkinR/utils -> UpdateAthleteJSON: payload {nchar(y)} bytes")
     return(y)
   } else {
-    stop(logger::log_error("athleteData must contain ID column"))
+    logger::log_error("hawkinR/utils -> UpdateAthleteJSON: athleteData must contain 'id' column")
+    stop("athleteData must contain 'id' column", call. = FALSE)
   }
 }
 
@@ -569,20 +569,39 @@ sanitize_chunks <- function(chunks) {
     }, logical(1)))
   }, logical(1))]
 
-  if (length(list_cols) == 0) return(chunks)
-
-  logger::log_trace("hawkinR/utils -> sanitize_chunks: enforcing list type for {paste(list_cols, collapse=', ')}")
-
-  # 3. Force those columns to be lists in ALL chunks
-  chunks <- lapply(chunks, function(df) {
-    for (col in list_cols) {
-      # If chunk has the column AND it's not a list (likely logical NA), coerce it
-      if (col %in% names(df) && !inherits(df[[col]], "list")) {
-        df[[col]] <- as.list(df[[col]])
+  if (length(list_cols) > 0) {
+    logger::log_trace("hawkinR/utils -> sanitize_chunks: enforcing list type for {paste(list_cols, collapse=', ')}")
+    chunks <- lapply(chunks, function(df) {
+      for (col in list_cols) {
+        # If chunk has the column AND it's not a list (likely logical NA), coerce it
+        if (col %in% names(df) && !inherits(df[[col]], "list")) {
+          df[[col]] <- as.list(df[[col]])
+        }
       }
+      return(df)
+    })
+  }
+
+  # 3. Harmonize scalar-type mismatches across pages. When one page has
+  #    `athlete_unique_id` as character and another has it as double (this
+  #    happens with mixed numeric / alphanumeric external IDs across the
+  #    org's athletes), dplyr::bind_rows refuses to combine them. Coerce
+  #    the mismatched column to character on every page — the safest
+  #    common type for ID-like columns.
+  non_list_cols <- setdiff(all_cols, list_cols)
+  for (col in non_list_cols) {
+    types <- unique(vapply(chunks, function(df) {
+      if (col %in% names(df)) typeof(df[[col]]) else NA_character_
+    }, character(1)))
+    types <- types[!is.na(types) & types != "logical"]  # logical NA is safely auto-coerced
+    if (length(types) > 1) {
+      logger::log_trace("hawkinR/utils -> sanitize_chunks: unifying '{col}' across types [{paste(types, collapse='/')}] as character")
+      chunks <- lapply(chunks, function(df) {
+        if (col %in% names(df)) df[[col]] <- as.character(df[[col]])
+        df
+      })
     }
-    return(df)
-  })
+  }
 
   return(chunks)
 }

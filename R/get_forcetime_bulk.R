@@ -8,7 +8,9 @@ NULL
 #' Retrieves raw force-time data for multiple tests. This function acts as a wrapper
 #' for both `get_tests` and `get_forcetime`.
 #'
-#' @param test_ids Optional. A character vector of specific Test IDs to retrieve.
+#' @param test_ids Optional. A character vector of specific Test IDs, or a data frame
+#'   containing an `id` column (e.g., the output of `get_tests()`). If NULL,
+#'   `get_tests(...)` is called to retrieve targets.
 #' @param export logical. If TRUE, data is written to files in `export_dir`.
 #' @param export_dir character. The directory path to save exported files.
 #' @param format character. Options: "csv", "tsv", "json", "rds", "parquet".
@@ -27,7 +29,7 @@ NULL
 get_forcetime_bulk <- function(test_ids = NULL,
                                export = FALSE,
                                export_dir = NULL,
-                               format = c("csv", "json", "rds", "tsv", "parquet"),
+                               format = c("csv", "json", "rds", "rda", "tsv", "parquet"),
                                file_naming = c("test_id"),
                                deidentify = FALSE,
                                ...) {
@@ -78,6 +80,14 @@ get_forcetime_bulk <- function(test_ids = NULL,
 
   # 2. Target Resolution ----------------------------------------------------
   targets <- test_ids
+
+  if (!is.null(targets) && is.data.frame(targets)) {
+    if (!"id" %in% names(targets)) {
+      stop("Data frame must contain an 'id' column.", call. = FALSE)
+    }
+    targets <- targets$id
+    logger::log_info("hawkinR/get_forcetime_bulk -> Extracted {length(targets)} test IDs from data frame.")
+  }
 
   if (is.null(targets)) {
     logger::log_info("hawkinR/get_forcetime_bulk -> Querying get_tests() for targets...")
@@ -162,8 +172,12 @@ get_forcetime_bulk <- function(test_ids = NULL,
           }
           arrow::write_parquet(obj@data, full_path)
         }
-        else if (format == "rds") saveRDS(obj, full_path)
-        else if (format == "json") {
+        else if (format == "rds") {
+          saveRDS(obj, full_path)
+        } else if (format == "rda") {
+          ft_data <- obj
+          save(ft_data, file = full_path)
+        } else if (format == "json") {
           jsonlite::write_json(list(metadata = as.list(meta_row), samples = obj@data), full_path, auto_unbox = TRUE, pretty = TRUE)
         }
 
@@ -185,6 +199,7 @@ get_forcetime_bulk <- function(test_ids = NULL,
       } else {
         df_manifest <- utils::read.csv(temp_manifest_path, stringsAsFactors = FALSE)
         if (format == "rds") saveRDS(df_manifest, final_manifest_path)
+        else if (format == "rda") save(df_manifest, file = final_manifest_path)
         else if (format == "parquet") arrow::write_parquet(df_manifest, final_manifest_path)
         else if (format == "json") jsonlite::write_json(df_manifest, final_manifest_path, pretty = TRUE)
         file.remove(temp_manifest_path)

@@ -129,7 +129,7 @@ get_athletes <- function(includeInactive = FALSE, ...) {
   if (status == 401) {
     error_message <- "Error 401: Refresh Token is invalid or expired."
   } else if (status == 500) {
-    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+    error_message <- "Error 500: Something went wrong. Please contact dev-team@hawkindynamics.com"
   }
 
   if (!base::is.null(error_message)) {
@@ -158,5 +158,8 @@ get_athletes <- function(includeInactive = FALSE, ...) {
 
     logger::log_success("hawkinR/get_athletes -> {body[[2]]} athletes returned")
     return(df)
+  } else {
+    logger::log_error("hawkinR/get_athletes -> Unexpected HTTP status: {status}")
+    stop(paste0("Unexpected HTTP status: ", status), call. = FALSE)
   }
 }

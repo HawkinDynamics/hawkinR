@@ -38,10 +38,10 @@
 #' # Example data frame following the required schema
 #' df <- data.frame(
 #'   name = c("John Doe", "Jane Smith"),
-#'   image = c("http://example.com/johndoe.jpg", "http://example.com/janesmith.jpg"),
+#'   image = c("https://example.com/johndoe.jpg", "https://example.com/janesmith.jpg"),
 #'   active = c(TRUE, FALSE),
-#'   teams = c("team1", c("team2", "team3"))),
-#'   groups = c(NULL, "group1")),
+#'   teams = I(list("team1", c("team2", "team3"))),
+#'   groups = I(list(NULL, "group1")),
 #'   external_property = c("value1", "value2")
 #' )
 #'
@@ -51,7 +51,7 @@
 #'
 #' @importFrom magrittr %>%
 #' @importFrom httr2 request req_url_path_append req_method req_body_raw req_auth_bearer_token req_error req_perform resp_status resp_body_json
-#' @importFrom logger log_info
+#' @importFrom logger log_trace log_debug log_info log_success log_warn log_error
 #' @importFrom rlang .data
 #' @importFrom dplyr bind_rows
 #'
@@ -134,7 +134,7 @@ create_athletes <- function(athleteData, ...) {
   if (status == 401) {
     error_message <- "Error 401: Refresh Token is invalid or expired."
   } else if (status == 500) {
-    error_message <- "Error 500: Something went wrong. Please contact support@hawkindynamics.com"
+    error_message <- "Error 500: Something went wrong. Please contact dev-team@hawkindynamics.com"
   }
 
 
@@ -156,14 +156,10 @@ create_athletes <- function(athleteData, ...) {
 
     d <- body$data
     successCount <- base::nrow(d)
+    allSuccess <- ""
 
-
-    if (!base::is.null(successCount)) {
-      allSuccess <- if (successCount > 1) {
-        base::paste0(d$name, collapse = ", ")
-      } else {
-        base::paste0(d$name)
-      }
+    if (!base::is.null(successCount) && successCount > 0) {
+      allSuccess <- base::paste0(d$name, collapse = ", ")
     }
 
 
@@ -189,13 +185,27 @@ create_athletes <- function(athleteData, ...) {
     # Report Response
     if (base::isTRUE(hasFailures) && isTRUE(is.null(successCount))) {
       logger::log_warn("hawkinR/create_athletes -> {failures} athletes failed || {allFails}")
+      fail_df <- base::data.frame(
+        reason = body$failures$reason,
+        name = body$failures$data[, 1],
+        stringsAsFactors = FALSE
+      )
+      return(invisible(fail_df))
     } else if (base::isTRUE(hasFailures) && successCount > 0) {
       logger::log_success("hawkinR/create_athletes -> {successCount} athletes were added successfully: {allSuccess}")
       logger::log_warn("hawkinR/create_athletes -> {failures} athletes failed || {allFails}")
+      fail_df <- base::data.frame(
+        reason = body$failures$reason,
+        name = body$failures$data[, 1],
+        stringsAsFactors = FALSE
+      )
+      return(invisible(fail_df))
     } else if (base::isFALSE(hasFailures)) {
       logger::log_success("hawkinR/create_athletes -> {successCount} athletes added successfully: {allSuccess}")
+      return(invisible(TRUE))
     } else {
-      stop(logger::log_error("hawkinR/create_athletes -> Unexpected status code: {status}"))
+      logger::log_error("hawkinR/create_athletes -> Unexpected status code: {status}")
+      stop("Unexpected status code.", call. = FALSE)
     }
   }
 }

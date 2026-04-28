@@ -55,17 +55,16 @@ fetched at once.}
 separated group id’s to receive tests from the specified groups. A maximum of 10 groups
 can be fetched at once.}
 
-\item{includeInactive}{There was a change to the default API configuration to reflect
-the majority of users API configuration. Inactive tests or tests where \code{active = false}
-are returned in these configuration. Be default, \code{includeInactive} is set to \code{FALSE}.
-To return all tests, including disabled trials, set \code{includeInactive} to \code{TRUE}.}
+\item{includeInactive}{Logical. Default \code{FALSE}, which sends \code{includeInactive=false} to
+the API so that only active tests are returned server-side. Set to \code{TRUE} to include
+inactive (disabled) trials in the response.}
 
 \item{...}{Optional arguments.
 \itemize{
 \item \code{profile}: A \code{HawkinAuth} object or a character string of the profile name.
 If not provided, the active connection is used.
-\item \code{chunk_size}: Integer. The number of days to fetch per API request. Defaults to 60.
-Reduce this number (e.g., to 7 or 14) if you experience timeouts.
+\item \code{chunk_size}: \strong{Deprecated.} Previously controlled time-window chunking.
+Now ignored; the API uses cursor-based pagination with a fixed page size of 1,000.
 }}
 }
 \value{
@@ -77,19 +76,20 @@ Retrieves test data from the Hawkin Dynamics API. This function replaces all pre
 \verb{get_tests_*} functions. It can filter by athlete, team, group, date range, or sync timestamp.
 }
 \details{
-\strong{Smart Chunking:}
-This function splits requests into chunks (default 60 days) to prevent API timeouts
-and manage load. You can adjust the \code{chunk_size} argument if you encounter timeouts.
+\strong{Pagination:}
+This function uses cursor-based pagination (API v1.13+) to reliably fetch all matching
+tests regardless of dataset size. The API returns pages of up to 1,000 tests each.
+The function loops automatically until all pages are retrieved.
 \itemize{
-\item If \code{from} is provided, it serves as the start of the first chunk.
-\item If \code{from} is NOT provided, the function looks for a default \code{start_date} in the connection
-profile. If none exists, it will pause and ask you to enter one.
+\item If \code{from} is provided, it is used as a time-range filter.
+\item If \code{from} is NOT provided, the function will pause and ask you to enter one
+(interactive sessions only; non-interactive calls must supply \code{from} explicitly).
 \item If \code{to} is not provided, it defaults to the current date.
 }
 
 \strong{Schema Handling:}
 Because metrics may be added to the system over time, older test results might have fewer
-columns than newer ones. This function uses \code{dplyr::bind_rows} to combine chunks, filling
+columns than newer ones. This function uses \code{dplyr::bind_rows} to combine pages, filling
 missing columns with \code{NA} where necessary.
 }
 \examples{
@@ -97,11 +97,11 @@ missing columns with \code{NA} where necessary.
 # Call for all tests (active connection)
 dfAllTests <- get_tests()
 
-# Adjust chunk size for slower connections
-dfSmallerChunks <- get_tests(chunk_size = 7)
-
 # Call for all tests within a specific time frame
 dfFromTo <- get_tests(from = "2023-08-01", to = "2023-08-10")
+
+# Include inactive tests
+dfAll <- get_tests(from = "2023-08-01", includeInactive = TRUE)
 }
 
 }

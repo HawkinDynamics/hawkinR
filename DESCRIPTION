@@ -1,6 +1,6 @@
 Package: hawkinR
-Title: hawkinR - Hawkin Dynamics API
-Version: 2.0.0
+Title: Interface to the Hawkin Dynamics Force Platform API
+Version: 0.0.1
 Authors@R: 
     person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
 Description: Provides a secure and configurable R interface to the Hawkin Dynamics API for accessing athlete performance data, tests, and metadata.
@@ -21,17 +21,19 @@ Imports:
     magrittr (>= 2.0.3),
     rlang (>= 1.1.1),
     keyring,
-    janitor(>= 2.2.0),
+    janitor (>= 2.2.0),
     stats,
     httr2 (>= 1.0.1),
     logger (>= 0.3.0),
     stringr (>= 1.4.0),
-    tidyselect(>= 1.2.1),
+    tidyselect (>= 1.2.1),
     progress
-Suggests: 
+Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
+    mockery,
+    withr,
     crayon,
     httpuv,
     arrow

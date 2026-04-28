@@ -24,6 +24,10 @@ Options are "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL". Default is "INFO
 log file. Options are "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL". Default is
 "INFO".}
 }
+\value{
+No return value, called for side effects. Configures the \code{logger}
+package's layout, threshold, and appender according to the arguments.
+}
 \description{
 This function initializes the logger with customization parameters, including the
 output destination and log thresholds for both stdout and log file.

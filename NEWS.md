@@ -1,76 +1,29 @@
 # Change Log
 
-# hawkinR 2.0.0.1001
-
-## Major Improvements
-* **Faster Data Sync:** `get_tests()` now uses a default chunk size of **60 days** (previously 7 days). This significantly improves performance for large data retrievals.
-* **Dynamic Chunking:** Users can now customize the chunk size in `get_tests()` using the `chunk_size` argument (e.g., `get_tests(..., chunk_size = 7)` to handle slower connections).
-
-## Bug Fixes
-* **List Column Conflicts:** Fixed a critical bug in `get_tests()` where `dplyr::bind_rows()` failed when combining chunks containing empty tag columns (logical `NA`) with populated tag columns (list). A new internal helper `sanitize_chunks()` now enforces consistent types.
-* **API Error Handling:** `get_forcetime()` now checks for a successful HTTP status (200 OK) before attempting to parse the response. This prevents cryptic "text/html" errors when the API returns a 404 or 500 error page.
-
-## Dependency Changes
-* **Arrow Package:** The `arrow` package has been moved from `Imports` to `Suggests`. This resolves build failures on some operating systems (specifically macOS/GitHub Actions).
-    * *Note:* Users exporting data to Parquet format via `get_forcetime_bulk()` will now be prompted to install `arrow` if it is not already present.
-
-## Internal
-* Fixed `DESCRIPTION` file formatting issues (URL indentation and sentence fragments) to resolve R CMD Check notes.
-
----
-
-## hawkinR v2.0.0.1000
+## hawkinR v2.0.0
 
 ### Breaking Changes
+* `get_tests()` now uses cursor-based API pagination instead of time-window chunking. The `chunk_size` argument is deprecated and ignored.
+* `includeInactive` filtering in `get_tests()` is now server-side (API v1.13). Behavior is unchanged but the parameter is sent to the API directly rather than filtering client-side.
+* `HawkinForceTime` property renamed: `testType_canoncical` -> `testType_canonical` (typo fix).
 
-* **Removed `get_access()`** - Replaced by `hd_connect()` for connection initialization
-* **Removed `get_tests_ath()`, `get_tests_group()`, `get_tests_team()`, `get_tests_type()`** - Consolidated into unified `get_tests()` function with optional filter parameters (`athleteId`, `groupId`, `teamId`, `typeId`)
-* **Environment variable format changed** - Now uses `HAWKIN_KEY_{PROFILE_NAME}` pattern for production deployments
+### Bug Fixes
+* **CRITICAL:** `update_athletes()` now correctly calls `UpdateAthleteJSON()` instead of `AddAthleteJSON()`. Previously, update payloads were missing the required `id` field.
+* `create_athletes()` and `update_athletes()` now return the failure data frame when operations partially fail, as documented.
+* Fixed `stop(logger::log_error(...))` antipattern in `create_athletes()`, `update_athletes()`, and `UpdateAthleteJSON()`.
+* Fixed malformed `@examples` syntax in `create_athletes()` and `update_athletes()` documentation.
+* Removed duplicate token refresh block in `get_forcetime()`.
+* Removed dead code in `TestTypePrep()`.
 
-### New Authentication System
-
-* Complete redesign of authentication using S7 object-oriented framework:
-  * `HawkinConfig` class for configuration settings (profile, org_id, environment, log_level)
-  * `HawkinAuth` class for managing API session state and token lifecycle
-
-* Profile-based authentication with secure credential storage:
-  * Credentials stored securely in OS keychain (macOS Keychain, Windows Credential Manager) via `keyring` package
-  * Support for multiple named profiles (e.g., "dev", "prod", "teamA")
-  * Dual environment modes: "development" (keyring) and "production" (environment variables)
-
-* Automatic on-demand token refresh:
-  * Tokens refresh automatically when within 5 minutes of expiration
-  * Removed background token-monitoring loops for improved reliability and performance
-
-* Regional API endpoints:
-  * Users specify `region` ("Americas", "Europe", "APAC") when connecting
-  * Base URL is computed automatically from region
-
-### New User-Facing Functions
-
-* `hd_connect()` - Initialize connection with profile, region, and configuration options
-* `hd_auth_store()` - Securely save refresh token to OS credential store
-* `hd_auth_reset()` - Delete stored credentials from OS keychain
-
-### API Function Updates
-
-* All `get_*()` and `create_*()` functions now accept optional `x` parameter for explicit connection objects
-* `get_tests()` now unified with optional filter parameters: `athleteId`, `typeId`, `teamId`, `groupId`
-* Added `get_metrics()` for retrieving the metric library
-* Added `get_testTypes()` for test type metadata
-
-### Dependencies
-
-* Added `S7` package for modern OOP class definitions
-* Added `keyring` package for secure OS credential storage
-* Removed `later` package (no longer needed without background monitoring)
+### Enhancements
+* `get_forcetime_bulk()` now accepts a data frame with an `id` column (e.g., output of `get_tests()`) in addition to a character vector of test IDs.
+* `get_forcetime_bulk()` now supports `.rda` export format.
+* Standardized token refresh threshold to 300 seconds across all functions.
 
 ### Documentation
-
-* New `vignettes/authentication.Rmd` guide covering local development, multiple profiles, and production deployment
-* Updated all function documentation with new authentication patterns
-
----
+* Updated `hd_auth_store()` with security note about `.Rhistory` risk when passing tokens as arguments.
+* Updated `update_athletes()` `@return` documentation to say "updated" instead of "created".
+* CRAN compliance fixes: DESCRIPTION title, import spacing, roxygen completeness.
 
 ## hawkinR v1.1.5
 

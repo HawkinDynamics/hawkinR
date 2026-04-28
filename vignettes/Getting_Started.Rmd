@@ -115,7 +115,7 @@ kable(groups)
 
 ## Test Types
 
-Lastly, there are 9 different test collection modes in our software. And thus, we have 9 different test type IDs. These test IDs are what will be used in `get_tests_type` function, NOT the test name. So it is a good idea to store the test types as an object as well. This also has a single function to execute, which returns a data frame with the test type name and ID.
+Lastly, there are 9 different test collection modes in our software. And thus, we have 9 different test type IDs. These test IDs are what will be passed to `get_tests()` via the `typeId` argument, NOT the test name. So it is a good idea to store the test types as an object as well. This also has a single function to execute, which returns a data frame with the test type name and ID.
 
 ```{r types, eval=FALSE}
 # store test type IDs in an object called testIds

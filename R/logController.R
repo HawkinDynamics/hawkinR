@@ -23,6 +23,9 @@
 #'
 #' @param log_file A character string specifying the name of the custom log file.
 #'
+#' @return No return value, called for side effects. Configures the `logger`
+#' package's layout, threshold, and appender according to the arguments.
+#'
 #' @details
 #' The function sets up the logging configuration with the specified output destination
 #' and log thresholds. If "stdout" is chosen, logs will be output to the console.
@@ -69,44 +72,39 @@ initialize_logger <-
       log_threshold_file, c("TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL")
     )
 
-  # Define log appenders based on user choice
-  log_appender_stdout <- logger::appender_console
-  log_appender_file <- logger::appender_file(file = log_file)
+  # Validate log_output up front
+  log_output <- base::match.arg(log_output, c("stdout", "file", "both"))
 
-  # Set the log appenders and thresholds
+  # Set the log appenders and thresholds.
+  # The file appender (and its underlying file handle) is only constructed
+  # when the user explicitly opts in via "file" or "both", so the default
+  # "stdout" invocation has no filesystem side effects.
   if (log_output == "stdout") {
-    # STDOUT Settings
     logger::log_threshold(log_threshold_stdout)
-    logger::log_appender(log_appender_stdout)
+    logger::log_appender(logger::appender_console)
     logger::log_layout(logger::layout_glue_colors)
-    # Log the initialization
     logger::log_info(
       "Logger initialized with {log_output} output at {log_threshold_stdout} threshold"
     )
   } else if (log_output == "file") {
-    # File Out Settings
     logger::log_threshold(log_threshold_file)
-    logger::log_appender(log_appender_file)
+    logger::log_appender(logger::appender_file(file = log_file))
     logger::log_layout(logger::layout_glue)
-    # Log the initialization
     logger::log_info(
       "Logger initialized with {log_output} output at {log_threshold_file} threshold"
     )
   } else if (log_output == "both") {
-
-    # Create separate logger configurations for stdout and file
-    logger::log_appender(log_appender_stdout, index = 1)
+    # Separate logger configurations for stdout (index 1) and file (index 2)
+    logger::log_appender(logger::appender_console, index = 1)
     logger::log_threshold(log_threshold_stdout, index = 1)
     logger::log_layout(logger::layout_glue_colors, index = 1)
 
-    logger::log_appender(log_appender_file, index = 2)
+    logger::log_appender(logger::appender_file(file = log_file), index = 2)
     logger::log_threshold(log_threshold_file, index = 2)
     logger::log_layout(logger::layout_glue, index = 2)
 
-    # Log the initialization
     logger::log_info(
-      "Logger initialized with both stdout and file outputs, with stdout threshold:
-      {log_threshold_stdout}, and file threshold: {log_threshold_file}"
+      "Logger initialized with both stdout and file outputs, with stdout threshold: {log_threshold_stdout}, and file threshold: {log_threshold_file}"
     )
   }
 }

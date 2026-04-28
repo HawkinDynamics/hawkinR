@@ -41,10 +41,10 @@ The data frame passed as the argument must use the following schema:\tabular{lll
 # Example data frame following the required schema
 df <- data.frame(
   name = c("John Doe", "Jane Smith"),
-  image = c("http://example.com/johndoe.jpg", "http://example.com/janesmith.jpg"),
+  image = c("https://example.com/johndoe.jpg", "https://example.com/janesmith.jpg"),
   active = c(TRUE, FALSE),
-  teams = c("team1", c("team2", "team3"))),
-  groups = c(NULL, "group1")),
+  teams = I(list("team1", c("team2", "team3"))),
+  groups = I(list(NULL, "group1")),
   external_property = c("value1", "value2")
 )
 

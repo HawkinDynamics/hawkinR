@@ -3,10 +3,12 @@
 ^LICENSE\.md$
 ^README\.Rmd$
 ^\.github$
-^tests/
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
 ^\.vscode$
 ^dev$
-^hawkinRlog.log
+^hawkinRlog\.log$
+^hawkinR_.*\.tar\.gz$
+^\.Rhistory$
+^cran-comments\.md$
