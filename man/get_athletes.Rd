@@ -24,8 +24,19 @@ Each athlete includes the following variables:\tabular{lll}{
    \strong{active} \tab \emph{bool} \tab athlete is active (TRUE) \cr
    \strong{teams} \tab \emph{chr} \tab team ids separated by "," \cr
    \strong{groups} \tab \emph{chr} \tab group ids separated by "," \cr
+   \strong{image} \tab \emph{chr} \tab URL to athlete's photo. \code{NA} when never set or explicitly cleared. \cr
+   \strong{position} \tab \emph{chr} \tab Free-text playing position (e.g. "Forward"). \code{NA} when blank. \cr
+   \strong{dob} \tab \emph{chr} \tab Date of birth as an ISO-8601 date string (\code{YYYY-MM-DD}). \code{NA} when blank. \cr
+   \strong{sport} \tab \emph{chr} \tab Free-text sport name (e.g. "Basketball"). \code{NA} when blank. \cr
+   \strong{height} \tab \emph{num} \tab Athlete height in \strong{centimeters}, range \verb{[1, 300]} when present. \code{NA} otherwise. \cr
+   \strong{lastTestedOn} \tab \emph{num} \tab Unix epoch \strong{milliseconds} of the athlete's most recent test session. \code{NA} when no tests on file. \cr
    \strong{external} \tab \emph{chr} \tab external properties will have a column of their name with the appropriate values for the athlete of \code{NA} if it does not apply \cr
 }
+
+
+The optional profile columns (image, position, dob, sport, height, lastTestedOn)
+only appear in the returned data frame when at least one athlete in the response
+has the field populated.
 }
 \description{
 Get the athletes for an account. Inactive players will only be included if

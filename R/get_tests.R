@@ -33,6 +33,7 @@ NULL
 #'  teamId = NULL,
 #'  groupId = NULL,
 #'  includeInactive = FALSE,
+#'  includeEid = FALSE,
 #'  ...
 #'  )
 #'
@@ -55,6 +56,11 @@ NULL
 #' @param includeInactive Logical. Default `FALSE`, which sends `includeInactive=false` to
 #' the API so that only active tests are returned server-side. Set to `TRUE` to include
 #' inactive (disabled) trials in the response.
+#'
+#' @param includeEid Logical. Default `FALSE`. When `TRUE`, the API includes an
+#' `eid` (equipment ID) field on each test record identifying the hardware that
+#' produced the trial. The column will be `NA` for any tests where the equipment
+#' ID is not recorded.
 #'
 #' @param athleteId Supply an athlete’s id to receive tests for a specific athlete
 #'
@@ -119,6 +125,7 @@ get_tests <- function(from = NULL,
                       teamId = NULL,
                       groupId = NULL,
                       includeInactive = FALSE,
+                      includeEid = FALSE,
                       ...) {
 
   # 1. ----- Resolve Arguments & Connection -----
@@ -215,6 +222,9 @@ get_tests <- function(from = NULL,
 
   # Server-side includeInactive filtering (API v1.13+)
   if (isFALSE(includeInactive)) params$includeInactive <- "false"
+
+  # Optional: ask the API to include the equipment ID on each record
+  if (isTRUE(includeEid)) params$includeEid <- "true"
 
   logger::log_info("hawkinR/get_tests -> Fetching tests with pagination...")
 

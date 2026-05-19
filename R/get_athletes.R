@@ -26,7 +26,17 @@
 #' | **active** | *bool* | athlete is active (TRUE) |
 #' | **teams** | *chr* | team ids separated by "," |
 #' | **groups** | *chr* | group ids separated by "," |
+#' | **image** | *chr* | URL to athlete's photo. `NA` when never set or explicitly cleared. |
+#' | **position** | *chr* | Free-text playing position (e.g. "Forward"). `NA` when blank. |
+#' | **dob** | *chr* | Date of birth as an ISO-8601 date string (`YYYY-MM-DD`). `NA` when blank. |
+#' | **sport** | *chr* | Free-text sport name (e.g. "Basketball"). `NA` when blank. |
+#' | **height** | *num* | Athlete height in **centimeters**, range `[1, 300]` when present. `NA` otherwise. |
+#' | **lastTestedOn** | *num* | Unix epoch **milliseconds** of the athlete's most recent test session. `NA` when no tests on file. |
 #' | **external** | *chr* | external properties will have a column of their name with the appropriate values for the athlete of `NA` if it does not apply |
+#'
+#' The optional profile columns (image, position, dob, sport, height, lastTestedOn)
+#' only appear in the returned data frame when at least one athlete in the response
+#' has the field populated.
 #'
 #' @examples
 #' \dontrun{

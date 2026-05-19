@@ -13,6 +13,7 @@ get_tests(
  teamId = NULL,
  groupId = NULL,
  includeInactive = FALSE,
+ includeEid = FALSE,
  ...
  )
 }
@@ -58,6 +59,11 @@ can be fetched at once.}
 \item{includeInactive}{Logical. Default \code{FALSE}, which sends \code{includeInactive=false} to
 the API so that only active tests are returned server-side. Set to \code{TRUE} to include
 inactive (disabled) trials in the response.}
+
+\item{includeEid}{Logical. Default \code{FALSE}. When \code{TRUE}, the API includes an
+\code{eid} (equipment ID) field on each test record identifying the hardware that
+produced the trial. The column will be \code{NA} for any tests where the equipment
+ID is not recorded.}
 
 \item{...}{Optional arguments.
 \itemize{
