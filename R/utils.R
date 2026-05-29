@@ -229,32 +229,81 @@ TestTypePrep <- function(arg_df) {
 
 #' Construct Athlete df
 #'
-#' Take athlete section from data frame and prep for final data frame
+#' Take athlete section from data frame and prep for final data frame.
+#' Uses the same v1.14 schema as get_athletes() — id/name/active/teams/
+#' groups/image are explicit core columns; position/dob/sport/height/
+#' lastTestedOn are optional and only appear when at least one athlete
+#' has the field populated; external is a nested object unnested into
+#' separate columns. Everything is prefixed with "athlete_" so test
+#' rows can namespace athlete data alongside metrics.
 #'
 #' @param arg_df Data frame to be evaluated.
-#' @return data frame of test type information
+#' @return data frame of athlete information, all columns prefixed "athlete_"
 #' @keywords internal
 AthletePrep <- function(arg_df) {
 
-  # 1. Isolate Expected Athlete Columns from Athlete Section
-  athleteData <- arg_df[1:5]
-  base::colnames(athleteData) <- base::paste0("athlete_", base::colnames(athleteData))
-
-  # 2. Check for External
-  externalData <- arg_df[[6]]
-
-  # 3. Reformat and Add External Data if Present
-  if (ncol(externalData) > 0) {
-    # A. Reformat External Data names
-    externalData <- janitor::clean_names(externalData)
-    base::colnames(externalData) <- base::paste0("athlete_", base::colnames(externalData))
-
-    # B. Combine Basic Athlete and External data
-    return(base::cbind(athleteData, externalData))
-  } else {
-    # A. Return Basic Athlete Data
-    return(athleteData)
+  # Defensive guards
+  if (base::is.null(arg_df) || base::length(arg_df) == 0L) {
+    return(base::data.frame())
   }
+  if (!base::is.data.frame(arg_df)) {
+    arg_df <- base::as.data.frame(arg_df, stringsAsFactors = FALSE)
+  }
+
+  # Authoritative v1.14 athlete schema
+  core_cols    <- c("id", "name", "active", "teams", "groups", "image")
+  profile_cols <- c("position", "dob", "sport", "height", "lastTestedOn")
+
+  # What this response actually contained
+  present_core    <- base::intersect(core_cols,    base::names(arg_df))
+  present_profile <- base::intersect(profile_cols, base::names(arg_df))
+
+  # Core + profile block, prefixed
+  known_df <- arg_df[, c(present_core, present_profile), drop = FALSE]
+  base::colnames(known_df) <- base::paste0("athlete_", base::colnames(known_df))
+
+  # Handle nested external if present
+  if (!"external" %in% base::names(arg_df)) {
+    return(known_df)
+  }
+
+  externalData <- arg_df[["external"]]
+  ext_df <- NULL
+
+  # external can be a sub-data-frame (uniform keys across rows) or a
+  # list-column (varying keys). Normalize to a data frame.
+  if (base::is.data.frame(externalData) && base::ncol(externalData) > 0L) {
+    ext_df <- externalData
+
+  } else if (base::is.list(externalData)) {
+    ext_keys <- base::unique(base::unlist(base::lapply(externalData, base::names)))
+    ext_keys <- ext_keys[!base::is.na(ext_keys)]
+
+    if (base::length(ext_keys) > 0L) {
+      ext_df <- base::as.data.frame(
+        base::lapply(ext_keys, function(k) {
+          base::vapply(externalData, function(row_ext) {
+            if (base::is.null(row_ext) || base::is.null(row_ext[[k]])) {
+              NA_character_
+            } else {
+              base::as.character(row_ext[[k]])
+            }
+          }, character(1))
+        }),
+        stringsAsFactors = FALSE
+      )
+      base::colnames(ext_df) <- ext_keys
+    }
+  }
+
+  # Combine if we have external data, prefixed for namespacing
+  if (!base::is.null(ext_df) && base::ncol(ext_df) > 0L) {
+    ext_df <- janitor::clean_names(ext_df)
+    base::colnames(ext_df) <- base::paste0("athlete_", base::colnames(ext_df))
+    return(base::cbind(known_df, ext_df))
+  }
+
+  return(known_df)
 }
 
 

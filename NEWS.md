@@ -1,5 +1,15 @@
 # Change Log
 
+## hawkinR v1.2.0
+
+* Addition of athlete profile fields (`image`, `position`, `dob`, `sport`, `height`, `lastTestedOn`) to `get_athletes()` returns
+
+* Addition of athlete profile fields (`athlete_image`, `athlete_position`, `athlete_dob`, `athlete_sport`, `athlete_height`) to `get_tests()` returns
+
+* Bug fix: rewrote external property handling in `get_athletes()` and `AthletePrep()` to correctly unnest external value pairs into separate columns, including varying keys across athletes
+
+* Bug fix: `get_access()` now uses the supplied `org_name` for the `Dev` region and defaults to `v1` instead of `dev`
+
 ## hawkinR v1.1.5
 
 * fix to R/utils/ParamValidation duplicated date format check.

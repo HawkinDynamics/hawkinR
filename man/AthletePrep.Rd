@@ -10,9 +10,15 @@ AthletePrep(arg_df)
 \item{arg_df}{Data frame to be evaluated.}
 }
 \value{
-data frame of test type information
+data frame of athlete information, all columns prefixed "athlete_"
 }
 \description{
-Take athlete section from data frame and prep for final data frame
+Take athlete section from data frame and prep for final data frame.
+Uses the same v1.14 schema as get_athletes() — id/name/active/teams/
+groups/image are explicit core columns; position/dob/sport/height/
+lastTestedOn are optional and only appear when at least one athlete
+has the field populated; external is a nested object unnested into
+separate columns. Everything is prefixed with "athlete_" so test
+rows can namespace athlete data alongside metrics.
 }
 \keyword{internal}
