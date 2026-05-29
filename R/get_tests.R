@@ -84,6 +84,11 @@
 #' | **athlete_active** | *logi* | The athlete is active |
 #' | **athlete_teams** | *list* | List containing Ids of each team the athlete is on |
 #' | **athlete_groups** | *list* | List containing Ids of each group the athlete is in |
+#' | **athlete_image** | *chr* | URL to athlete's profile image |
+#' | **athlete_position** | *chr* | Athlete's position |
+#' | **athlete_dob** | *chr* | Athlete's date of birth |
+#' | **athlete_sport** | *chr* | Athlete's sport |
+#' | **athlete_height** | *chr* | Athlete's height |
 #'
 #' All metrics from each test type are included as the remaining variables
 #' unless `typeId` is provided, then only the metrics of that test type will be returned.

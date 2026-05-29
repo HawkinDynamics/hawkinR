@@ -85,6 +85,11 @@ Response will be a data frame containing the trials within the time range
    \strong{athlete_active} \tab \emph{logi} \tab The athlete is active \cr
    \strong{athlete_teams} \tab \emph{list} \tab List containing Ids of each team the athlete is on \cr
    \strong{athlete_groups} \tab \emph{list} \tab List containing Ids of each group the athlete is in \cr
+   \strong{athlete_image} \tab \emph{chr} \tab URL to athlete's profile image \cr
+   \strong{athlete_position} \tab \emph{chr} \tab Athlete's position \cr
+   \strong{athlete_dob} \tab \emph{chr} \tab Athlete's date of birth \cr
+   \strong{athlete_sport} \tab \emph{chr} \tab Athlete's sport \cr
+   \strong{athlete_height} \tab \emph{chr} \tab Athlete's height \cr
 }
 
 

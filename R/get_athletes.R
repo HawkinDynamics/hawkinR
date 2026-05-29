@@ -21,6 +21,12 @@
 #' | **active**      | *bool*   | athlete is active (TRUE) |
 #' | **teams**       | *chr*    | team ids separated by "," |
 #' | **groups**      | *chr*    | group ids separated by "," |
+#' | **image**       | *chr*    | URL to athlete's profile image |
+#' | **position**    | *chr*    | athlete's position |
+#' | **dob**         | *chr*    | athlete's date of birth |
+#' | **sport**       | *chr*    | athlete's sport |
+#' | **height**      | *chr*    | athlete's height |
+#' | **lastTestedOn** | *chr*    | date of athlete's last test |
 #' | **external**    | *chr*    | external properties will have a column of their name with the appropriate values for the athlete of `NA` if it does not apply |
 #'
 #' @examples
@@ -147,20 +153,41 @@ get_athletes <- function(includeInactive = FALSE) {
     # Create data frame from returns data
     df <- base::as.data.frame(x[[1]])
 
-    # Handle External Properties
-    if (base::ncol(df) > 5) {
-      # Select base athlete attributes
-      a <- df[, 1:5]
-      # Select any external value pairs
-      b <- df[, 6:base::ncol(df)]
+    # Explicit response columns to pull out of the response.
+    core_cols    <- c("id", "name", "active", "teams", "groups", "image")
+    profile_cols <- c( "position", "dob", "sport", "height", "lastTestedOn")
 
-      # Return new data frame with externals expanded
-      return(base::cbind(a, b))
-    } else {
-      # Return data frame
-      return(df)
+    # What's present in this response
+    present_core    <- intersect(core_cols,    names(df))
+    present_profile <- intersect(profile_cols, names(df))
+
+    # Core + profile block
+    known_df <- df[, c(present_core, present_profile), drop = FALSE]
+
+    # External block — unnest the list-column into one column per key
+    if ("external" %in% names(df)) {
+      # Discover every key that appears across all rows
+      ext_keys <- base::unique(base::unlist(base::lapply(df$external, base::names)))
+
+      if (base::length(ext_keys) > 0L) {
+        ext_df <- base::as.data.frame(
+          base::lapply(ext_keys, function(k) {
+            base::vapply(df$external, function(row_ext) {
+              if (base::is.null(row_ext) || base::is.null(row_ext[[k]])) {
+                NA_character_
+              } else {
+                base::as.character(row_ext[[k]])
+              }
+            }, character(1))
+          }),
+          stringsAsFactors = FALSE
+        )
+        base::colnames(ext_df) <- ext_keys
+
+        known_df <- base::cbind(known_df, ext_df)
+      }
     }
+
+    return(known_df)
   }
 }
-
-

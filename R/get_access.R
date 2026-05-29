@@ -85,7 +85,7 @@ get_access <- function(refreshToken, region = "Americas", org_name = NULL) {
   orgName <- if(!is.null(org_name)) {
     org_name
   } else {
-    "dev"
+    "v1"
   }
 
   urlCloud <- base::switch(
@@ -93,7 +93,7 @@ get_access <- function(refreshToken, region = "Americas", org_name = NULL) {
     "Americas" = paste0("https://cloud.hawkindynamics.com/api/", orgName),
     "Europe" = paste0("https://eu.cloud.hawkindynamics.com/api/", orgName),
     "Asia/Pacific" = paste0("https://apac.cloud.hawkindynamics.com/api/", orgName),
-    "Dev" = "https://cloud.dev.hawkindynamics.com/api/dev"
+    "Dev" = paste0("https://cloud.dev.hawkindynamics.com/api/", orgName)
   )
 
   # Log Debug

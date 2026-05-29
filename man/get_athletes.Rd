@@ -19,6 +19,12 @@ Each athlete includes the following variables:\tabular{lll}{
    \strong{active} \tab \emph{bool} \tab athlete is active (TRUE) \cr
    \strong{teams} \tab \emph{chr} \tab team ids separated by "," \cr
    \strong{groups} \tab \emph{chr} \tab group ids separated by "," \cr
+   \strong{image} \tab \emph{chr} \tab URL to athlete's profile image \cr
+   \strong{position} \tab \emph{chr} \tab athlete's position \cr
+   \strong{dob} \tab \emph{chr} \tab athlete's date of birth \cr
+   \strong{sport} \tab \emph{chr} \tab athlete's sport \cr
+   \strong{height} \tab \emph{chr} \tab athlete's height \cr
+   \strong{lastTestedOn} \tab \emph{chr} \tab date of athlete's last test \cr
    \strong{external} \tab \emph{chr} \tab external properties will have a column of their name with the appropriate values for the athlete of \code{NA} if it does not apply \cr
 }
 }

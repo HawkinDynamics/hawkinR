@@ -16,13 +16,13 @@ version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
-[![packageversion](https://img.shields.io/badge/Package%20version-1.1.5-orange.svg?style=flat-square)](commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.2.0-orange.svg?style=flat-square)](commits/master)
 [![thanks-md](https://img.shields.io/badge/THANKS-md-ff69b4.svg)](THANKS.md)
 
 <!-- badges: end -->
 
 hawkinR provides simple functionality with Hawkin Dynamics API. These
-functions are for use with ‘Hawkin Dynamics Beta API’ version 1.10-beta.
+functions are for use with ‘Hawkin Dynamics Beta API’ version 1.14-beta.
 You must be an Hawkin Dynamics user with active integration account to
 utilize functions within the package.
 
