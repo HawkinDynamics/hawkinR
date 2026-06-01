@@ -247,6 +247,12 @@ AthletePrep <- function(arg_df) {
     return(base::data.frame())
   }
   if (!base::is.data.frame(arg_df)) {
+    # Replace NULL / zero-length elements with NA so columns line up
+    if (base::is.list(arg_df)) {
+      arg_df <- base::lapply(arg_df, function(x) {
+        if (base::is.null(x) || base::length(x) == 0L) NA else x
+      })
+    }
     arg_df <- base::as.data.frame(arg_df, stringsAsFactors = FALSE)
   }
 

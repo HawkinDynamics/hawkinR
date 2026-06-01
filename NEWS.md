@@ -1,5 +1,9 @@
 # Change Log
 
+## hawkinR v1.2.1
+
+* Bug fix: `AthletePrep` internal helper function now correctly handles athletes with missing external property values, including varying keys across athletes. This resolves issues with `get_athletes()` and `get_tests()` when external properties are present but not consistently populated across all athletes.
+
 ## hawkinR v1.2.0
 
 * Addition of athlete profile fields (`image`, `position`, `dob`, `sport`, `height`, `lastTestedOn`) to `get_athletes()` returns
