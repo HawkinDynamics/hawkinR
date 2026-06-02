@@ -7,15 +7,15 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/HawkinDynamics/hawkinR/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/HawkinDynamics/hawkinR/blob/v1.2.1/DESCRIPTION)
 
-Green L (2026). *hawkinR: hawkinR - Hawkin Dynamics API*. R package
-version 1.2.0, <https://github.com/HawkinDynamics/hawkinR>.
+Green L (2026). *hawkinR: hawkinR - Hawkin Dynamics API Client*. R
+package version 1.2.1, <https://github.com/HawkinDynamics/hawkinR>.
 
     @Manual{,
-      title = {hawkinR: hawkinR - Hawkin Dynamics API},
+      title = {hawkinR: hawkinR - Hawkin Dynamics API Client},
       author = {Lauren Green},
       year = {2026},
-      note = {R package version 1.2.0},
+      note = {R package version 1.2.1},
       url = {https://github.com/HawkinDynamics/hawkinR},
     }
