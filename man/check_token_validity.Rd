@@ -6,7 +6,14 @@
 \usage{
 check_token_validity()
 }
+\value{
+\code{TRUE} if the stored token is still valid, otherwise \code{FALSE}
+(returned invisibly).
+}
 \description{
-Takes the current token expiration and validates it
+Takes the current token expiration and validates it. A missing, empty, or
+non-numeric expiration (which coerces to \code{NA}) is treated as invalid rather
+than being compared against \code{NA} — the latter raises
+"missing value where TRUE/FALSE needed".
 }
 \keyword{internal}

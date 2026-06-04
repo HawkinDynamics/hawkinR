@@ -3,16 +3,26 @@
 
 #' Check Authentication Validity
 #'
-#' Takes the current token expiration and validates it
+#' Takes the current token expiration and validates it. A missing, empty, or
+#' non-numeric expiration (which coerces to `NA`) is treated as invalid rather
+#' than being compared against `NA` — the latter raises
+#' "missing value where TRUE/FALSE needed".
+#'
+#' @return `TRUE` if the stored token is still valid, otherwise `FALSE`
+#'   (returned invisibly).
 #' @keywords internal
 check_token_validity <- function() {
-  token_expiration <- as.numeric(Sys.getenv("accessToken_expiration"))
-  if (Sys.time() > as.POSIXct(token_expiration, origin = "1970-01-01")) {
-    Sys.setenv(accessToken_valid = FALSE)
-  } else {
-    Sys.setenv(accessToken_valid = TRUE)
-  }
-  invisible(NULL)  # To avoid printing
+  token_expiration <- base::suppressWarnings(
+    as.numeric(Sys.getenv("accessToken_expiration"))
+  )
+
+  # NA-safe: an unparseable/missing expiration is invalid, and `&&`
+  # short-circuits before any comparison against NA.
+  valid <- !is.na(token_expiration) &&
+    Sys.time() <= as.POSIXct(token_expiration, origin = "1970-01-01")
+
+  Sys.setenv(accessToken_valid = valid)
+  invisible(valid)
 }
 
 
@@ -21,21 +31,71 @@ check_token_validity <- function() {
 
 #' Monitor Authentication Validity
 #'
-#' Looped checks of access taken validation
+#' Looped checks of access token validation. Polling continues only while the
+#' token is valid; once it expires (or was never set) the loop stops, and the
+#' next `get_*()` call prompts re-authentication. The loop also stops on any
+#' unexpected error to avoid an endless 5-second error loop in the console.
 #'
 #' @keywords internal
 monitor_token <- function() {
   tryCatch(
     {
-      check_token_validity()  # Perform the validity check
-      later::later(monitor_token, 5)  # Schedule the next check
+      valid <- check_token_validity()  # Perform the validity check
+      if (base::isTRUE(valid)) {
+        later::later(monitor_token, 5)  # Schedule the next check while valid
+      }
     },
     error = function(e) {
       message("An error occurred in monitor_token: ", e$message)
-      # Optionally retry scheduling in case of recoverable errors
-      later::later(monitor_token, 5)
+      # Do not reschedule: stop the loop instead of repeating the error.
     }
   )
+}
+
+
+#--------------------#
+
+
+#' Retrieve and Validate Stored Access Token
+#'
+#' Reads the access token and expiration stored by `get_access()`, validates
+#' both, and returns the token. A missing, empty, or non-numeric (`NA`)
+#' expiration is treated as an expired token — prompting re-authentication —
+#' rather than being allowed to propagate `NA` into the calling `if` condition
+#' (which raises "missing value where TRUE/FALSE needed").
+#'
+#' @param fn_name Calling function label, used for log context.
+#' @return The access token (character). Stops with an instructive error when
+#'   the token is missing or expired.
+#' @keywords internal
+validate_access_token <- function(fn_name = "hawkinR") {
+  aToken <- base::Sys.getenv("accessToken")
+  token_exp <- base::suppressWarnings(
+    base::as.numeric(base::Sys.getenv("accessToken_expiration"))
+  )
+
+  # Token is unusable if absent, or expiration is missing/non-numeric/past.
+  # `||` short-circuits so `token_exp <= ...` never runs against an NA.
+  token_missing <- base::nchar(aToken) == 0L
+  exp_missing   <- base::length(token_exp) == 0L || base::is.na(token_exp)
+
+  if (token_missing || exp_missing ||
+      token_exp <= base::as.numeric(base::Sys.time())) {
+    logger::log_error(base::paste0(
+      fn_name,
+      " -> Access token not available or expired. Call get_access() to obtain it."
+    ))
+    stop("Access token not available or expired. Call get_access() to obtain it.")
+  }
+
+  # Log Debug
+  logger::log_debug(base::paste0(
+    fn_name,
+    " -> Temporary access token expires: ",
+    base::as.POSIXct(token_exp)
+  ))
+
+  aToken
 }
 
 

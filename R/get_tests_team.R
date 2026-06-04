@@ -102,24 +102,8 @@ get_tests_team <-
 
     # 2. ----- Parameter Validation -----
 
-    # Retrieve access token and expiration from environment variables
-    aToken <- base::Sys.getenv("accessToken")
-
-    #-----#
-
-    token_exp <- base::as.numeric(base::Sys.getenv("accessToken_expiration"))
-
-    #-----#
-
-    # Check for Access Token and Expiration
-    if (base::is.null(aToken) ||
-        token_exp <= base::as.numeric(base::Sys.time())) {
-      logger::log_error("hawkinR/get_tests_team -> Access token not available or expired. Call get_access() to obtain it.")
-      stop("Access token not available or expired. Call get_access() to obtain it.")
-    } else {
-      # Log Debug
-      logger::log_debug(base::paste0("hawkinR/get_tests_team -> Temporary access token expires: ", base::as.POSIXct(token_exp)))
-    }
+    # Retrieve and validate access token (NA-safe; stops if missing/expired)
+    aToken <- validate_access_token("hawkinR/get_tests_team")
 
     #-----#
 

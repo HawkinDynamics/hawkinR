@@ -130,18 +130,22 @@ get_access <- function(refreshToken, region = "Americas", org_name = NULL) {
   # 4. ----- Create Response Outputs -----
 
   # Error Handler
-  error_message <- NULL
+  # Any non-200 status must stop here. Otherwise execution falls through to the
+  # success path and monitor_token() with no token set (e.g. a 404 from a down
+  # regional endpoint), leaving accessToken_expiration as NA.
+  if (status != 200) {
+    error_message <- base::switch(
+      base::as.character(status),
+      "401" = 'Error 401: Refresh Token is invalid or expired.',
+      "403" = 'Error 403: Refresh Token is missing',
+      "500" = 'Error 500: Something went wrong. Please contact support@hawkindynamics.com',
+      base::paste0(
+        'Error ', status,
+        ': Unable to retrieve access token. Verify your `region` and `org_name`',
+        ' and try again, or contact support@hawkindynamics.com'
+      )
+    )
 
-  if (status == 401) {
-    error_message <- 'Error 401: Refresh Token is invalid or expired.'
-  } else if (status == 403) {
-    error_message <- 'Error 403: Refresh Token is missing'
-  } else if (status == 500) {
-    error_message <-
-      'Error 500: Something went wrong. Please contact support@hawkindynamics.com'
-  }
-
-  if (!base::is.null(error_message)) {
     logger::log_error(paste0(
       "hawkinR/get_access -> ", error_message
     ))
