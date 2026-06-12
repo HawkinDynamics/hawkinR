@@ -1,5 +1,13 @@
 # Change Log
 
+## hawkinR v1.2.2
+
+* Bug fix: `get_access()` now stops on any non-200 response. Previously only 401/403/500 were handled, so other statuses (e.g. a 404 from a regional endpoint that is down) fell through to the success path, leaving the token expiration unset (`NA`). Unhandled statuses now return an informative error including the status code.
+
+* Bug fix: token validation across all `get_*()` functions is now `NA`-safe. A missing, empty, or non-numeric stored expiration no longer raises `missing value where TRUE/FALSE needed`; instead it returns a clear prompt to call `get_access()`. The per-function check was consolidated into the internal `validate_access_token()` helper.
+
+* Bug fix: `monitor_token()` no longer loops indefinitely. It stops polling once the token is invalid or expired, and no longer reschedules itself after an error — resolving the repeating `An error occurred in monitor_token` console output.
+
 ## hawkinR v1.2.1
 
 * Bug fix: `AthletePrep` internal helper function now correctly handles athletes with missing external property values, including varying keys across athletes. This resolves issues with `get_athletes()` and `get_tests()` when external properties are present but not consistently populated across all athletes.

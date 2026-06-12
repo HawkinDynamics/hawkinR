@@ -9,3 +9,4 @@
 ^pkgdown$
 ^hawkinRlog.log
 ^.claude/
+^\.claude$
