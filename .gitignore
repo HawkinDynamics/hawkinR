@@ -8,3 +8,6 @@ hawkinR.Rproj
 .Rhistory
 hawkinRlog.log
 .claude/
+
+/.quarto/
+**/*.quarto_ipynb

@@ -242,6 +242,11 @@ get_tests_ath <-
         # Build Output Test Data frame
         outputDF <- base::cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
 
+        # Guard against duplicate column names across the cbind'd blocks
+        # (e.g. an athlete external property colliding with a profile column).
+        # cbind allows duplicates, but the dplyr verbs below reject them.
+        base::colnames(outputDF) <- base::make.unique(base::colnames(outputDF))
+
         # Add Test Meta Data to output data frame
         outputDF <- dplyr::mutate(outputDF, last_test_time = lastTest, last_sync_time = lastSync)
 

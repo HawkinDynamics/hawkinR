@@ -366,7 +366,14 @@ AthletePrep <- function(arg_df) {
   if (!base::is.null(ext_df) && base::ncol(ext_df) > 0L) {
     ext_df <- janitor::clean_names(ext_df)
     base::colnames(ext_df) <- base::paste0("athlete_", base::colnames(ext_df))
-    return(base::cbind(known_df, ext_df))
+    combined <- base::cbind(known_df, ext_df)
+    # An external property can share a name with a core/profile column
+    # (e.g. an external field "Position" -> athlete_position, colliding with
+    # the profile athlete_position). cbind tolerates the duplicate, but
+    # downstream dplyr verbs reject any frame with duplicate names, so
+    # disambiguate the external copy here (athlete_position.1).
+    base::colnames(combined) <- base::make.unique(base::colnames(combined))
+    return(combined)
   }
 
   return(known_df)
