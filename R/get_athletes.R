@@ -169,6 +169,11 @@ get_athletes <- function(includeInactive = FALSE) {
         base::colnames(ext_df) <- ext_keys
 
         known_df <- base::cbind(known_df, ext_df)
+        # An external property can share a name with a core/profile column
+        # (e.g. an external field literally named "position"). cbind tolerates
+        # the duplicate, but it breaks downstream dplyr verbs and masks one of
+        # the columns, so disambiguate the external copy here (position.1).
+        base::colnames(known_df) <- base::make.unique(base::colnames(known_df))
       }
     }
 

@@ -1,5 +1,11 @@
 # Change Log
 
+## hawkinR v1.2.3
+
+* Bug fix: `get_tests()` (and the deprecated `get_tests_ath()`, `get_tests_team()`, `get_tests_group()`, `get_tests_type()`) no longer error with `Can't transform a data frame with duplicate names.` when an athlete has an external property whose cleaned name collides with a profile column (e.g. an external field `"Position"` colliding with `athlete_position`). Duplicate column names produced by `cbind` are now disambiguated with `make.unique()` in the internal `AthletePrep()` helper and again on the assembled output, so both the profile column and the external column are retained (the external copy is suffixed, e.g. `athlete_position.1`).
+
+* Bug fix: `get_athletes()` applies the same guard — an external property named identically to a core/profile column (e.g. `position`) is retained as a distinct suffixed column rather than silently masking the profile value.
+
 ## hawkinR v1.2.2
 
 * Bug fix: `get_access()` now stops on any non-200 response. Previously only 401/403/500 were handled, so other statuses (e.g. a 404 from a regional endpoint that is down) fell through to the success path, leaving the token expiration unset (`NA`). Unhandled statuses now return an informative error including the status code.
