@@ -1,5 +1,11 @@
 # Change Log
 
+## hawkinR v1.2.4
+
+* Bug fix: `get_forcetime()` returned a data frame with mislabeled columns — values were shifted by one relative to their headers (e.g. `time_s` held the test id and `right_force_n` held the time values). The function now indexes the JSON response by its named fields (`x$testType$id`, `x$Time(s)`, `x$RightForce(N)`, etc.) instead of positional array indices, so each column is populated from the correct vector regardless of field order. The tri-axial force/moment columns are handled the same way.
+
+* Improvement: the test name reported in the `get_forcetime()` success log is now built from the test type name plus any tags present, joined by `-` (e.g. `Countermovement Jump-Morning-PreSeason`). The unused `stringr` dependency was removed.
+
 ## hawkinR v1.2.3
 
 * Bug fix: `get_tests()` (and the deprecated `get_tests_ath()`, `get_tests_team()`, `get_tests_group()`, `get_tests_type()`) no longer error with `Can't transform a data frame with duplicate names.` when an athlete has an external property whose cleaned name collides with a profile column (e.g. an external field `"Position"` colliding with `athlete_position`). Duplicate column names produced by `cbind` are now disambiguated with `make.unique()` in the internal `AthletePrep()` helper and again on the assembled output, so both the profile column and the external column are retained (the external copy is suffixed, e.g. `athlete_position.1`).
