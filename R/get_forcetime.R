@@ -32,7 +32,6 @@
 #' @importFrom magrittr %>%
 #' @importFrom httr2 request req_url_path_append req_auth_bearer_token req_error req_perform resp_status resp_body_json
 #' @importFrom rlang .data
-#' @importFrom stringr str_replace_all
 #' @importFrom lubridate as_datetime
 #' @importFrom logger log_info log_formatter formatter_pander
 #'
@@ -120,56 +119,57 @@ get_forcetime <- function(testId) {
     # 5. ----- Sort Test Type Data -----
 
     # Test ID
-    testTypeID <- x[[1]][[1]]
+    testTypeID <- x$testType$id
 
     # Test Type Name with Tags
-    testName <- stringr::str_replace_all(x[[1]][[2]], "-", " - ")
+    # Combine the test type name with any tag names (if present), joined by "-"
+    tagNames <- x$testType$tags$name
+    testName <- base::paste(c(x$testType$name, tagNames), collapse = "-")
 
     # Test Type Canonical ID
-    testCanonical <- x[[1]][[3]]
+    testCanonical <- x$testType$canonicalId
 
     # 6. ----- Sort Athlete Data -----
 
     # Athlete ID
-    athleteID <- x[[3]][[1]]
+    athleteID <- x$athlete$id
 
     # Athlete Name
-    athleteName <- x[[3]][[2]]
+    athleteName <- x$athlete$name
 
     # Athlete Active Status
-    athleteStatus <- if(x[[3]][[5]]) "active" else "inactive"
+    athleteStatus <- if(x$athlete$active) "active" else "inactive"
 
     # 7. ----- Sort Trial Info -----
 
     # Time stamp
-    timestamp <- x[[4]]
+    timestamp <- x$timestamp
 
     # Date Time
-    dateTime <- lubridate::as_datetime(x[[4]], tz = base::Sys.timezone())
+    dateTime <- lubridate::as_datetime(x$timestamp, tz = base::Sys.timezone())
 
     # 8. ----- Create Test Data Frame -----
 
     # Time
-    time_s <- x[[5]]
+    time_s <- x$`Time(s)`
 
     # Right Force
-    right_force_N <- x[[6]]
+    right_force_N <- x$`RightForce(N)`
 
     # Left Force
-    left_force_N <- x[[7]]
+    left_force_N <- x$`LeftForce(N)`
 
     # Combined Force
-    combined_force_N <- x[[8]]
+    combined_force_N <- x$`CombinedForce(N)`
 
     # Velocity
-    velocity_m_s <- x[[9]]
+    velocity_m_s <- x$`Velocity(m/s)`
 
     # Displacement
-    displacement_m <- x[[10]]
+    displacement_m <- x$`Displacement(m)`
 
     # Power
-    power_W <- x[[11]]
-
+    power_W <- x$`Power(W)`
     # Data Frame Output
     ft <- if(testCanonical %in% c(
       "r4fhrkPdYlLxYQxEeM78", # Multi Rebound
@@ -204,28 +204,28 @@ get_forcetime <- function(testId) {
     # 9. ----- Check For TriAxial data -----
 
     # X Left Force
-    if (length(x[[12]]) > 0) {ft$x_left_force_N <- x[12]}
+    if (length(x$`XLeftForce(N)`) > 0) {ft$x_left_force_N <- x$`XLeftForce(N)`}
 
     # X Right Force
-    if (length(x[[13]]) > 0) {ft$x_right_force_N <- x[13]}
+    if (length(x$`XRightForce(N)`) > 0) {ft$x_right_force_N <- x$`XRightForce(N)`}
 
     # Y Left Force
-    if (length(x[[14]]) > 0) {ft$y_left_force_N <- x[14]}
+    if (length(x$`YLeftForce(N)`) > 0) {ft$y_left_force_N <- x$`YLeftForce(N)`}
 
     #  Y Right Force
-    if (length(x[[15]]) > 0) {ft$y_right_force_N <- x[15]}
+    if (length(x$`YRightForce(N)`) > 0) {ft$y_right_force_N <- x$`YRightForce(N)`}
 
     # X Left Moments
-    if (length(x[[16]]) > 0) {ft$x_left_moments <- x[16]}
+    if (length(x$`XLeftMoments(Nm)`) > 0) {ft$x_left_moments <- x$`XLeftMoments(Nm)`}
 
     # X Right Moments
-    if (length(x[[17]]) > 0) {ft$x_right_moments <- x[17]}
+    if (length(x$`XRightMoments(Nm)`) > 0) {ft$x_right_moments <- x$`XRightMoments(Nm)`}
 
     # Y Left Moments
-    if (length(x[[18]]) > 0) {ft$y_left_moments <- x[18]}
+    if (length(x$`YLeftMoments(Nm)`) > 0) {ft$y_left_moments <- x$`YLeftMoments(Nm)`}
 
     # Y Right Moments
-    if (length(x[[19]]) > 0) {ft$y_right_moments <- x[19]}
+    if (length(x$`YRightMoments(Nm)`) > 0) {ft$y_right_moments <- x$`YRightMoments(Nm)`}
 
     # 10. ----- Returns -----
 
