@@ -11,6 +11,10 @@ hd_auth_store(profile = "default", token = NULL)
 
 \item{token}{character. Optional. If NULL (default), a secure prompt will appear.}
 }
+\value{
+No return value, called for side effects. Stores the refresh token
+for \code{profile} in the operating system credential store.
+}
 \description{
 Securely saves your Hawkin Dynamics Refresh Token to your operating system's
 credential store (Keychain on macOS, Credential Manager on Windows).

@@ -1,5 +1,12 @@
 # Change Log
 
+## hawkinR v2.0.1
+
+### Bug Fixes
+* **CRITICAL:** `get_forcetime()` built its data frame by indexing the API response positionally rather than by field name. When the response elements did not line up with the assumed positions, the force-time series were populated from the wrong fields, leaving column values misaligned relative to their labels (for example, a force series appearing under the `time_s` column). Because the shape and length of the data were unaffected, the result looked valid and no error was raised, so downstream analysis could be silently incorrect. Columns are now selected by their API field names (`Time(s)`, `LeftForce(N)`, `RightForce(N)`, ...), so each series is populated from the correct vector regardless of field order or omitted optional fields. The tri-axial force and moment columns are handled the same way.
+* `get_forcetime()` now reads `testType_id` from the named `testType$id` field instead of a positional lookup.
+* Added regression tests covering the force-time column mapping (each column populated from its own field, tri-axial fields present and absent, and `testType_id`), which previously had no test coverage.
+
 ## hawkinR v2.0.0
 
 ### Breaking Changes
@@ -7,15 +14,23 @@
 * `includeInactive` filtering in `get_tests()` is now server-side (API v1.13). Behavior is unchanged but the parameter is sent to the API directly rather than filtering client-side.
 * `HawkinForceTime` property renamed: `testType_canoncical` -> `testType_canonical` (typo fix).
 
+### New Features
+* `get_cop()` — retrieve raw Center of Pressure (COP) time-series data for a test, returning a new `HawkinCOP` object with the six COP series (`cop_x`, `cop_y`, `left_cop_x`, `left_cop_y`, `right_cop_x`, `right_cop_y`). Exclusive to the Free Run test type (other types return a 404). COP values are kept as `NA` for samples with no weight on a given plate.
+
 ### Bug Fixes
 * **CRITICAL:** `update_athletes()` now correctly calls `UpdateAthleteJSON()` instead of `AddAthleteJSON()`. Previously, update payloads were missing the required `id` field.
 * `create_athletes()` and `update_athletes()` now return the failure data frame when operations partially fail, as documented.
 * Fixed `stop(logger::log_error(...))` antipattern in `create_athletes()`, `update_athletes()`, and `UpdateAthleteJSON()`.
 * Fixed malformed `@examples` syntax in `create_athletes()` and `update_athletes()` documentation.
 * Removed duplicate token refresh block in `get_forcetime()`.
+* `get_forcetime()` no longer returns `NULL` for tests whose API response omits an `rsi` value. A `return(NULL)` inside a `tryCatch({})` block was escaping the whole function instead of the block, so any non-RSI test (and every `get_forcetime_bulk()` item) silently came back empty.
 * Removed dead code in `TestTypePrep()`.
+* `AthletePrep()` now selects athlete columns by name and unnests external (custom) properties robustly, handling both uniform sub-data-frames and list-columns whose keys vary across athletes. Athletes missing a given key receive `NA` instead of triggering an error in `get_athletes()` / `get_tests()`.
+* Token expiry checks are now `NA`-safe. A missing or non-`POSIXct` expiration returns a clear prompt to run `hd_connect()` rather than `missing value where TRUE/FALSE needed`, via the internal `token_seconds_remaining()` helper used across all data functions.
 
 ### Enhancements
+* `get_athletes()` now returns the API v1.14 athlete profile fields (`image`, `position`, `dob`, `sport`, `height`, `lastTestedOn`) when present in the response.
+* `get_tests()` now returns the athlete profile fields (`athlete_image`, `athlete_position`, `athlete_dob`, `athlete_sport`, `athlete_height`, `athlete_lastTestedOn`) when present.
 * `get_forcetime_bulk()` now accepts a data frame with an `id` column (e.g., output of `get_tests()`) in addition to a character vector of test IDs.
 * `get_forcetime_bulk()` now supports `.rda` export format.
 * Standardized token refresh threshold to 300 seconds across all functions.

@@ -26,17 +26,17 @@
 #' | **active** | *bool* | athlete is active (TRUE) |
 #' | **teams** | *chr* | team ids separated by "," |
 #' | **groups** | *chr* | group ids separated by "," |
-#' | **image** | *chr* | URL to athlete's photo. `NA` when never set or explicitly cleared. |
+#' | **image** | *chr* | URL to the athlete's profile image. `NA` when never set or cleared. |
 #' | **position** | *chr* | Free-text playing position (e.g. "Forward"). `NA` when blank. |
 #' | **dob** | *chr* | Date of birth as an ISO-8601 date string (`YYYY-MM-DD`). `NA` when blank. |
 #' | **sport** | *chr* | Free-text sport name (e.g. "Basketball"). `NA` when blank. |
-#' | **height** | *num* | Athlete height in **centimeters**, range `[1, 300]` when present. `NA` otherwise. |
-#' | **lastTestedOn** | *num* | Unix epoch **milliseconds** of the athlete's most recent test session. `NA` when no tests on file. |
+#' | **height** | *num* | Athlete height in centimeters when present. `NA` otherwise. |
+#' | **lastTestedOn** | *num* | Unix epoch **seconds** of the athlete's most recent test session. `NA` when no tests on file. |
 #' | **external** | *chr* | external properties will have a column of their name with the appropriate values for the athlete of `NA` if it does not apply |
 #'
 #' The optional profile columns (image, position, dob, sport, height, lastTestedOn)
-#' only appear in the returned data frame when at least one athlete in the response
-#' has the field populated.
+#' and any external property columns only appear when at least one athlete in the
+#' response has that field populated.
 #'
 #' @examples
 #' \dontrun{
@@ -87,7 +87,7 @@ get_athletes <- function(includeInactive = FALSE, ...) {
   }
 
   # Token Lifecycle Management
-  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+  token_remaining <- token_seconds_remaining(conn)
   logger::log_debug("hawkinR/get_athletes -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/get_athletes -> Token expiring soon. Refreshing...")
@@ -154,19 +154,14 @@ get_athletes <- function(includeInactive = FALSE, ...) {
                                   check_type = TRUE,
                                   simplifyVector = TRUE)
 
-    # Create data frame from returns data
+    # Reshape athletes: core columns + API v1.14 profile fields + unnested
+    # external properties, all selected by name (bare column names, no prefix).
+    # Optional fields and varying external keys are tolerated by AthletePrep().
     logger::log_trace("hawkinR/get_athletes -> Converting to data frame")
-    df <- base::as.data.frame(body[[1]])
+    df_raw <- if (!base::is.null(body$data)) body$data else body[[1]]
+    df <- AthletePrep(df_raw, prefix = "")
 
-    # Handle External Properties
-    if (base::ncol(df) > 5) {
-      logger::log_trace("hawkinR/get_athletes -> Processing {base::ncol(df) - 5} external properties")
-      a <- df[, 1:5]
-      b <- df[, 6:base::ncol(df)]
-      df <- base::cbind(a, b)
-    }
-
-    logger::log_success("hawkinR/get_athletes -> {body[[2]]} athletes returned")
+    logger::log_success("hawkinR/get_athletes -> {nrow(df)} athletes returned")
     return(df)
   } else {
     logger::log_error("hawkinR/get_athletes -> Unexpected HTTP status: {status}")

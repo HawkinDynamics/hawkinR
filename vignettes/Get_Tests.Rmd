@@ -58,7 +58,7 @@ iso_data <- get_tests(typeId = "Isometric Test")
 
 ### Filter by Athletes, Teams, or Groups
 
-First, it is important to remember a few specifics of the HD athlete data structure. All unique entities have unique IDs. This includes athletes, tests types, teams, and groups. Each athlete MUST be a part of a team, but MAY optionally be in a group. Also, athletes can be a part of multiple teams and multiple groups. To see which teams and/or groups an athlete is a part of, you can find this in the data frame returned from `get_athletes`. For more information on this, you can go to the [Getting Started](vignettes/Getting_Started.html) page for specifics.
+First, it is important to remember a few specifics of the HD athlete data structure. All unique entities have unique IDs. This includes athletes, tests types, teams, and groups. Each athlete MUST be a part of a team, but MAY optionally be in a group. Also, athletes can be a part of multiple teams and multiple groups. To see which teams and/or groups an athlete is a part of, you can find this in the data frame returned from `get_athletes`. For more information on this, you can go to the [Getting Started](Getting_Started.html) page for specifics.
 
 ```{r roster, eval=FALSE}
 # Store player info in object called roster. 
@@ -127,4 +127,4 @@ all_history <- get_tests(from = "2023-01-01", includeInactive = TRUE)
 
 ------------------------------------------------------------------------
 
-All of the test trials have there own unique ID. This `testId` is what is used in the `get_forcetime` function to call in the raw data from that trial. See [Accessing Force-Time Data of A Test](vignettes/Get_ForceTime_Data.html) for more information.
+All of the test trials have there own unique ID. This `testId` is what is used in the `get_forcetime` function to call in the raw data from that trial. See [Accessing Force-Time Data of A Test](Get_ForceTime_Data.html) for more information.

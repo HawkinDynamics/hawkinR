@@ -20,6 +20,11 @@ HawkinConfig(
 
 \item{log_level}{character. Logging verbosity ("INFO", "DEBUG", "WARN").}
 }
+\value{
+An S7 object of class \code{HawkinConfig} storing environment and
+profile configuration settings (\code{profile}, \code{org_id},
+\code{environment}, and \code{log_level}).
+}
 \description{
 Stores environment and profile configuration settings.
 }

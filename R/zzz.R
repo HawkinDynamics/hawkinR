@@ -10,15 +10,11 @@
   logger::log_layout(logger::layout_glue_colors)
 
   # 2. Initialize the internal state container ----------------------------
-  # We use the object already defined in the package namespace
-  # This makes it accessible to get_active_conn() and set_active_conn()
-
-  env <- new.env(parent = emptyenv())
-  env$active_conn <- NULL
-
-  # Update the package-level variable defined in auth_system.R
-  # Note: .hawkin_env must be defined at the top level of one of your R files
-  .hawkin_env <<- env
+  # .hawkin_env is defined at the top level of auth_system.R as an environment.
+  # We mutate its contents here (reference semantics) instead of rebinding the
+  # symbol, so we never write to the global environment (CRAN policy forbids
+  # superassignment into .GlobalEnv from package code).
+  .hawkin_env$active_conn <- NULL
 
   logger::log_trace("hawkinR -> Package initialized")
 }

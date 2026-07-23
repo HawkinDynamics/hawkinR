@@ -9,6 +9,10 @@ hd_auth_reset(profile = "default")
 \arguments{
 \item{profile}{character. The name of the profile to remove.}
 }
+\value{
+No return value, called for side effects. Deletes the stored refresh
+token for \code{profile} from the operating system credential store.
+}
 \description{
 Deletes a stored Refresh Token from the system keychain.
 }

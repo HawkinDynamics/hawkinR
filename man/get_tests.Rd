@@ -24,7 +24,7 @@ get_tests(
 \item A date as a \code{character} string in \code{"YYYY-MM-DD"} format (e.g., \code{"2023-08-01"}).
 }
 
-If not supplied, you will be prompted to enter a start date (or use the profile default).}
+Optional. If not supplied, no lower bound is applied and all available history is returned.}
 
 \item{to}{Optionally supply a time frame \strong{end} value. Accepts either:
 \itemize{
@@ -32,7 +32,7 @@ If not supplied, you will be prompted to enter a start date (or use the profile 
 \item A date as a \code{character} string in \code{"YYYY-MM-DD"} format (e.g., \code{"2023-08-10"}).
 }
 
-If not supplied, defaults to the current date.}
+Optional. If not supplied, no upper bound is applied (results run through the most recent test).}
 
 \item{sync}{The result set will include updated and newly created tests. This parameter
 is best suited to keep your database in sync with the Hawkin database. If you do not
@@ -88,15 +88,24 @@ tests regardless of dataset size. The API returns pages of up to 1,000 tests eac
 The function loops automatically until all pages are retrieved.
 \itemize{
 \item If \code{from} is provided, it is used as a time-range filter.
-\item If \code{from} is NOT provided, the function will pause and ask you to enter one
-(interactive sessions only; non-interactive calls must supply \code{from} explicitly).
-\item If \code{to} is not provided, it defaults to the current date.
+\item If \code{from} is NOT provided, no lower bound is applied and all available
+history is returned. Pagination handles arbitrarily large result sets.
+\item If \code{to} is NOT provided, no upper bound is applied (results run through the
+most recent test).
 }
 
 \strong{Schema Handling:}
 Because metrics may be added to the system over time, older test results might have fewer
 columns than newer ones. This function uses \code{dplyr::bind_rows} to combine pages, filling
 missing columns with \code{NA} where necessary.
+
+\strong{Athlete columns:}
+The athlete block is prefixed with \code{athlete_} and includes the core fields
+(\code{athlete_id}, \code{athlete_name}, \code{athlete_active}, \code{athlete_teams}, \code{athlete_groups}),
+the API v1.14 profile fields when present (\code{athlete_image}, \code{athlete_position},
+\code{athlete_dob}, \code{athlete_sport}, \code{athlete_height}, \code{athlete_lastTestedOn}), and one
+\verb{athlete_<key>} column per external (custom) property. Athletes missing a given
+external key receive \code{NA}.
 }
 \examples{
 \dontrun{

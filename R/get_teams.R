@@ -63,7 +63,7 @@ get_teams <- function(...) {
   }
 
   # Token Lifecycle Management
-  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+  token_remaining <- token_seconds_remaining(conn)
   logger::log_debug("hawkinR/get_teams -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/get_teams -> Token expiring soon. Refreshing...")

@@ -15,7 +15,7 @@ NULL
 #' This object is initialized in zzz.R during .onLoad().
 #' It holds the active HawkinAuth connection.
 #' @keywords internal
-.hawkin_env <- NULL
+.hawkin_env <- new.env(parent = emptyenv())
 
 #' Set the Active Hawkin Connection
 #' @description Internal function to set the global connection pointer.
@@ -52,6 +52,9 @@ get_active_conn <- function() {
 #' @param org_id character. The organization ID for API paths (default: "v1").
 #' @param environment character. "development" (keyring) or "production" (env vars).
 #' @param log_level character. Logging verbosity ("INFO", "DEBUG", "WARN").
+#' @return An S7 object of class \code{HawkinConfig} storing environment and
+#'   profile configuration settings (\code{profile}, \code{org_id},
+#'   \code{environment}, and \code{log_level}).
 #' @export
 HawkinConfig <- S7::new_class("HawkinConfig",
                               properties = list(
@@ -81,6 +84,9 @@ HawkinConfig <- S7::new_class("HawkinConfig",
 #' \itemize{
 #'   \item \code{base_url}: The computed API base URL for the region (read-only).
 #' }
+#' @return An S7 object of class \code{HawkinAuth} representing the API session
+#'   state, including its \code{config}, \code{access_token}, \code{expires_at},
+#'   \code{region}, and the computed read-only \code{base_url}.
 #' @export
 HawkinAuth <- S7::new_class("HawkinAuth",
                             properties = list(
@@ -191,7 +197,8 @@ S7::method(authenticate, HawkinAuth) <- function(x) {
 #'
 #' @param profile character. A name for this set of credentials (default: "default").
 #' @param token character. Optional. If NULL (default), a secure prompt will appear.
-#' @return NULL
+#' @return No return value, called for side effects. Stores the refresh token
+#'   for \code{profile} in the operating system credential store.
 #' @note When using the `token` parameter directly (e.g., `hd_auth_store(token = "...")`),
 #'   be aware that the token string may be recorded in your `.Rhistory` file.
 #'   For maximum security, omit the `token` parameter to use the secure OS prompt instead.
@@ -219,7 +226,8 @@ hd_auth_store <- function(profile = "default", token = NULL) {
 #' @description
 #' Deletes a stored Refresh Token from the system keychain.
 #' @param profile character. The name of the profile to remove.
-#' @return NULL
+#' @return No return value, called for side effects. Deletes the stored refresh
+#'   token for \code{profile} from the operating system credential store.
 #' @export
 hd_auth_reset <- function(profile = "default") {
   tryCatch({

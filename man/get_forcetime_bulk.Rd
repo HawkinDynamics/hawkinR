@@ -32,6 +32,13 @@ containing an \code{id} column (e.g., the output of \code{get_tests()}). If NULL
 \item{...}{Additional arguments passed to \code{get_tests} (e.g., \code{from}, \code{typeId}).
 Also accepts \code{profile} (HawkinAuth object).}
 }
+\value{
+When \code{export = FALSE} (the default), a named list of raw
+force-time results, one element per requested test. When
+\code{export = TRUE}, a character vector of the file paths written to
+\code{export_dir}, returned invisibly. Returns \code{NULL} if no matching
+tests are found.
+}
 \description{
 Retrieves raw force-time data for multiple tests. This function acts as a wrapper
 for both \code{get_tests} and \code{get_forcetime}.

@@ -1,0 +1,248 @@
+#' @include auth_system.R
+NULL
+
+# 1. Class Definition -----------------------------------------------------
+# HawkinCOP mirrors HawkinForceTime but carries the six Center-of-Pressure
+# series instead of the force/velocity/power arrays (and an `eid` plate id).
+HawkinCOP <- S7::new_class("HawkinCOP",
+                           properties = list(
+                             test_id               = S7::class_character,
+                             test_sampling_rate    = S7::class_integer,
+                             testType_id           = S7::class_character,
+                             testType_name         = S7::class_character,
+                             testType_canonical   = S7::class_character,
+                             testType_tags         = S7::class_list,
+                             athlete_id            = S7::class_character,
+                             athlete_name          = S7::class_character,
+                             athlete_teams         = S7::class_character,
+                             athlete_groups        = S7::class_character,
+                             athlete_active        = S7::class_logical,
+                             athlete_external      = S7::class_list,
+                             timestamp             = S7::class_integer,
+                             test_date             = S7::class_POSIXct,
+                             eid                   = S7::class_any,
+                             data                  = S7::class_data.frame
+                           )
+)
+
+# 2. Function Definition --------------------------------------------------
+
+#' Get Center-of-Pressure Data
+#'
+#' Retrieves the raw Center of Pressure (COP) time-series data for a specific
+#' test trial ID. COP data is **exclusive to the "Free Run" test type** — any
+#' other test type returns a 404.
+#'
+#' @param testId character. The unique identifier for the test trial.
+#' @param ... Optional arguments.
+#' \itemize{
+#'   \item `profile`: A `HawkinAuth` object. If not provided, the active connection is used.
+#' }
+#'
+#' @return A `HawkinCOP` object. The `data` data frame contains the columns
+#'   `time_s`, `cop_x`, `cop_y`, `left_cop_x`, `left_cop_y`, `right_cop_x`, and
+#'   `right_cop_y`. COP values are in millimeters relative to plate center and
+#'   may be `NA` for samples where no weight is on a given plate.
+#' @importFrom httr2 request req_auth_bearer_token req_perform resp_status resp_body_json
+#' @importFrom logger log_info log_error log_trace log_warn
+#' @importFrom lubridate as_datetime with_tz
+#' @export
+get_cop <- function(testId, ...) {
+
+  # 1. ----- Resolve Connection -----
+  logger::log_trace("hawkinR/get_cop -> Resolving connection")
+  extra_args <- list(...)
+
+  if (!is.null(extra_args$profile)) {
+    if (is.character(extra_args$profile)) {
+      # User passed a name string, so we connect
+      conn <- hd_connect(profile = extra_args$profile)
+    } else {
+      # User passed the object directly
+      conn <- extra_args$profile
+    }
+  } else {
+    conn <- get_active_conn()
+  }
+
+  # Validate
+  if (!is.object(conn) || is.null(conn@access_token)) {
+    stop("A valid HawkinAuth connection is required. Run hd_connect() first.", call. = FALSE)
+  }
+
+  # Token Lifecycle Management
+  token_remaining <- token_seconds_remaining(conn)
+  logger::log_debug("hawkinR/get_cop -> Token expires in {token_remaining} seconds")
+  if (token_remaining < 300) {
+    logger::log_info("hawkinR/get_cop -> Token expiring soon. Refreshing...")
+    conn <- authenticate(conn)
+    set_active_conn(conn)
+  }
+
+  # 2. ----- Build Request -----
+  logger::log_trace("hawkinR/get_cop -> Building request")
+  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
+    httr2::req_url_path_append("cop") |>
+    httr2::req_url_path_append(testId)
+
+  reqPath <- httr2::req_dry_run(request, quiet = TRUE)
+  logger::log_debug("hawkinR/get_cop -> {reqPath$method}: {reqPath$headers$host}{reqPath$path}")
+
+
+  # 5. ----- Execute Call -----
+  logger::log_trace("hawkinR/get_cop -> Executing API request")
+  resp <-  request |>
+    httr2::req_auth_bearer_token(conn@access_token) |>
+    httr2::req_error(is_error = function(resp) FALSE) |>
+    httr2::req_perform()
+
+  # Response Status
+  status <- httr2::resp_status(resp = resp)
+  logger::log_debug("hawkinR/get_cop -> Response status: {status}")
+
+  # 6. ----- Error Handling -----
+  error_message <- NULL
+
+  if (status == 401) {
+    error_message <- "Error 401: Refresh Token is invalid or expired."
+  } else if (status == 404) {
+    logger::log_error("hawkinR/get_cop -> Error 404: No COP data for testId: {testId} (Free Run tests only)")
+    stop("Error 404: Requested Resource Not Found. COP data is exclusive to Free Run tests.", call. = FALSE)
+  } else if (status == 500) {
+    error_message <- "Error 500: Something went wrong. Please contact dev-team@hawkindynamics.com"
+  }
+
+  if (!base::is.null(error_message)) {
+    logger::log_error("hawkinR/get_cop -> {error_message}")
+    stop(error_message, call. = FALSE)
+  }
+
+  # 7. ----- Parse Response -----
+  if (status == 200) {
+    logger::log_trace("hawkinR/get_cop -> Parsing JSON response")
+    x <- httr2::resp_body_json(
+      resp = resp,
+      check_type = TRUE,
+      simplifyVector = TRUE
+    )
+
+    # A team-scoped token that is not authorized for the test's teams gets an
+    # empty body `{}` (mirrors the force-time endpoint) — treat as not visible.
+    if (length(x) < 1) {
+      logger::log_error("hawkinR/get_cop -> No COP data returned (test not visible to this token, or no data)")
+      stop("No COP data returned for this test.", call. = FALSE)
+    }
+
+    # 8. ----- Extract Metadata -----
+    logger::log_trace("hawkinR/get_cop -> Extracting test metadata")
+    meta_test    <- x$testType
+    meta_athlete <- x$athlete
+    timestamp <- x$timestamp
+
+    testName <- stringr::str_replace_all(meta_test$name, "-", " - ")
+    testCanonical <- meta_test$canonicalId
+    athleteName <- meta_athlete$name
+    athleteID <- meta_athlete$id
+    logger::log_debug("hawkinR/get_cop -> Test type: {testName} ({testCanonical})")
+    logger::log_debug("hawkinR/get_cop -> Athlete: {athleteName} [{athleteID}]")
+
+    # 9. ----- Build COP Series -----
+    logger::log_trace("hawkinR/get_cop -> Building COP data frame")
+
+    # COP arrays are nullable element-wise. With simplifyVector a clean number
+    # array becomes numeric (nulls -> NA), but an all-null / mixed array can come
+    # back as a list — coerce defensively so columns stay numeric with NA.
+    coerce_num <- function(v) {
+      if (is.null(v) || length(v) == 0) return(numeric(0))
+      if (is.list(v)) {
+        return(vapply(
+          v,
+          function(e) if (is.null(e) || length(e) == 0) NA_real_ else as.numeric(e),
+          numeric(1)
+        ))
+      }
+      as.numeric(v)
+    }
+
+    # Map API response key -> Column Name
+    data_map <- list(
+      "Time(s)"   = "time_s",
+      "copX"      = "cop_x",
+      "copY"      = "cop_y",
+      "leftCopX"  = "left_cop_x",
+      "leftCopY"  = "left_cop_y",
+      "rightCopX" = "right_cop_x",
+      "rightCopY" = "right_cop_y"
+    )
+
+    collected_cols <- list()
+    for (api_key in names(data_map)) {
+      col_name <- data_map[[api_key]]
+      vec <- coerce_num(x[[api_key]])
+      if (length(vec) > 0) {
+        collected_cols[[col_name]] <- vec
+      }
+    }
+
+    # All seven arrays share the same length (sample count).
+    cop_df <- tryCatch(
+      as.data.frame(collected_cols),
+      error = function(e) {
+        logger::log_error("hawkinR/get_cop -> Failed to bind columns. Data lengths may vary.")
+        stop("Data parsing error: Mismatched vector lengths from API.", call. = FALSE)
+      }
+    )
+
+    # 8. ----- Construct S7 Object -----
+
+    # Parse timestamp safely
+    date_obj <- lubridate::as_datetime(timestamp, tz = Sys.timezone())
+
+    # Parse tags safely
+    tags_obj <- if (length(meta_test$tags) > 0) {
+      as.list(meta_test$tags[[2]])
+    } else {
+      list()
+    }
+
+    # plate id (eid) may be NULL
+    eid_obj <- if (is.null(x$eid) || length(x$eid) == 0) NULL else as.character(x$eid)
+
+    # Infer sampling rate from the (server-derived) Time(s) spacing.
+    sampling_rate <- if (nrow(cop_df) > 1 && !is.null(cop_df$time_s)) {
+      dt <- stats::median(diff(cop_df$time_s), na.rm = TRUE)
+      if (is.finite(dt) && dt > 0) as.integer(round(1 / dt)) else NA_integer_
+    } else {
+      NA_integer_
+    }
+
+    out_object <- HawkinCOP(
+      test_id               = testId,
+      test_sampling_rate    = sampling_rate,
+      timestamp             = as.integer(timestamp),
+      test_date             = date_obj,
+      testType_id           = as.character(meta_test$id),
+      testType_name         = as.character(testName),
+      testType_canonical   = as.character(testCanonical),
+      testType_tags         = tags_obj,
+      athlete_id            = as.character(athleteID),
+      athlete_name          = as.character(athleteName),
+      athlete_teams         = as.character(meta_athlete$teams),
+      athlete_groups        = as.character(meta_athlete$groups),
+      athlete_active        = as.logical(meta_athlete$active),
+      athlete_external      = as.list(meta_athlete$external),
+      eid                   = eid_obj,
+      data                  = cop_df
+    )
+
+    # 9. ----- Success Log -----
+    logger::log_trace("hawkinR/get_cop -> Data frame complete: {nrow(cop_df)} samples, {ncol(cop_df)} columns")
+
+    logger::log_success("hawkinR/get_cop -> Fetched COP for test '{testId}': {out_object@testType_name} by {out_object@athlete_name} at {date_obj}")
+
+    return(out_object)
+  } else {
+    logger::log_error("hawkinR/get_cop -> Unexpected HTTP status: {status}")
+    stop(paste0("Unexpected HTTP status: ", status), call. = FALSE)
+  }
+}

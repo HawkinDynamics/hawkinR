@@ -8,16 +8,15 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/HawkinDynamics/hawkinR/actions/workflows/R-CMD-check.yaml)
-[![Last-changedate](https://img.shields.io/badge/last%20change-%60r%20gsub('-',%20'--',%20Sys.Date())%60-yellowgreen.svg)](/commits/main)
+[![Last-changedate](https://img.shields.io/badge/last%20change-2026--07--22-yellowgreen.svg)](https://github.com/HawkinDynamics/hawkinR/commits/main)
 [![license](https://img.shields.io/badge/license-MIT%20+%20file%20LICENSE-lightgrey.svg)](https://choosealicense.com/)
 [![minimal R
-version](https://img.shields.io/badge/R%3E%3D-3.5.0-6666ff.svg)](https://cran.r-project.org/)
+version](https://img.shields.io/badge/R%3E%3D-4.1.0-6666ff.svg)](https://cran.r-project.org/)
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![packageversion](https://img.shields.io/badge/Package%20version-2.0.0-orange.svg?style=flat-square)](commits/main)
-[![thanks-md](https://img.shields.io/badge/THANKS-md-ff69b4.svg)](THANKS.md)
+[![packageversion](https://img.shields.io/badge/Package%20version-2.0.1-orange.svg?style=flat-square)](https://github.com/HawkinDynamics/hawkinR/commits/main)
 
 <!-- badges: end -->
 
@@ -28,8 +27,14 @@ utilize functions within the package.
 
 ## Installation
 
-You can install the development version of hawkinR from
-[GitHub](https://github.com/) with:
+Install the released version of hawkinR from CRAN:
+
+``` r
+install.packages("hawkinR")
+```
+
+Or install the development version from
+[GitHub](https://github.com/HawkinDynamics/hawkinR):
 
 ``` r
 # install.packages("devtools")
@@ -68,11 +73,11 @@ designed for both local development and production deployment.
 ##### Key concepts
 
 - Profiles
-  - A profile represents a specific authentication context (for example,
-    a development token, a production token, or a team-specific token).
-  - **Profiles store:**
-    - org_name
-    - region (Americas, Europe, APAC)
+  - A profile is a named credential slot (for example, a development
+    token, a production token, or a team-specific token). Your Refresh
+    Token is stored under the profile name in the OS keychain.
+  - Organization (`org_id`) and `region` are supplied per session when
+    you call `hd_connect()`.
 - Secrets
   - API tokens are never stored in plain text.
     - Local development: stored securely using the operating system
@@ -82,88 +87,57 @@ designed for both local development and production deployment.
   - Access tokens are refreshed automatically when needed. Users do not
     need to manage token expiration.
 
-##### Local Development (recommended)
+##### Local development (recommended)
 
-1.  Create a Profile
-
-``` r
-hd_config_set(
-  profile  = "dev",
-  org_name = "my_org",
-  region   = "Americas"
-)
-```
-
-2.  Store your API token securely
+1.  Store your Integration Key (Refresh Token) securely in the OS
+    keychain. This opens a secure prompt and saves the token via the
+    `keyring` package under the given profile:
 
 ``` r
-hd_auth_set_secret(
-  profile = "dev",
-  secret  = "<YOUR_API_TOKEN>"
-)
+hd_auth_store()                      # stores under the "default" profile
+# hd_auth_store(profile = "research")  # or store a named profile
 ```
 
-3.  Use the profile
+2.  Connect. `hd_connect()` reads the stored key, exchanges it for an
+    access token, and sets the active session used by every `get_*()`
+    call:
 
 ``` r
-hd_config_use("dev")
+hd_connect(region = "Americas")      # environment = "development" (default)
 ```
 
-All subsequent API calls will authenticate automatically.
+All subsequent API calls authenticate automatically; access tokens are
+refreshed as needed.
 
 ##### Production deployments (Shiny, Plumber, CI/CD)
 
-In production environments, keyring access may not be available.
-Instead, inject secrets via environment variables.
-
-Example setup:
+In hosted environments the OS keychain is unavailable, so authenticate
+from an environment variable instead. When `environment = "production"`,
+hawkinR reads the Refresh Token from `HAWKIN_KEY_<PROFILE>` — the
+profile name, upper-cased. The default profile reads
+`HAWKIN_KEY_DEFAULT`.
 
 ``` r
-# set by hosting platform
-Sys.setenv(
-  HAWKINR_PROFILE = "prod",
-  HAWKINR_TOKEN   = "<PRODUCTION_API_TOKEN>"
-)
+# The hosting platform sets the environment variable (never commit the token):
+#   HAWKIN_KEY_DEFAULT = <your Refresh Token>
 
-# in application startup
-hd_config_set(
-  profile  = "prod",
-  org_name = "my_org",
-  region   = "Americas"
-)
-
-hd_auth_use_env_secret("HAWKINR_TOKEN")
+hd_connect(environment = "production", region = "Americas")
 ```
 
 No secrets are written to disk.
 
-##### Checking authentication status
+##### Regions
+
+`hd_connect(region = ...)` accepts `"Americas"` (default), `"Europe"`,
+or `"APAC"`.
+
+##### Resetting credentials
+
+Remove a stored Refresh Token from the keychain:
 
 ``` r
-hd_auth_status()
-```
-
-Returns safe diagnostic information, including:
-
-- active profile
-- organization
-- region
-- token validity and expiration
-
-Secrets and tokens are never printed.
-
-##### Resetting authentication
-
-Clear cached access tokens:
-
-``` r
-hd_auth_redset()
-```
-
-Remove stored secrets (local development only):
-
-``` r
-hd_auth_reset(remove_secret = TRUE)
+hd_auth_reset()                      # removes the "default" profile
+# hd_auth_reset(profile = "research")
 ```
 
 ------------------------------------------------------------------------

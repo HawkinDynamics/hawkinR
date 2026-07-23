@@ -20,6 +20,11 @@ HawkinAuth(
 
 \item{region}{character. The data region ("Americas", "Europe", "APAC").}
 }
+\value{
+An S7 object of class \code{HawkinAuth} representing the API session
+state, including its \code{config}, \code{access_token}, \code{expires_at},
+\code{region}, and the computed read-only \code{base_url}.
+}
 \description{
 Manages the API session state, including the access token lifecycle and regional endpoints.
 }

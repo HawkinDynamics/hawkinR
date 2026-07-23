@@ -14,14 +14,23 @@ NULL
 #' The function loops automatically until all pages are retrieved.
 #'
 #' * If `from` is provided, it is used as a time-range filter.
-#' * If `from` is NOT provided, the function will pause and ask you to enter one
-#'   (interactive sessions only; non-interactive calls must supply `from` explicitly).
-#' * If `to` is not provided, it defaults to the current date.
+#' * If `from` is NOT provided, no lower bound is applied and all available
+#'   history is returned. Pagination handles arbitrarily large result sets.
+#' * If `to` is NOT provided, no upper bound is applied (results run through the
+#'   most recent test).
 #'
 #' **Schema Handling:**
 #' Because metrics may be added to the system over time, older test results might have fewer
 #' columns than newer ones. This function uses `dplyr::bind_rows` to combine pages, filling
 #' missing columns with `NA` where necessary.
+#'
+#' **Athlete columns:**
+#' The athlete block is prefixed with `athlete_` and includes the core fields
+#' (`athlete_id`, `athlete_name`, `athlete_active`, `athlete_teams`, `athlete_groups`),
+#' the API v1.14 profile fields when present (`athlete_image`, `athlete_position`,
+#' `athlete_dob`, `athlete_sport`, `athlete_height`, `athlete_lastTestedOn`), and one
+#' `athlete_<key>` column per external (custom) property. Athletes missing a given
+#' external key receive `NA`.
 #'
 #' @usage
 #' get_tests(
@@ -41,13 +50,13 @@ NULL
 #' - A Unix timestamp as an `integer` (e.g., `1689958617`), or
 #' - A date as a `character` string in `"YYYY-MM-DD"` format (e.g., `"2023-08-01"`).
 #'
-#' If not supplied, you will be prompted to enter a start date (or use the profile default).
+#' Optional. If not supplied, no lower bound is applied and all available history is returned.
 #'
 #' @param to Optionally supply a time frame **end** value. Accepts either:
 #' - A Unix timestamp as an `integer` (e.g., `1691207356`), or
 #' - A date as a `character` string in `"YYYY-MM-DD"` format (e.g., `"2023-08-10"`).
 #'
-#' If not supplied, defaults to the current date.
+#' Optional. If not supplied, no upper bound is applied (results run through the most recent test).
 #'
 #' @param sync The result set will include updated and newly created tests. This parameter
 #' is best suited to keep your database in sync with the Hawkin database. If you do not
@@ -165,40 +174,31 @@ get_tests <- function(from = NULL,
     return(as.character(d))
   }
 
-  # A. Determine Start Date
+  # A. Determine Start Date (optional). Cursor-based pagination means a 'from'
+  # date is no longer required — omitting it returns all available history.
   from_epoch <- NULL
 
   if (!is.null(from)) {
-    start_dt <- tryCatch(lubridate::ymd(from), error = function(e) NA)
+    start_dt <- tryCatch(suppressWarnings(lubridate::ymd(from)), error = function(e) NA)
     if (is.na(start_dt) && is.numeric(from)) start_dt <- as.Date(as.POSIXct(from, origin = "1970-01-01"))
-    if (!is.na(start_dt)) from_epoch <- to_epoch(start_dt)
-  }
-
-  if (is.null(from_epoch)) {
-    # Fallback: prompt the user in an interactive session; fail otherwise.
-    if (interactive()) {
-      message("\n[NOTE] 'from' date is required to fetch tests.")
-      start_input <- readline(prompt = "Enter Start Date (YYYY-MM-DD): ")
-      if (start_input == "") stop("Operation cancelled by user.", call. = FALSE)
-      start_dt <- tryCatch(lubridate::ymd(start_input), error = function(e) NA)
-      if (is.na(start_dt)) stop("Invalid Start Date format.", call. = FALSE)
-      from_epoch <- to_epoch(start_dt)
-    } else {
-      stop("get_tests() requires a 'from' date in non-interactive mode.", call. = FALSE)
+    if (is.na(start_dt)) {
+      stop("Invalid 'from' value. Use a 'YYYY-MM-DD' string or a Unix timestamp.", call. = FALSE)
     }
+    from_epoch <- to_epoch(start_dt)
   }
 
-  # B. Determine End Date
+  # B. Determine End Date (optional). Omitting it returns results through the
+  # most recent test rather than imposing an upper bound.
   to_epoch_val <- NULL
   if (!is.null(to)) {
-    parsed_to <- tryCatch(lubridate::ymd(to), error = function(e) NA)
+    parsed_to <- tryCatch(suppressWarnings(lubridate::ymd(to)), error = function(e) NA)
     if (!is.na(parsed_to)) {
       to_epoch_val <- to_epoch(parsed_to)
     } else if (is.numeric(to)) {
       to_epoch_val <- to_epoch(as.Date(as.POSIXct(to, origin = "1970-01-01")))
+    } else {
+      stop("Invalid 'to' value. Use a 'YYYY-MM-DD' string or a Unix timestamp.", call. = FALSE)
     }
-  } else {
-    to_epoch_val <- to_epoch(Sys.Date())
   }
 
   # 3. ----- Build Query Parameters -----
@@ -237,7 +237,7 @@ get_tests <- function(from = NULL,
     page_count <- page_count + 1
 
     # Token refresh check (300s threshold)
-    token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+    token_remaining <- token_seconds_remaining(conn)
     if (token_remaining < 300) {
       logger::log_info("hawkinR/get_tests -> Token expiring soon. Refreshing...")
       conn <- authenticate(conn)
@@ -316,9 +316,17 @@ get_tests <- function(from = NULL,
 
       logger::log_trace("hawkinR/get_tests -> Page {page_count}: {body$count} tests")
 
-      # Cursor handling — exit when no more pages
-      cursor <- body$nextCursor
-      if (is.null(cursor)) break
+      # Cursor handling — loop until the API stops returning a cursor.
+      next_cursor <- body$nextCursor
+      if (is.null(next_cursor)) break
+
+      # Safeguard: if the cursor fails to advance, stop rather than loop
+      # forever on a malformed response.
+      if (!is.null(cursor) && identical(next_cursor, cursor)) {
+        logger::log_warn("hawkinR/get_tests -> Pagination cursor did not advance on page {page_count}; stopping to avoid an infinite loop.")
+        break
+      }
+      cursor <- next_cursor
 
     } else {
       logger::log_warn("hawkinR/get_tests -> API Error {status} on page {page_count}")

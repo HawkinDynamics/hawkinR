@@ -92,7 +92,7 @@ update_athletes <- function(athleteData, ...) {
   }
 
   # Token Lifecycle Management
-  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+  token_remaining <- token_seconds_remaining(conn)
   logger::log_debug("hawkinR/update_athletes -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/update_athletes -> Token expiring soon. Refreshing...")

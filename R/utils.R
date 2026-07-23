@@ -40,6 +40,31 @@ validate_timestamp <- function(x) {
 #--------------------#
 
 
+#' Seconds Until Access Token Expiry
+#'
+#' Returns the number of seconds remaining on the active access token. Guards
+#' against a missing, `NULL`, or non-`POSIXct` expiration so callers never hit
+#' `missing value where TRUE/FALSE needed` when deciding whether to refresh.
+#'
+#' @param conn A `HawkinAuth` connection object.
+#' @return Numeric seconds remaining (may be negative if already expired).
+#' @keywords internal
+#' @noRd
+token_seconds_remaining <- function(conn) {
+  exp <- conn@expires_at
+  if (base::is.null(exp) || !base::inherits(exp, "POSIXct") || base::anyNA(exp)) {
+    stop(
+      "No valid access token expiration found. Please run `hd_connect()` to (re)authenticate.",
+      call. = FALSE
+    )
+  }
+  base::round(base::as.numeric(base::difftime(exp, base::Sys.time(), units = "secs")))
+}
+
+
+#--------------------#
+
+
 #' Validate GetTest Parameters
 #'
 #' Check `athleteId`, `testTypeId`, `teamId`, and `groupId` parameters.
@@ -176,35 +201,106 @@ TestTypePrep <- function(arg_df) {
 
 #' Construct Athlete df
 #'
-#' Take athlete section from data frame and prep for final data frame
+#' Take an athlete section (from `get_athletes()` or the nested `athlete` block
+#' of `get_tests()`) and reshape it into a flat data frame.
 #'
-#' @param arg_df Data frame to be evaluated.
-#' @return data frame of test type information
+#' Columns are selected by **name**, never by position, so responses that omit
+#' optional fields or reorder columns are handled gracefully. The athlete profile
+#' fields added in API v1.14 (`image`, `position`, `dob`, `sport`, `height`,
+#' `lastTestedOn`) are included when present.
+#'
+#' External (custom) properties are unnested into one column per key. The API may
+#' return `external` either as a uniform sub-data-frame (every athlete shares the
+#' same keys) or as a list-column (keys vary across athletes). Both shapes are
+#' handled; athletes missing a given key receive `NA`.
+#'
+#' @param arg_df Data frame (or coercible list) to be evaluated.
+#' @param prefix Character prefix applied to every output column. Defaults to
+#'   `"athlete_"` for the `get_tests()` path; pass `""` for `get_athletes()`.
+#' @return data frame of athlete information
 #' @keywords internal
 #' @noRd
-AthletePrep <- function(arg_df) {
+AthletePrep <- function(arg_df, prefix = "athlete_") {
+
+  # 0. Defensive guards — empty or non-data-frame input
+  if (base::is.null(arg_df) || base::length(arg_df) == 0L) {
+    return(base::data.frame())
+  }
+  if (!base::is.data.frame(arg_df)) {
+    # Replace NULL / zero-length elements with NA so columns line up
+    if (base::is.list(arg_df)) {
+      arg_df <- base::lapply(arg_df, function(x) {
+        if (base::is.null(x) || base::length(x) == 0L) NA else x
+      })
+    }
+    arg_df <- base::as.data.frame(arg_df, stringsAsFactors = FALSE)
+  }
+
   logger::log_trace("hawkinR/utils -> AthletePrep: processing {nrow(arg_df)} athlete rows")
 
-  # 1. Isolate Expected Athlete Columns from Athlete Section
-  athleteData <- arg_df[1:5]
-  base::colnames(athleteData) <- base::paste0("athlete_", base::colnames(athleteData))
+  # 1. Select known athlete columns by NAME (API v1.14 schema)
+  core_cols    <- c("id", "name", "active", "teams", "groups", "image")
+  profile_cols <- c("position", "dob", "sport", "height", "lastTestedOn")
 
-  # 2. Check for External
-  externalData <- arg_df[[6]]
+  present_core    <- base::intersect(core_cols,    base::names(arg_df))
+  present_profile <- base::intersect(profile_cols, base::names(arg_df))
 
-  # 3. Reformat and Add External Data if Present
-  if (ncol(externalData) > 0) {
-    logger::log_trace("hawkinR/utils -> AthletePrep: {ncol(externalData)} external properties found")
-    # A. Reformat External Data names
-    externalData <- janitor::clean_names(externalData)
-    base::colnames(externalData) <- base::paste0("athlete_", base::colnames(externalData))
+  known_df <- arg_df[, c(present_core, present_profile), drop = FALSE]
+  base::colnames(known_df) <- base::paste0(prefix, base::colnames(known_df))
 
-    # B. Combine Basic Athlete and External data
-    return(base::cbind(athleteData, externalData))
-  } else {
-    # A. Return Basic Athlete Data
-    return(athleteData)
+  # 2. No external block -> return the known columns
+  if (!"external" %in% base::names(arg_df)) {
+    return(known_df)
   }
+
+  externalData <- arg_df[["external"]]
+  ext_df <- NULL
+
+  # 3. Normalize external to a data frame, handling both shapes
+  if (base::is.data.frame(externalData) && base::ncol(externalData) > 0L) {
+    # Uniform keys across athletes -> already a sub-data-frame
+    ext_df <- externalData
+
+  } else if (base::is.list(externalData)) {
+    # Varying keys across athletes -> union of keys, NA-filled per athlete
+    ext_keys <- base::unique(base::unlist(base::lapply(externalData, base::names)))
+    ext_keys <- ext_keys[!base::is.na(ext_keys)]
+
+    if (base::length(ext_keys) > 0L) {
+      ext_df <- base::as.data.frame(
+        base::lapply(ext_keys, function(k) {
+          base::vapply(externalData, function(row_ext) {
+            if (base::is.null(row_ext) || base::is.null(row_ext[[k]])) {
+              NA_character_
+            } else {
+              base::as.character(row_ext[[k]])
+            }
+          }, character(1))
+        }),
+        stringsAsFactors = FALSE
+      )
+      base::colnames(ext_df) <- ext_keys
+    }
+  }
+
+  # 4. Combine if we have external data, with cleaned + prefixed names
+  if (!base::is.null(ext_df) && base::ncol(ext_df) > 0L) {
+    logger::log_trace("hawkinR/utils -> AthletePrep: {ncol(ext_df)} external properties found")
+    ext_df <- janitor::clean_names(ext_df)
+    base::colnames(ext_df) <- base::paste0(prefix, base::colnames(ext_df))
+    combined_df <- base::cbind(known_df, ext_df)
+
+    # Disambiguate any external property whose name collides with a known
+    # column (e.g. an external "position" -> <prefix>position clashes with the
+    # profile column). Left unguarded, the duplicate names propagate downstream
+    # and trigger "Can't transform a data frame with duplicate names." The
+    # external copy is suffixed (e.g. athlete_position.1).
+    base::colnames(combined_df) <- base::make.unique(base::colnames(combined_df))
+
+    return(combined_df)
+  }
+
+  return(known_df)
 }
 
 

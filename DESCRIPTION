@@ -1,14 +1,14 @@
 Package: hawkinR
-Title: Interface to the Hawkin Dynamics Force Platform API
-Version: 0.1.0
+Title: Interface to the 'Hawkin Dynamics' Force Platform API
+Version: 2.0.1
 Authors@R: 
     person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
-Description: Provides a secure and configurable R interface to the Hawkin Dynamics API for accessing athlete performance data, tests, and metadata.
+Description: Provides a secure and configurable interface to the 'Hawkin Dynamics' API for accessing athlete performance data, tests, and metadata.
     The package supports profile-based authentication with secure credential storage via the operating system keychain, automatic access token refresh, and region-aware API routing.
     Designed for reproducible analysis, data synchronization workflows, and production deployment.
-URL: https://github.com/HawkinDynamics/hawkinR, https://hawkindynamics.github.io/hawkinR/
+URL: https://connect.hawkindynamics.com/r, https://github.com/HawkinDynamics/hawkinR, https://hawkindynamics.github.io/hawkinR/
 BugReports: https://github.com/HawkinDynamics/hawkinR/issues
-Depends: R (>= 3.5.0)
+Depends: R (>= 4.1.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -46,6 +46,7 @@ Collate:
     'auth_system.R'
     'create_athletes.R'
     'get_athletes.R'
+    'get_cop.R'
     'get_forcetime.R'
     'get_tests.R'
     'get_forcetime_bulk.R'

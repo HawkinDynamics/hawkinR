@@ -10,7 +10,14 @@ docs
 # ---- logs ----
 hawkinRlog.log
 
+# ---- dev smoke/stress test run artifacts (keep the .R scripts, ignore output) ----
+dev/*.log
+dev/*_results.csv
+
 # ---- build artifacts ----
 hawkinR_*.tar.gz
 # ---- config & auth ----
 # User config is stored via rappdirs (outside repo) and is never committed
+
+/.quarto/
+**/*.quarto_ipynb

@@ -24,6 +24,12 @@ NULL
 #' @importFrom jsonlite write_json
 #' @importFrom utils write.csv write.table read.csv
 #' @importFrom S7 prop
+#'
+#' @return When \code{export = FALSE} (the default), a named list of raw
+#'   force-time results, one element per requested test. When
+#'   \code{export = TRUE}, a character vector of the file paths written to
+#'   \code{export_dir}, returned invisibly. Returns \code{NULL} if no matching
+#'   tests are found.
 #' @export
 
 get_forcetime_bulk <- function(test_ids = NULL,
@@ -57,7 +63,7 @@ get_forcetime_bulk <- function(test_ids = NULL,
   }
 
   # Token Lifecycle Management
-  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+  token_remaining <- token_seconds_remaining(conn)
   logger::log_debug("hawkinR/get_forcetime_bulk -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/get_forcetime_bulk -> Token expiring soon. Refreshing...")

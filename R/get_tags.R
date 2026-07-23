@@ -65,7 +65,7 @@ get_tags <- function(...) {
   }
 
   # Token Lifecycle Management
-  token_remaining <- round(as.numeric(difftime(conn@expires_at, Sys.time(), units = "secs")))
+  token_remaining <- token_seconds_remaining(conn)
   logger::log_debug("hawkinR/get_tags -> Token expires in {token_remaining} seconds")
   if (token_remaining < 300) {
     logger::log_info("hawkinR/get_tags -> Token expiring soon. Refreshing...")

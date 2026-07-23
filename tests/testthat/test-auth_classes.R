@@ -68,3 +68,20 @@ test_that("HawkinAuth accepts NULL access_token and expires_at", {
   expect_null(auth@access_token)
   expect_null(auth@expires_at)
 })
+
+test_that("base_url honors the internal dev/staging override", {
+  cfg <- HawkinConfig()
+  withr::with_envvar(
+    c(HAWKINR_API_BASE_URL_OVERRIDE = "https://cloud.dev.hawkindynamics.com/api"),
+    {
+      auth <- HawkinAuth(config = cfg, region = "Americas")
+      expect_equal(auth@base_url, "https://cloud.dev.hawkindynamics.com/api")
+      # Data calls compose base_url + "/" + org_id; org_id defaults to "v1",
+      # so dev requests resolve to .../api/v1 — never the literal "dev".
+      expect_equal(
+        paste0(auth@base_url, "/", auth@config@org_id),
+        "https://cloud.dev.hawkindynamics.com/api/v1"
+      )
+    }
+  )
+})

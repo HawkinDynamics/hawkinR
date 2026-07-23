@@ -148,4 +148,4 @@ cmj_tests <- get_tests(
 )
 ```
 
-With these objects, you can access any of the IDs and information you would need for your test queries. For a deeper dive into filtering data, see the [Get Tests](vignettes/Get_Tests.html) vignette.
+With these objects, you can access any of the IDs and information you would need for your test queries. For a deeper dive into filtering data, see the [Get Tests](Get_Tests.html) vignette.
