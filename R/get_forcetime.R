@@ -75,7 +75,7 @@ get_forcetime <- function(testId, ...) {
 
   # 2. ----- Build Request -----
   logger::log_trace("hawkinR/get_forcetime -> Building request")
-  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
+  request <- hd_request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("forcetime") |>
     httr2::req_url_path_append(testId)
 

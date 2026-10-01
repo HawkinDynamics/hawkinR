@@ -7,6 +7,46 @@
 
 #--------------------#
 
+#' Identify this client to the Hawkin API
+#'
+#' Every integration authenticates with an org-scoped token, so the API can
+#' already attribute a call to an organisation. It cannot tell the clients
+#' apart, because each one sends only an Authorization header. This label
+#' makes "which integrations are used, and how often" answerable server-side.
+#'
+#' It carries the package and its version, and nothing about the user.
+#'
+#' @return A string like `"hawkinr/2.1.0"`.
+#' @noRd
+hd_client_id <- function() {
+  version <- tryCatch(
+    as.character(utils::packageVersion("hawkinR")),
+    error = function(e) "unknown"
+  )
+  paste0("hawkinr/", version)
+}
+
+
+#--------------------#
+
+#' Start a request that identifies itself to the Hawkin API
+#'
+#' Use in place of `httr2::request()` so no call site can forget the header.
+#'
+#' @param url The request URL.
+#' @return An `httr2` request carrying the client header.
+#' @importFrom httr2 request req_headers
+#' @noRd
+hd_request <- function(url) {
+  httr2::req_headers(
+    httr2::request(url),
+    `X-Hawkin-Client` = hd_client_id()
+  )
+}
+
+
+#--------------------#
+
 #' Check for interactive mode for sensitive prompts
 #' @noRd
 check_interactive <- function() {
@@ -651,6 +691,7 @@ dfDatetoChar <- function(arg_df) {
 #' @return A list of data frames with consistent list columns
 #' @keywords internal
 #' @noRd
+
 sanitize_chunks <- function(chunks) {
   # If list is empty or has 1 item, no conflict possible
   if (length(chunks) < 2) return(chunks)
@@ -700,4 +741,41 @@ sanitize_chunks <- function(chunks) {
   }
 
   return(chunks)
+}
+
+# Expand a nested `metrics` column into a long table.
+#
+# Used by get_tests() when nestMetrics = TRUE (API v1.16). Each element of
+# `metrics_list` is the data frame httr2::resp_body_json(simplifyVector = TRUE)
+# produces for one test's `metrics` array (columns metricId, metricLabel,
+# metricUnits, metricValue), or an empty list when the test has no numeric
+# metrics. Returns one row per test and metric with the columns metric_id,
+# metric_label, metric_units and metric_value; a test with no metrics keeps a
+# single row with NA metric fields.
+expand_nested_metrics <- function(meta_df, metrics_list) {
+  col_or_na <- function(m, col, n, as_fn) {
+    if (!is.null(m[[col]])) as_fn(m[[col]]) else rep(as_fn(NA), n)
+  }
+  placeholder <- data.frame(
+    metric_id = NA_character_, metric_label = NA_character_,
+    metric_units = NA_character_, metric_value = NA_real_,
+    stringsAsFactors = FALSE
+  )
+  per_test <- lapply(metrics_list, function(m) {
+    if (!is.data.frame(m) || nrow(m) == 0) return(placeholder)
+    n <- nrow(m)
+    data.frame(
+      metric_id = col_or_na(m, "metricId", n, as.character),
+      metric_label = col_or_na(m, "metricLabel", n, as.character),
+      metric_units = col_or_na(m, "metricUnits", n, as.character),
+      metric_value = col_or_na(m, "metricValue", n, as.numeric),
+      stringsAsFactors = FALSE
+    )
+  })
+  n_per <- vapply(per_test, nrow, integer(1))
+  idx <- rep(seq_len(nrow(meta_df)), n_per)
+  rownames(meta_df) <- NULL
+  out <- cbind(meta_df[idx, , drop = FALSE], dplyr::bind_rows(per_test))
+  rownames(out) <- NULL
+  out
 }

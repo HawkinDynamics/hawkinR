@@ -1,6 +1,6 @@
 Package: hawkinR
 Title: Interface to the 'Hawkin Dynamics' Force Platform API
-Version: 2.0.1
+Version: 2.1.0
 Authors@R: 
     person("Lauren", "Green", , "lauren@hawkindynamics.com", role = c("aut", "cre"))
 Description: Provides a secure and configurable interface to the 'Hawkin Dynamics' API for accessing athlete performance data, tests, and metadata.
@@ -12,8 +12,8 @@ Depends: R (>= 4.1.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Imports: 
+    utils,
     S7,  
     dplyr (>= 0.7.4),
     jsonlite (>= 1.8.7),
@@ -59,3 +59,4 @@ Collate:
     'update_athletes.R'
     'utils-pipe.R'
     'zzz.R'
+Config/roxygen2/version: 8.1.0

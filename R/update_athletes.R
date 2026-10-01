@@ -105,7 +105,7 @@ update_athletes <- function(athleteData, ...) {
   # Athletes Data to Send
   payload <- UpdateAthleteJSON(arg_df = athleteData)
 
-  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
+  request <- hd_request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("athletes/bulk") |>
     httr2::req_method("PUT") |>
     httr2::req_body_raw(body = payload, type = "application/json")

@@ -14,6 +14,9 @@ get_tests(
  groupId = NULL,
  includeInactive = FALSE,
  includeEid = FALSE,
+ useNulls = TRUE,
+ rounding = FALSE,
+ nestMetrics = FALSE,
  ...
  )
 }
@@ -65,6 +68,24 @@ inactive (disabled) trials in the response.}
 produced the trial. The column will be \code{NA} for any tests where the equipment
 ID is not recorded.}
 
+\item{useNulls}{Logical. Default \code{TRUE}: non-calculable metrics come back as \code{NA}.
+Set to \code{FALSE} to receive the string \code{"N/A"} instead (API v1.16). Any metric
+column containing \code{"N/A"} becomes character. Intended for customers migrating
+from a legacy named endpoint; leave the default otherwise.}
+
+\item{rounding}{Logical. Default \code{FALSE}: raw metric values. Set to \code{TRUE} to have
+the API round each metric to its standard display precision (API v1.16). Has no
+effect when \code{nestMetrics = TRUE}. Intended for customers migrating from a legacy
+named endpoint; leave the default otherwise.}
+
+\item{nestMetrics}{Logical. Default \code{FALSE}: one row per test with a column per
+metric. Set to \code{TRUE} to receive a long table instead: one row per test and
+metric, with \code{metric_id}, \code{metric_label}, \code{metric_units} and \code{metric_value}
+columns beside the trial, athlete and test-type columns (API v1.16). Only
+metrics with a numeric value are included; a test with none keeps a single row
+with \code{NA} metric fields. Intended for customers migrating from a legacy named
+endpoint; leave the default otherwise.}
+
 \item{...}{Optional arguments.
 \itemize{
 \item \code{profile}: A \code{HawkinAuth} object or a character string of the profile name.
@@ -74,8 +95,8 @@ Now ignored; the API uses cursor-based pagination with a fixed page size of 1,00
 }}
 }
 \value{
-A data frame containing test trials and their metrics. Each row represents a single test trial.
-(if specified).
+A data frame containing test trials and their metrics. Each row represents a single test trial,
+or a single test-and-metric pair when \code{nestMetrics = TRUE}.
 }
 \description{
 Retrieves test data from the Hawkin Dynamics API. This function replaces all previous
@@ -86,6 +107,10 @@ Retrieves test data from the Hawkin Dynamics API. This function replaces all pre
 This function uses cursor-based pagination (API v1.13+) to reliably fetch all matching
 tests regardless of dataset size. The API returns pages of up to 1,000 tests each.
 The function loops automatically until all pages are retrieved.
+
+The result is all-or-nothing. Transient failures (HTTP 429, 502, 503, 504) are
+retried with backoff. If any page still fails, the function stops with an error
+naming the page rather than returning the pages fetched so far.
 \itemize{
 \item If \code{from} is provided, it is used as a time-range filter.
 \item If \code{from} is NOT provided, no lower bound is applied and all available
@@ -117,6 +142,12 @@ dfFromTo <- get_tests(from = "2023-08-01", to = "2023-08-10")
 
 # Include inactive tests
 dfAll <- get_tests(from = "2023-08-01", includeInactive = TRUE)
+
+# Reproduce a legacy named endpoint's payload: rounded values, "N/A" strings
+dfLegacy <- get_tests(from = "2023-08-01", rounding = TRUE, useNulls = FALSE)
+
+# Long table: one row per test and metric
+dfLong <- get_tests(from = "2023-08-01", nestMetrics = TRUE)
 }
 
 }

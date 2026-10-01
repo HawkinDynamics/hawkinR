@@ -163,7 +163,7 @@ S7::method(authenticate, HawkinAuth) <- function(x) {
   }
 
   # Perform Exchange
-  req <- httr2::request(paste0(x@base_url, "/token")) |>
+  req <- hd_request(paste0(x@base_url, "/token")) |>
     httr2::req_headers(Authorization = paste("Bearer", refresh_secret)) |>
     httr2::req_method("GET") |>
     httr2::req_error(is_error = function(resp) FALSE)

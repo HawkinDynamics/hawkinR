@@ -13,6 +13,10 @@ NULL
 #' tests regardless of dataset size. The API returns pages of up to 1,000 tests each.
 #' The function loops automatically until all pages are retrieved.
 #'
+#' The result is all-or-nothing. Transient failures (HTTP 429, 502, 503, 504) are
+#' retried with backoff. If any page still fails, the function stops with an error
+#' naming the page rather than returning the pages fetched so far.
+#'
 #' * If `from` is provided, it is used as a time-range filter.
 #' * If `from` is NOT provided, no lower bound is applied and all available
 #'   history is returned. Pagination handles arbitrarily large result sets.
@@ -43,6 +47,9 @@ NULL
 #'  groupId = NULL,
 #'  includeInactive = FALSE,
 #'  includeEid = FALSE,
+#'  useNulls = TRUE,
+#'  rounding = FALSE,
+#'  nestMetrics = FALSE,
 #'  ...
 #'  )
 #'
@@ -71,6 +78,24 @@ NULL
 #' produced the trial. The column will be `NA` for any tests where the equipment
 #' ID is not recorded.
 #'
+#' @param useNulls Logical. Default `TRUE`: non-calculable metrics come back as `NA`.
+#' Set to `FALSE` to receive the string `"N/A"` instead (API v1.16). Any metric
+#' column containing `"N/A"` becomes character. Intended for customers migrating
+#' from a legacy named endpoint; leave the default otherwise.
+#'
+#' @param rounding Logical. Default `FALSE`: raw metric values. Set to `TRUE` to have
+#' the API round each metric to its standard display precision (API v1.16). Has no
+#' effect when `nestMetrics = TRUE`. Intended for customers migrating from a legacy
+#' named endpoint; leave the default otherwise.
+#'
+#' @param nestMetrics Logical. Default `FALSE`: one row per test with a column per
+#' metric. Set to `TRUE` to receive a long table instead: one row per test and
+#' metric, with `metric_id`, `metric_label`, `metric_units` and `metric_value`
+#' columns beside the trial, athlete and test-type columns (API v1.16). Only
+#' metrics with a numeric value are included; a test with none keeps a single row
+#' with `NA` metric fields. Intended for customers migrating from a legacy named
+#' endpoint; leave the default otherwise.
+#'
 #' @param athleteId Supply an athlete’s id to receive tests for a specific athlete
 #'
 #' @param typeId Supply a value of type string. Must be canonical test Id, test type name,
@@ -98,8 +123,8 @@ NULL
 #' }
 #'
 #' @return
-#' A data frame containing test trials and their metrics. Each row represents a single test trial.
-#' (if specified).
+#' A data frame containing test trials and their metrics. Each row represents a single test trial,
+#' or a single test-and-metric pair when `nestMetrics = TRUE`.
 #'
 #' @examples
 #' \dontrun{
@@ -111,16 +136,22 @@ NULL
 #'
 #' # Include inactive tests
 #' dfAll <- get_tests(from = "2023-08-01", includeInactive = TRUE)
+#'
+#' # Reproduce a legacy named endpoint's payload: rounded values, "N/A" strings
+#' dfLegacy <- get_tests(from = "2023-08-01", rounding = TRUE, useNulls = FALSE)
+#'
+#' # Long table: one row per test and metric
+#' dfLong <- get_tests(from = "2023-08-01", nestMetrics = TRUE)
 #' }
 #'
 #' @importFrom magrittr %>%
 #' @importFrom httr2 request req_url_query req_auth_bearer_token req_headers req_error req_perform req_url_path_append
-#' @importFrom httr2 resp_status resp_body_json
+#' @importFrom httr2 req_retry resp_status resp_body_json
 #' @importFrom rlang .data
 #' @importFrom dplyr filter bind_rows
 #' @importFrom lubridate as_datetime with_tz ymd days
 #' @importFrom janitor clean_names
-#' @importFrom logger log_info log_trace log_debug log_success log_warn
+#' @importFrom logger log_info log_trace log_debug log_success log_warn log_error
 #' @importFrom progress progress_bar
 #'
 #' @export
@@ -135,6 +166,9 @@ get_tests <- function(from = NULL,
                       groupId = NULL,
                       includeInactive = FALSE,
                       includeEid = FALSE,
+                      useNulls = TRUE,
+                      rounding = FALSE,
+                      nestMetrics = FALSE,
                       ...) {
 
   # 1. ----- Resolve Arguments & Connection -----
@@ -226,12 +260,30 @@ get_tests <- function(from = NULL,
   # Optional: ask the API to include the equipment ID on each record
   if (isTRUE(includeEid)) params$includeEid <- "true"
 
+  # Response-shape overrides (API v1.16). Only the non-default value is sent so
+  # existing callers produce byte-identical requests.
+  if (isFALSE(useNulls))   params$useNulls    <- "false"
+  if (isTRUE(rounding))    params$rounding    <- "true"
+  if (isTRUE(nestMetrics)) params$nestMetrics <- "true"
+
   logger::log_info("hawkinR/get_tests -> Fetching tests with pagination...")
 
   # 4. ----- Pagination Loop -----
   all_results <- list()
   page_count <- 0
   cursor <- NULL
+
+  # Every page failure is fatal: returning the pages fetched so far would
+  # silently truncate the export. Past page 1, say why those pages are dropped.
+  stop_page <- function(error_message) {
+    if (page_count > 1) {
+      error_message <- paste0(
+        error_message, ". No results returned because the export would be incomplete."
+      )
+    }
+    logger::log_error("hawkinR/get_tests -> {error_message}")
+    stop(error_message, call. = FALSE)
+  }
 
   repeat {
     page_count <- page_count + 1
@@ -250,28 +302,37 @@ get_tests <- function(from = NULL,
 
     # Build Request
     req_url <- paste0(conn@base_url, "/", conn@config@org_id)
-    request <- httr2::request(req_url)
+    request <- hd_request(req_url)
     if (length(current_params) > 0) {
       request <- request |> httr2::req_url_query(!!!current_params)
     }
 
-    # Execute Request
+    # Execute Request. Transient statuses (rate limit, gateway errors) are
+    # retried with backoff; any failure that survives the retries is fatal.
     resp <- tryCatch({
       request |>
         httr2::req_auth_bearer_token(conn@access_token) |>
+        httr2::req_retry(
+          max_tries = 3,
+          is_transient = function(resp) httr2::resp_status(resp) %in% c(429, 502, 503, 504)
+        ) |>
         httr2::req_error(is_error = function(resp) FALSE) |>
         httr2::req_perform()
     }, error = function(e) {
-      logger::log_error("hawkinR/get_tests -> Request failed on page {page_count}: {e$message}")
-      NULL
+      stop_page(paste0("Request failed on page ", page_count, ": ", conditionMessage(e)))
     })
-
-    if (is.null(resp)) break
 
     status <- httr2::resp_status(resp)
 
     if (status == 200) {
-      body <- httr2::resp_body_json(resp, simplifyVector = TRUE, check_type = TRUE)
+      body <- tryCatch(
+        httr2::resp_body_json(resp, simplifyVector = TRUE, check_type = TRUE),
+        error = function(e) {
+          stop_page(paste0(
+            "Could not parse the response on page ", page_count, ": ", conditionMessage(e)
+          ))
+        }
+      )
 
       if (body$count > 0) {
         # Process Data — select by name, not by fixed index. Different
@@ -295,8 +356,9 @@ get_tests <- function(from = NULL,
           data.frame(row.names = seq_len(nrow(df)))
         }
 
-        # Everything not a known structural column is a metric.
-        structural <- c("id", "timestamp", "segment", "testType", "athlete")
+        # Everything not a known structural column is a metric. `metrics` is the
+        # nested array returned for nestMetrics = TRUE and is expanded below.
+        structural <- c("id", "timestamp", "segment", "testType", "athlete", "metrics")
         metric_cols <- setdiff(names(df), structural)
         trialMetrics <- if (length(metric_cols) > 0) {
           janitor::clean_names(df[, metric_cols, drop = FALSE])
@@ -306,6 +368,11 @@ get_tests <- function(from = NULL,
 
         # Combine
         page_res <- cbind(trialInfo, TestTypeData, AthleteData, trialMetrics)
+
+        # nestMetrics = TRUE (API v1.16): one row per test and metric
+        if ("metrics" %in% names(df)) {
+          page_res <- expand_nested_metrics(page_res, df$metrics)
+        }
 
         # Add timestamps
         page_res$last_test_time <- body$lastTestTime
@@ -320,17 +387,22 @@ get_tests <- function(from = NULL,
       next_cursor <- body$nextCursor
       if (is.null(next_cursor)) break
 
-      # Safeguard: if the cursor fails to advance, stop rather than loop
-      # forever on a malformed response.
+      # Safeguard: if the cursor fails to advance, error rather than loop
+      # forever on a malformed response or return a truncated result.
       if (!is.null(cursor) && identical(next_cursor, cursor)) {
-        logger::log_warn("hawkinR/get_tests -> Pagination cursor did not advance on page {page_count}; stopping to avoid an infinite loop.")
-        break
+        stop_page(paste0("Pagination cursor did not advance on page ", page_count))
       }
       cursor <- next_cursor
 
     } else {
-      logger::log_warn("hawkinR/get_tests -> API Error {status} on page {page_count}")
-      break
+      error_message <- if (status == 401) {
+        "Error 401: Refresh Token is invalid or expired."
+      } else if (status == 500) {
+        "Error 500: Something went wrong. Please contact dev-team@hawkindynamics.com"
+      } else {
+        paste0("Unexpected HTTP status: ", status)
+      }
+      stop_page(paste0(error_message, " (page ", page_count, ")"))
     }
   }
 

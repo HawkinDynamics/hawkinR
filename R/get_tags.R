@@ -75,7 +75,7 @@ get_tags <- function(...) {
 
   # 3. ----- Build URL Request -----
   logger::log_trace("hawkinR/get_tags -> Building request")
-  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
+  request <- hd_request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("tags")
 
   reqPath <- httr2::req_dry_run(request, quiet = TRUE)

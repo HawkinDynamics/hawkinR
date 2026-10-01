@@ -106,7 +106,7 @@ get_athletes <- function(includeInactive = FALSE, ...) {
     params$includeInactive <- "true"
   }
 
-  request <- httr2::request(paste0(conn@base_url, "/", conn@config@org_id)) |>
+  request <- hd_request(paste0(conn@base_url, "/", conn@config@org_id)) |>
     httr2::req_url_path_append("athletes")
 
   # Only add the query if params list is not empty
