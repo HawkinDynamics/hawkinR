@@ -391,9 +391,272 @@ TestIdCheck <- function(arg_id) {
 #--------------------#
 
 
+# Athlete write helpers -----
+#
+# The athlete write endpoints (POST/PUT /athletes and /athletes/bulk) take
+# these profile fields as native body properties. They are never sent inside
+# `external`, which is a separate property bag that update replaces wholesale.
+athlete_profile_fields <- c("position", "sport", "dob", "height")
+
+# Columns get_athletes() returns that the write endpoints ignore. They are kept
+# out of both the body and `external`, so a get -> modify -> update round trip
+# does not invent external properties.
+athlete_read_only_fields <- c("lastTestedOn")
+
+
+#' Format an Athlete Text Field for a Write Payload
+#'
+#' @param x A single value from a `position` or `sport` column.
+#' @return The trimmed string, or `NULL` when `x` is `NA` or blank, so the
+#'   field is omitted and the API leaves it unset (create) or unchanged
+#'   (update).
+#' @keywords internal
+#' @noRd
+athlete_text_value <- function(x) {
+  if (base::length(x) != 1L || base::is.na(x)) {
+    return(NULL)
+  }
+  x <- base::trimws(base::as.character(x))
+  if (base::nzchar(x)) x else NULL
+}
+
+
+#' Format an Athlete Date of Birth for a Write Payload
+#'
+#' The API takes `"YYYY"` or `"YYYY-MM-DD"` and stores the string verbatim.
+#' `Date` and date-time values are formatted as `YYYY-MM-DD` in their own time
+#' zone (a `POSIXct`'s `tzone` attribute, or the session time zone when it has
+#' none). They are never converted to UTC first, so the calendar day the user
+#' sees is the day that is sent. A whole number such as `1998` is sent as
+#' `"1998"`. Character values are trimmed and passed through for the API to
+#' validate.
+#'
+#' @param x A single value from a `dob` column.
+#' @return A string, or `NULL` when `x` is `NA` or blank.
+#' @keywords internal
+#' @noRd
+athlete_dob_value <- function(x) {
+  if (base::length(x) != 1L || base::is.na(x)) {
+    return(NULL)
+  }
+  if (base::inherits(x, c("Date", "POSIXt"))) {
+    return(base::format(x, "%Y-%m-%d"))
+  }
+  if (base::is.numeric(x) && x == base::round(x)) {
+    return(base::sprintf("%.0f", x))
+  }
+  athlete_text_value(x)
+}
+
+
+#' Format an Athlete Height for a Write Payload
+#'
+#' @param x A single value from a `height` column, in centimeters. Numeric
+#'   strings are accepted.
+#' @return The height rounded to 1 decimal place (the precision the API reads
+#'   back), or `NULL` when `x` is `NA` or blank.
+#' @keywords internal
+#' @noRd
+athlete_height_value <- function(x) {
+  if (base::length(x) != 1L || base::is.na(x)) {
+    return(NULL)
+  }
+  if (!base::is.numeric(x)) {
+    text <- athlete_text_value(x)
+    if (base::is.null(text)) {
+      return(NULL)
+    }
+    x <- base::suppressWarnings(base::as.numeric(text))
+    if (base::is.na(x)) {
+      stop(
+        "height must be a number in centimeters; got '", text, "'.",
+        call. = FALSE
+      )
+    }
+  }
+  # 0 means "not provided" to the API; leave it out like a blank cell.
+  if (x == 0) {
+    return(NULL)
+  }
+  base::round(x, 1)
+}
+
+
+#' Collect the Native Profile Fields for One Athlete
+#'
+#' @param arg_df The athlete data frame.
+#' @param i Row index.
+#' @return A named list holding only the profile fields that have a value.
+#' @keywords internal
+#' @noRd
+athlete_profile_values <- function(arg_df, i) {
+  formatters <- list(
+    position = athlete_text_value,
+    sport = athlete_text_value,
+    dob = athlete_dob_value,
+    height = athlete_height_value
+  )
+  out <- list()
+  for (field in base::intersect(athlete_profile_fields, base::names(arg_df))) {
+    value <- formatters[[field]](arg_df[[field]][i])
+    if (!base::is.null(value)) {
+      out[[field]] <- value
+    }
+  }
+  out
+}
+
+
+#' Choose the Columns Sent as External Properties
+#'
+#' Every column that is not a body field, a native profile field or a
+#' read-only field becomes an external property.
+#'
+#' `get_athletes()` renames an external property that shares a name with a
+#' native column using a `make.unique()` suffix, so an old external `position`
+#' comes back as `position.1`. Sending it back would either write a profile
+#' field into `external` or create a junk `position.1` key, so it is dropped
+#' with a warning.
+#'
+#' @param arg_df The athlete data frame.
+#' @param body_cols Columns the caller already writes to the body.
+#' @return Character vector of column names.
+#' @keywords internal
+#' @noRd
+athlete_external_columns <- function(arg_df, body_cols) {
+  reserved <- c(athlete_profile_fields, athlete_read_only_fields)
+  cols <- base::setdiff(base::names(arg_df), c(body_cols, reserved))
+
+  pattern <- base::paste0(
+    "^(", base::paste(reserved, collapse = "|"), ")\\.[0-9]+$"
+  )
+  suffixed <- cols[base::grepl(pattern, cols)]
+  populated <- suffixed[base::vapply(
+    suffixed,
+    function(col) base::any(!base::is.na(arg_df[[col]])),
+    logical(1)
+  )]
+
+  if (base::length(populated) > 0L) {
+    warning(
+      "Not sent: ", base::paste(populated, collapse = ", "), ". These ",
+      "columns are external properties that get_athletes() renamed because ",
+      "they share a name with a native profile field, and profile fields are ",
+      "never written to external properties. On update, external properties ",
+      "are replaced, so the old external key is removed. Copy any value you ",
+      "want to keep into the native column.",
+      call. = FALSE
+    )
+  }
+
+  base::setdiff(cols, suffixed)
+}
+
+
+#' Format Athlete Team or Group IDs for a Write Payload
+#'
+#' Accepts one element of a list column (a character vector of IDs) or a
+#' comma-separated string such as `"t1, t2"`, the format the Sheets and Excel
+#' add-ins use. IDs are split on `,`, trimmed, and blanks are dropped.
+#'
+#' @param x One value from a `teams` or `groups` column, taken with `[[i]]`.
+#' @return A list of ID strings, so `toJSON(auto_unbox = TRUE)` writes a JSON
+#'   array even for a single ID, or `NULL` when there are no IDs, so the field
+#'   is omitted.
+#' @keywords internal
+#' @noRd
+athlete_id_values <- function(x) {
+  ids <- base::as.character(base::unlist(x, use.names = FALSE))
+  ids <- ids[!base::is.na(ids)]
+  ids <- base::trimws(base::unlist(base::strsplit(ids, ",", fixed = TRUE)))
+  ids <- ids[base::nzchar(ids)]
+  if (base::length(ids) == 0L) NULL else base::as.list(ids)
+}
+
+
+#' Collect the External Properties for One Athlete
+#'
+#' @param arg_df The athlete data frame.
+#' @param i Row index.
+#' @param columns Columns chosen by `athlete_external_columns()`.
+#' @return A named list of the properties with a value. `NA` and blank values
+#'   are skipped. An empty list means `external` should not be sent, because
+#'   the API replaces external properties on update.
+#' @keywords internal
+#' @noRd
+athlete_external_values <- function(arg_df, i, columns) {
+  out <- list()
+  for (column in columns) {
+    # `[[i]]` returns the element itself for both atomic and list columns.
+    # A list-column element may be NULL, empty or hold several values; the
+    # API takes a string per custom property, so several values are joined.
+    value <- arg_df[[column]][[i]]
+    if (base::is.list(value)) value <- base::unlist(value, use.names = FALSE)
+    value <- value[!base::is.na(value)]
+    # Trim text (numbers stay numbers) and drop blank elements.
+    if (base::is.character(value)) value <- base::trimws(value)
+    value <- value[base::nzchar(base::as.character(value))]
+    if (base::length(value) == 0L) {
+      next
+    }
+    if (base::length(value) > 1L) {
+      value <- base::paste(base::as.character(value), collapse = ", ")
+    }
+    out[[column]] <- value
+  }
+  out
+}
+
+
+#' Warn About Heights That Look Like Feet or Inches
+#'
+#' The API stores height in centimeters but reads values below 100 back as
+#' legacy feet or inches (95 reads back as 241.3). Sending such a value is
+#' allowed, so this only warns.
+#'
+#' @param athletes List of athlete payloads built by `AddAthleteJSON()` or
+#'   `UpdateAthleteJSON()`.
+#' @return `NULL`, invisibly.
+#' @keywords internal
+#' @noRd
+athlete_height_warning <- function(athletes) {
+  low <- base::Filter(
+    function(a) !base::is.null(a$height) && a$height > 0 && a$height < 100,
+    athletes
+  )
+  if (base::length(low) == 0L) {
+    return(invisible(NULL))
+  }
+  labels <- base::vapply(low, function(a) {
+    label <- if (!base::is.null(a$name)) a$name else a$id
+    base::paste0(label, " (", a$height, ")")
+  }, character(1))
+  shown <- utils::head(labels, 5L)
+  if (base::length(labels) > 5L) {
+    shown <- c(shown, base::paste0("and ", base::length(labels) - 5L, " more"))
+  }
+  warning(
+    "height is in centimeters, but ", base::length(low), " athlete(s) have ",
+    "a height below 100: ", base::paste(shown, collapse = ", "), ". The ",
+    "Hawkin API reads values below 100 back as legacy feet or inches (95 ",
+    "reads back as 241.3). Check these are centimeters.",
+    call. = FALSE
+  )
+  invisible(NULL)
+}
+
+
+#--------------------#
+
+
 #' Add Athlete Data Frame to JSON
 #'
 #' Take the athlete data frame passed and convert to JSON for POST method payload
+#'
+#' `position`, `sport`, `dob` and `height` are written as native fields, never
+#' as external properties. `id` (assigned by the API) and `lastTestedOn`
+#' (read-only) are not sent, so the output of `get_athletes()` can be passed
+#' straight back in.
 #'
 #' @param arg_df the athlete data frame argument provided in the function
 #' @return JSON string
@@ -404,6 +667,12 @@ AddAthleteJSON <- function(arg_df) {
   logger::log_trace("hawkinR/utils -> AddAthleteJSON: converting {nrow(arg_df)} athletes")
   # Create blank list for athletes
   x <- list()
+
+  # Columns that are not body fields, profile fields or read-only fields
+  other_columns <- athlete_external_columns(
+    arg_df,
+    body_cols = c("id", "name", "image", "active", "teams", "groups")
+  )
 
   for (i in seq_len(nrow(arg_df))) {
     # create list with required name
@@ -425,34 +694,31 @@ AddAthleteJSON <- function(arg_df) {
       }
     }
 
-    # Check for TEAMS column
+    # Check for TEAMS column (list column or comma-separated string)
     if ("teams" %in% base::names(arg_df)) {
-      if (!is.na(arg_df$teams[i])) {
-        ath$teams <- base::ifelse(is.list(arg_df$teams[i]), arg_df$teams[i], list(arg_df$teams[i]))
-      }
+      ath$teams <- athlete_id_values(arg_df$teams[[i]])
     }
 
-    # Check for GROUPS column
+    # Check for GROUPS column (list column or comma-separated string)
     if ("groups" %in% base::names(arg_df)) {
-      if (!is.na(arg_df$groups[i])) {
-        ath$groups <- base::ifelse(is.list(arg_df$groups[i]), arg_df$groups[i], list(arg_df$groups[i]))
-      }
+      ath$groups <- athlete_id_values(arg_df$groups[[i]])
     }
 
-    # Create external list
-    ath$external <- list()
+    # Native profile fields: position, sport, dob, height
+    ath <- c(ath, athlete_profile_values(arg_df, i))
 
-    # Handle columns that are not "name", "image", "active", "teams", "groups"
-    other_columns <- base::setdiff(base::names(arg_df), c("name", "image", "active", "teams", "groups"))
-
-    for (column in other_columns) {
-      if (!is.na(arg_df[[column]][i])) {
-        ath$external[[column]] <- arg_df[[column]][i]
-      }
+    # External properties. Only sent when there is at least one value:
+    # the API replaces them on update, so an empty `external` would
+    # delete every custom property the athlete has.
+    external <- athlete_external_values(arg_df, i, other_columns)
+    if (base::length(external) > 0L) {
+      ath$external <- external
     }
 
     x <- base::append(x, list(ath))
   }
+
+  athlete_height_warning(x)
 
   # Convert lists to JSON format
   y <- jsonlite::toJSON(x, pretty = TRUE, auto_unbox = TRUE)
@@ -469,6 +735,10 @@ AddAthleteJSON <- function(arg_df) {
 #'
 #' Take the athlete data frame passed and convert to JSON for PUT method payload
 #'
+#' `position`, `sport`, `dob` and `height` are written as native fields, never
+#' as external properties. `lastTestedOn` (read-only) is not sent, so the output
+#' of `get_athletes()` can be modified and passed straight back in.
+#'
 #' @param arg_df the athlete data frame argument provided in the function
 #' @return JSON string
 #' @importFrom jsonlite toJSON
@@ -480,6 +750,12 @@ UpdateAthleteJSON <- function(arg_df) {
   x <- list()
 
   if ("id" %in% base::names(arg_df)) {
+    # Columns that are not body fields, profile fields or read-only fields
+    other_columns <- athlete_external_columns(
+      arg_df,
+      body_cols = c("id", "name", "image", "active", "teams", "groups")
+    )
+
     for (i in seq_len(nrow(arg_df))) {
       # create list with required id
       ath <- list(
@@ -507,34 +783,31 @@ UpdateAthleteJSON <- function(arg_df) {
         }
       }
 
-      # Check for TEAMS column
+      # Check for TEAMS column (list column or comma-separated string)
       if ("teams" %in% base::names(arg_df)) {
-        if (!is.na(arg_df$teams[i])) {
-          ath$teams <- base::ifelse(is.list(arg_df$teams[i]), arg_df$teams[i], list(arg_df$teams[i]))
-        }
+        ath$teams <- athlete_id_values(arg_df$teams[[i]])
       }
 
-      # Check for GROUPS column
+      # Check for GROUPS column (list column or comma-separated string)
       if ("groups" %in% base::names(arg_df)) {
-        if (!is.na(arg_df$groups[i])) {
-          ath$groups <- base::ifelse(is.list(arg_df$groups[i]), arg_df$groups[i], list(arg_df$groups[i]))
-        }
+        ath$groups <- athlete_id_values(arg_df$groups[[i]])
       }
 
-      # Create external list
-      ath$external <- list()
+      # Native profile fields: position, sport, dob, height
+      ath <- c(ath, athlete_profile_values(arg_df, i))
 
-      # Handle columns that are not "name", "image", "active", "teams", "groups"
-      other_columns <- base::setdiff(base::names(arg_df), c("id","name", "image", "active", "teams", "groups"))
-
-      for (column in other_columns) {
-        if (!is.na(arg_df[[column]][i])) {
-          ath$external[[column]] <- arg_df[[column]][i]
-        }
+      # External properties. Only sent when there is at least one value:
+      # the API replaces them on update, so an empty `external` would
+      # delete every custom property the athlete has.
+      external <- athlete_external_values(arg_df, i, other_columns)
+      if (base::length(external) > 0L) {
+        ath$external <- external
       }
 
       x <- base::append(x, list(ath))
     }
+
+    athlete_height_warning(x)
 
     # Convert lists to JSON format
     y <- jsonlite::toJSON(x, pretty = TRUE, auto_unbox = TRUE)

@@ -32,13 +32,46 @@ The data frame passed as the argument must use the following schema:\tabular{lll
    \strong{name} \tab \emph{chr} \tab \emph{optional} \tab athlete's given name (First Last) \cr
    \strong{image} \tab \emph{chr} \tab \emph{optional} \tab URL path to image. \code{default = null} \cr
    \strong{active} \tab \emph{logi} \tab \emph{optional} \tab athlete is active (TRUE). \code{default = null} \cr
-   \strong{teams} \tab \emph{list} \tab \emph{optional} \tab a single team id as a string or list of team ids. \verb{default = [defaultTeamId]} \cr
-   \strong{groups} \tab \emph{list} \tab \emph{optional} \tab a single group id as a string or list of group ids. \verb{default = []} \cr
-   \strong{external property} \tab \emph{chr} \tab \emph{optional} \tab External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. Use "lowercase" or "snake_case" styles for column names. \cr
+   \strong{teams} \tab \emph{list} or \emph{chr} \tab \emph{optional} \tab team ids, as a list column (\code{I(list("team1", c("team2", "team3")))}) or a comma-separated string (\code{"team2, team3"}). \code{NA}, \code{NULL} or blank leaves the athlete's teams unchanged. \cr
+   \strong{groups} \tab \emph{list} or \emph{chr} \tab \emph{optional} \tab group ids, as a list column or a comma-separated string, like \code{teams}. \code{NA}, \code{NULL} or blank leaves the athlete's groups unchanged. \cr
+   \strong{position} \tab \emph{chr} \tab \emph{optional} \tab playing position (e.g. "Forward"). Surrounding whitespace is trimmed. \cr
+   \strong{sport} \tab \emph{chr} \tab \emph{optional} \tab sport name (e.g. "Basketball"). Surrounding whitespace is trimmed. \cr
+   \strong{dob} \tab \emph{chr}, \emph{Date}, \emph{POSIXct} or \emph{num} \tab \emph{optional} \tab date of birth: \code{"YYYY-MM-DD"} or a 4-digit year (\code{"1998"} or \code{1998}). The API rejects years before 1900 or after the current year and full dates in the future; hawkinR doesn't check these itself. See \strong{Dates of birth} below. \cr
+   \strong{height} \tab \emph{num} \tab \emph{optional} \tab height in \strong{centimeters}. The API rejects values outside 0 to 300; hawkinR doesn't check the range itself. \code{0} counts as not provided and isn't sent. Decimals are allowed; it is sent and read back rounded to 1 decimal place. See \strong{Height} below. \cr
+   \strong{external property} \tab \emph{chr} \tab \emph{optional} \tab External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. \code{NA} and blank values are not sent. Use "lowercase" or "snake_case" styles for column names. \cr
 }
 
 
-\emph{If optional fields are not present in an update request, those properties will be left unchanged. However, when updating external properties, custom properties that are not present will be removed.}
+\emph{If optional fields are not present in an update request, those properties will be left unchanged.}
+
+\strong{External properties.} The API replaces an athlete's external properties
+on update; it does not merge them. External properties are only sent for an
+athlete with at least one non-\code{NA}, non-blank custom value, and then every
+custom property without a value in that row is removed. With no custom
+columns, or with every custom cell \code{NA} or blank, nothing is sent and the
+athlete's custom properties are left unchanged.
+
+\code{position}, \code{sport}, \code{dob} and \code{height} are written as native athlete
+fields, never as external properties. A value that is \code{NA} or blank (\code{""})
+leaves that field \strong{unchanged}: the API cannot clear these fields. To clear
+one, edit the athlete in the Hawkin app.
+
+The output of \code{get_athletes()} can be modified and passed straight back in.
+\code{lastTestedOn} is read-only and is not sent. If an athlete has an old
+external property named \code{position}, \code{sport}, \code{dob}, \code{height} or
+\code{lastTestedOn}, \code{get_athletes()} returns it as a suffixed column such as
+\code{position.1}. That column is not sent, with a warning, and because external
+properties are replaced the old external key is removed from the athlete.
+
+\strong{Dates of birth.} \code{Date} values are sent as \code{YYYY-MM-DD}. \code{POSIXct}
+date-times are sent as the calendar date in their own time zone (their
+\code{tzone} attribute, or the session time zone if they have none), with no
+conversion to UTC, so the day you see printed is the day that is stored. The
+API stores and returns the string exactly as sent.
+
+\strong{Height.} The API reads values below 100 back as legacy feet or inches, so
+a height of 95 is read back as 241.3. A warning is raised when any height
+below 100 is sent; the request still goes ahead.
 }
 \examples{
 \dontrun{
@@ -50,11 +83,18 @@ df <- data.frame(
   active = c(TRUE, FALSE),
   teams = I(list("team1", c("team2", "team3"))),
   groups = I(list(NULL, "group1")),
+  position = c("Forward", NA),
+  height = c(190.5, 172),
   external_property = c("value1", "value2")
 )
 
 # Update athletes using the example data frame
 update_athletes(athleteData = df)
+
+# Or modify the output of get_athletes() and send it back
+athletes <- get_athletes()
+athletes$sport <- "Basketball"
+update_athletes(athleteData = athletes)
 }
 
 }

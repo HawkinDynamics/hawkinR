@@ -12,11 +12,44 @@
 #' | **name** | *chr* | *optional* | athlete's given name (First Last) |
 #' | **image** | *chr* | *optional* | URL path to image. `default = null` |
 #' | **active** | *logi* | *optional* | athlete is active (TRUE). `default = null` |
-#' | **teams** | *list* | *optional* | a single team id as a string or list of team ids. `default = [defaultTeamId]` |
-#' | **groups** | *list* | *optional* | a single group id as a string or list of group ids. `default = []` |
-#' | **external property** | *chr* | *optional* | External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. Use "lowercase" or "snake_case" styles for column names. |
+#' | **teams** | *list* or *chr* | *optional* | team ids, as a list column (`I(list("team1", c("team2", "team3")))`) or a comma-separated string (`"team2, team3"`). `NA`, `NULL` or blank leaves the athlete's teams unchanged. |
+#' | **groups** | *list* or *chr* | *optional* | group ids, as a list column or a comma-separated string, like `teams`. `NA`, `NULL` or blank leaves the athlete's groups unchanged. |
+#' | **position** | *chr* | *optional* | playing position (e.g. "Forward"). Surrounding whitespace is trimmed. |
+#' | **sport** | *chr* | *optional* | sport name (e.g. "Basketball"). Surrounding whitespace is trimmed. |
+#' | **dob** | *chr*, *Date*, *POSIXct* or *num* | *optional* | date of birth: `"YYYY-MM-DD"` or a 4-digit year (`"1998"` or `1998`). The API rejects years before 1900 or after the current year and full dates in the future; hawkinR doesn't check these itself. See **Dates of birth** below. |
+#' | **height** | *num* | *optional* | height in **centimeters**. The API rejects values outside 0 to 300; hawkinR doesn't check the range itself. `0` counts as not provided and isn't sent. Decimals are allowed; it is sent and read back rounded to 1 decimal place. See **Height** below. |
+#' | **external property** | *chr* | *optional* | External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. `NA` and blank values are not sent. Use "lowercase" or "snake_case" styles for column names. |
 #'
-#' *If optional fields are not present in an update request, those properties will be left unchanged. However, when updating external properties, custom properties that are not present will be removed.*
+#' *If optional fields are not present in an update request, those properties will be left unchanged.*
+#'
+#' **External properties.** The API replaces an athlete's external properties
+#' on update; it does not merge them. External properties are only sent for an
+#' athlete with at least one non-`NA`, non-blank custom value, and then every
+#' custom property without a value in that row is removed. With no custom
+#' columns, or with every custom cell `NA` or blank, nothing is sent and the
+#' athlete's custom properties are left unchanged.
+#'
+#' `position`, `sport`, `dob` and `height` are written as native athlete
+#' fields, never as external properties. A value that is `NA` or blank (`""`)
+#' leaves that field **unchanged**: the API cannot clear these fields. To clear
+#' one, edit the athlete in the Hawkin app.
+#'
+#' The output of `get_athletes()` can be modified and passed straight back in.
+#' `lastTestedOn` is read-only and is not sent. If an athlete has an old
+#' external property named `position`, `sport`, `dob`, `height` or
+#' `lastTestedOn`, `get_athletes()` returns it as a suffixed column such as
+#' `position.1`. That column is not sent, with a warning, and because external
+#' properties are replaced the old external key is removed from the athlete.
+#'
+#' **Dates of birth.** `Date` values are sent as `YYYY-MM-DD`. `POSIXct`
+#' date-times are sent as the calendar date in their own time zone (their
+#' `tzone` attribute, or the session time zone if they have none), with no
+#' conversion to UTC, so the day you see printed is the day that is stored. The
+#' API stores and returns the string exactly as sent.
+#'
+#' **Height.** The API reads values below 100 back as legacy feet or inches, so
+#' a height of 95 is read back as 241.3. A warning is raised when any height
+#' below 100 is sent; the request still goes ahead.
 #'
 #' @usage
 #' update_athletes(athleteData, ...)
@@ -47,11 +80,18 @@
 #'   active = c(TRUE, FALSE),
 #'   teams = I(list("team1", c("team2", "team3"))),
 #'   groups = I(list(NULL, "group1")),
+#'   position = c("Forward", NA),
+#'   height = c(190.5, 172),
 #'   external_property = c("value1", "value2")
 #' )
 #'
 #' # Update athletes using the example data frame
 #' update_athletes(athleteData = df)
+#'
+#' # Or modify the output of get_athletes() and send it back
+#' athletes <- get_athletes()
+#' athletes$sport <- "Basketball"
+#' update_athletes(athleteData = athletes)
 #' }
 #'
 #' @importFrom magrittr %>%

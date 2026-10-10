@@ -31,10 +31,37 @@ The data frame passed as the argument must use the following schema:\tabular{lll
    \strong{name} \tab \emph{chr} \tab \strong{REQUIRED} \tab athlete's given name (First Last) \cr
    \strong{image} \tab \emph{chr} \tab \emph{optional} \tab URL path to image. \code{default = null} \cr
    \strong{active} \tab \emph{logi} \tab \emph{optional} \tab athlete is active (TRUE). \code{default = null} \cr
-   \strong{teams} \tab \emph{list} \tab \emph{optional} \tab a single team id as a string or list of team ids. \verb{default = [defaultTeamId]} \cr
-   \strong{groups} \tab \emph{list} \tab \emph{optional} \tab a single group id as a string or list of group ids. \verb{default = []} \cr
-   \strong{external property} \tab \emph{chr} \tab \emph{optional} \tab External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. Use "lowercase" or "snake_case" styles for column names. \cr
+   \strong{teams} \tab \emph{list} or \emph{chr} \tab \emph{optional} \tab team ids, as a list column (\code{I(list("team1", c("team2", "team3")))}) or a comma-separated string (\code{"team2, team3"}). \code{NA}, \code{NULL} or blank puts the athlete on the default team. \verb{default = [defaultTeamId]} \cr
+   \strong{groups} \tab \emph{list} or \emph{chr} \tab \emph{optional} \tab group ids, as a list column or a comma-separated string, like \code{teams}. \code{NA}, \code{NULL} or blank creates the athlete with no groups. \verb{default = []} \cr
+   \strong{position} \tab \emph{chr} \tab \emph{optional} \tab playing position (e.g. "Forward"). Surrounding whitespace is trimmed. \cr
+   \strong{sport} \tab \emph{chr} \tab \emph{optional} \tab sport name (e.g. "Basketball"). Surrounding whitespace is trimmed. \cr
+   \strong{dob} \tab \emph{chr}, \emph{Date}, \emph{POSIXct} or \emph{num} \tab \emph{optional} \tab date of birth: \code{"YYYY-MM-DD"} or a 4-digit year (\code{"1998"} or \code{1998}). The API rejects years before 1900 or after the current year and full dates in the future; hawkinR doesn't check these itself. See \strong{Dates of birth} below. \cr
+   \strong{height} \tab \emph{num} \tab \emph{optional} \tab height in \strong{centimeters}. The API rejects values outside 0 to 300; hawkinR doesn't check the range itself. \code{0} counts as not provided and isn't sent. Decimals are allowed; it is sent and read back rounded to 1 decimal place. See \strong{Height} below. \cr
+   \strong{external property} \tab \emph{chr} \tab \emph{optional} \tab External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. \code{NA} and blank values are not sent. Use "lowercase" or "snake_case" styles for column names. \cr
 }
+
+
+\code{position}, \code{sport}, \code{dob} and \code{height} are written as native athlete fields,
+never as external properties. Leave a value \code{NA} or blank (\code{""}) and that
+field is not set.
+
+External properties are only sent for an athlete with at least one
+non-\code{NA}, non-blank custom value.
+
+Columns that \code{get_athletes()} returns but the API does not accept on create
+are ignored, so its output can be passed straight in: \code{id} (the API assigns
+a new one) and \code{lastTestedOn} (read-only). To store your own identifier, use
+a different column name such as \code{external_id}.
+
+\strong{Dates of birth.} \code{Date} values are sent as \code{YYYY-MM-DD}. \code{POSIXct}
+date-times are sent as the calendar date in their own time zone (their
+\code{tzone} attribute, or the session time zone if they have none), with no
+conversion to UTC, so the day you see printed is the day that is stored. The
+API stores and returns the string exactly as sent.
+
+\strong{Height.} The API reads values below 100 back as legacy feet or inches, so
+a height of 95 is read back as 241.3. A warning is raised when any height
+below 100 is sent; the request still goes ahead.
 }
 \examples{
 \dontrun{
@@ -45,6 +72,10 @@ df <- data.frame(
   active = c(TRUE, FALSE),
   teams = I(list("team1", c("team2", "team3"))),
   groups = I(list(NULL, "group1")),
+  position = c("Forward", "Guard"),
+  sport = c("Basketball", "Basketball"),
+  dob = as.Date(c("1998-04-01", "2001-11-23")),
+  height = c(190.5, 172),
   external_property = c("value1", "value2")
 )
 

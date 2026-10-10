@@ -10,9 +10,35 @@
 #' | **name** | *chr* | **REQUIRED** | athlete's given name (First Last) |
 #' | **image** | *chr* | *optional* | URL path to image. `default = null` |
 #' | **active** | *logi* | *optional* | athlete is active (TRUE). `default = null` |
-#' | **teams** | *list* | *optional* | a single team id as a string or list of team ids. `default = [defaultTeamId]` |
-#' | **groups** | *list* | *optional* | a single group id as a string or list of group ids. `default = []` |
-#' | **external property** | *chr* | *optional* | External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. Use "lowercase" or "snake_case" styles for column names. |
+#' | **teams** | *list* or *chr* | *optional* | team ids, as a list column (`I(list("team1", c("team2", "team3")))`) or a comma-separated string (`"team2, team3"`). `NA`, `NULL` or blank puts the athlete on the default team. `default = [defaultTeamId]` |
+#' | **groups** | *list* or *chr* | *optional* | group ids, as a list column or a comma-separated string, like `teams`. `NA`, `NULL` or blank creates the athlete with no groups. `default = []` |
+#' | **position** | *chr* | *optional* | playing position (e.g. "Forward"). Surrounding whitespace is trimmed. |
+#' | **sport** | *chr* | *optional* | sport name (e.g. "Basketball"). Surrounding whitespace is trimmed. |
+#' | **dob** | *chr*, *Date*, *POSIXct* or *num* | *optional* | date of birth: `"YYYY-MM-DD"` or a 4-digit year (`"1998"` or `1998`). The API rejects years before 1900 or after the current year and full dates in the future; hawkinR doesn't check these itself. See **Dates of birth** below. |
+#' | **height** | *num* | *optional* | height in **centimeters**. The API rejects values outside 0 to 300; hawkinR doesn't check the range itself. `0` counts as not provided and isn't sent. Decimals are allowed; it is sent and read back rounded to 1 decimal place. See **Height** below. |
+#' | **external property** | *chr* | *optional* | External properties can be added by adding any additional columns of equal length. The name of the column will become the external property name, and the row value will become the external property value. `NA` and blank values are not sent. Use "lowercase" or "snake_case" styles for column names. |
+#'
+#' `position`, `sport`, `dob` and `height` are written as native athlete fields,
+#' never as external properties. Leave a value `NA` or blank (`""`) and that
+#' field is not set.
+#'
+#' External properties are only sent for an athlete with at least one
+#' non-`NA`, non-blank custom value.
+#'
+#' Columns that `get_athletes()` returns but the API does not accept on create
+#' are ignored, so its output can be passed straight in: `id` (the API assigns
+#' a new one) and `lastTestedOn` (read-only). To store your own identifier, use
+#' a different column name such as `external_id`.
+#'
+#' **Dates of birth.** `Date` values are sent as `YYYY-MM-DD`. `POSIXct`
+#' date-times are sent as the calendar date in their own time zone (their
+#' `tzone` attribute, or the session time zone if they have none), with no
+#' conversion to UTC, so the day you see printed is the day that is stored. The
+#' API stores and returns the string exactly as sent.
+#'
+#' **Height.** The API reads values below 100 back as legacy feet or inches, so
+#' a height of 95 is read back as 241.3. A warning is raised when any height
+#' below 100 is sent; the request still goes ahead.
 #'
 #' @usage
 #' create_athletes(athleteData, ...)
@@ -42,6 +68,10 @@
 #'   active = c(TRUE, FALSE),
 #'   teams = I(list("team1", c("team2", "team3"))),
 #'   groups = I(list(NULL, "group1")),
+#'   position = c("Forward", "Guard"),
+#'   sport = c("Basketball", "Basketball"),
+#'   dob = as.Date(c("1998-04-01", "2001-11-23")),
+#'   height = c(190.5, 172),
 #'   external_property = c("value1", "value2")
 #' )
 #'

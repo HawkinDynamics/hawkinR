@@ -1,66 +1,62 @@
-# CRAN submission — hawkinR 2.0.1
+# CRAN submission — hawkinR 2.2.0
 
 ## Release summary
 
-This is a patch release fixing a data-correctness bug in `get_forcetime()`.
+This is a minor release. The current CRAN version is 2.0.1 (published
+2026-07-21). Version 2.1.0 was tagged in our repository but never submitted
+to CRAN, so this submission contains the changes from both 2.1.0 and 2.2.0.
+See NEWS.md for details.
 
-`get_forcetime()` built its returned data frame by indexing the API response
-positionally rather than by field name. When the response elements did not
-line up with the assumed positions, the force-time series were populated from
-the wrong fields, leaving column values misaligned relative to their labels.
-The data's shape and length were unaffected, so the result looked valid and
-raised no error, which meant downstream analysis could be silently incorrect.
+Two of the changes are data-correctness fixes:
 
-Columns are now selected by their API field names (`Time(s)`, `LeftForce(N)`,
-`RightForce(N)`, ...), so each series is populated from the correct vector
-regardless of field order or omitted optional fields. The tri-axial force and
-moment columns are handled the same way, and `testType_id` is now read from
-the named `testType$id` field rather than a positional lookup.
+- `get_tests()` could silently return incomplete data. When any page after
+  the first failed (a non-200 status, a network error, or a pagination
+  cursor that did not advance), it logged a warning and returned only the
+  pages fetched so far, which looked like a complete result. It now stops
+  with an error naming the status and page. Transient failures (HTTP 429,
+  502, 503, 504) are retried with backoff first.
+- `update_athletes()` always sent an `external` field, empty when the data
+  frame had no custom-property columns. The API replaces external properties
+  on update, so an update that only changed, for example, `name` could delete
+  every custom property on those athletes. `external` is now sent only when
+  there are custom values. Multiple team or group IDs were also sent nested
+  one level too deep; they are now sent as a flat array.
 
-Regression tests covering the force-time column mapping have been added; this
-code path previously had no test coverage, which is why the defect was not
-caught before release.
+New features:
 
-## Note on submission timing
+- `get_tests()` gains `useNulls`, `rounding` and `nestMetrics`, which map to
+  response-shape query parameters of the Hawkin API.
+- `create_athletes()` and `update_athletes()` write the athlete profile
+  fields `position`, `sport`, `dob` and `height` as native API fields.
 
-I am aware that CRAN asks maintainers not to submit updates more frequently
-than every 1–2 months, and that 2.0.0 was published very recently. I am
-submitting this sooner because the defect silently returned misaligned
-force-time columns to users, with no error or warning to indicate a problem.
-Given that this package is used for biomechanical analysis, force values
-attributed to the wrong column can invalidate the user's conclusions without
-their knowledge. I judged that to warrant a prompt correction rather than
-waiting. Apologies for the short interval.
+Regression tests cover each fix.
 
 ## Test environments
 
-- Local: Windows 11 Pro (x86_64, build 26200), R 4.4.3 (2025-02-28 ucrt)
-- win-builder: R-devel (2026-07-20 r90283) and R-release (4.6.1) — both 1 NOTE (see below)
-- GitHub Actions (`r-lib/actions/check-r-package`) on:
-  - ubuntu-latest, R-release
-  - ubuntu-latest, R-devel
-  - ubuntu-latest, R-oldrel-1
-  - macos-latest, R-release
-  - windows-latest, R-release
+- Local: Windows 11 Enterprise (x86_64), R 4.4.3 (2025-02-28 ucrt)
+- mac builder (macOS 26.6, Apple M1, R 4.6.1, arm64): Status OK, no errors, warnings or notes; PDF manual OK
+- win-builder: R-devel (2026-09-30 r90605 ucrt) and R-release (4.6.1), x86_64-w64-mingw32
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
-
-Both win-builder R-devel and R-release return a single NOTE:
+Local `R CMD check --as-cran`: 0 errors | 0 warnings | 1 note
 
 ```
-Maintainer: 'Lauren Green <lauren@hawkindynamics.com>'
-
-Days since last update: 2
+* checking for future file timestamps ... NOTE
+  unable to verify current time
 ```
 
-This is the short interval since 2.0.0 — see the note on submission timing
-above for the justification.
+This note comes from the local environment's time-server lookup, not from
+the package.
+
+win-builder R-devel and R-release: Status OK (0 errors | 0 warnings | 0 notes),
+including the CRAN incoming feasibility check.
+
+mac builder (R 4.6.1, arm64): Status OK (0 errors | 0 warnings | 0 notes).
 
 ## Downstream dependencies
 
-None — no reverse dependencies exist for this package.
+None. There are no reverse dependencies on CRAN.
 
 ## Notes for CRAN reviewers
 
